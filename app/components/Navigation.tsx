@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { Search, Menu, X, User, Zap, ChevronDown, LogOut, Settings, Car, Activity } from 'lucide-react';
+import { Search, Menu, X, User, Zap, ChevronDown, LogOut, Settings, Car, Activity, PenTool } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 const Navigation = () => {
@@ -33,15 +33,17 @@ const Navigation = () => {
 
   const mainNavItems = [
     { name: 'Home', href: '/' },
-    { name: 'Forums', href: '/forums' },
     { name: 'EV Listings', href: '/ev-listings' },
     { name: 'Marketplace', href: '/marketplace' },
+    { name: 'Forums', href: '/forums' },
+    { name: 'What\'s New', href: '/whats-new' },
   ];
 
   const dropdownItems = [
     { name: 'Community Garage', href: '/garage' },
     { name: 'Directory', href: '/directory' },
-    { name: "What's New", href: '/whats-new' },
+    { name: 'Blog', href: '/blog' },
+    { name: 'Charging Stations', href: '/charging' },
   ];
 
   return (
@@ -57,34 +59,40 @@ const Navigation = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {mainNavItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="nav-link"
-              >
-                {item.name}
-              </Link>
-            ))}
+          <div className="hidden md:flex md:items-center md:space-x-8">
+            <Link href="/" className="text-gray-700 hover:text-blue-600 transition-colors">
+              Home
+            </Link>
+            <Link href="/ev-listings" className="text-gray-700 hover:text-blue-600 transition-colors">
+              EV Listings
+            </Link>
+            <Link href="/marketplace" className="text-gray-700 hover:text-blue-600 transition-colors">
+              Marketplace
+            </Link>
+            <Link href="/forums" className="text-gray-700 hover:text-blue-600 transition-colors">
+              Forums
+            </Link>
+            <Link href="/whats-new" className="text-gray-700 hover:text-blue-600 transition-colors">
+              What's New
+            </Link>
             
             {/* More Dropdown */}
-             <div className="relative" ref={dropdownRef}>
-               <button
-                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                 className="nav-link flex items-center space-x-1 hover:cursor-pointer"
-               >
-                 <span>More</span>
-                 <ChevronDown className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-               </button>
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="text-gray-700 hover:text-blue-600 transition-colors flex items-center space-x-1"
+              >
+                <span>More</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
               
               {isDropdownOpen && (
-                <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   {dropdownItems.map((item) => (
                     <Link
                       key={item.name}
                       href={item.href}
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       {item.name}
@@ -95,8 +103,9 @@ const Navigation = () => {
             </div>
           </div>
 
-          {/* Search Bar */}
+          {/* Search and User Menu */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Search Bar */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -113,7 +122,7 @@ const Navigation = () => {
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 hover:cursor-pointer"
+                  className="flex items-center space-x-2 text-gray-600 hover:text-blue-600"
                 >
                   <img
                     src={user.avatar || 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20placeholder%2C%20clean%20simple%20design&image_size=square'}
@@ -155,6 +164,15 @@ const Navigation = () => {
                       >
                         <Car className="w-4 h-4 mr-3" />
                         My Garage
+                      </Link>
+                      <div className="border-t border-gray-100 my-1"></div>
+                      <Link
+                        href="/blog/create"
+                        className="flex items-center px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <PenTool className="w-4 h-4 mr-3" />
+                        Write Article
                       </Link>
                       <Link
                         href="/profile?tab=settings"
@@ -227,19 +245,24 @@ const Navigation = () => {
               </div>
               
               {/* Mobile Nav Items */}
-              {mainNavItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-md"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
-              ))}
+              <Link href="/" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+                Home
+              </Link>
+              <Link href="/ev-listings" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+                EV Listings
+              </Link>
+              <Link href="/marketplace" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+                Marketplace
+              </Link>
+              <Link href="/forums" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+                Forums
+              </Link>
+              <Link href="/whats-new" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+                What's New
+              </Link>
               
               {/* Mobile dropdown items */}
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
+              <div className="border-t border-gray-200 pt-2 mt-2">
                 {dropdownItems.map((item) => (
                   <Link
                     key={item.name}
@@ -290,6 +313,14 @@ const Navigation = () => {
                   >
                     <Car className="h-5 w-5 mr-2" />
                     My Garage
+                  </Link>
+                  <Link
+                    href="/blog/create"
+                    className="flex items-center px-3 py-2 text-base font-medium text-blue-600 hover:bg-blue-50 rounded-md"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <PenTool className="h-5 w-5 mr-2" />
+                    Write Article
                   </Link>
                   <Link
                     href="/profile?tab=settings"
