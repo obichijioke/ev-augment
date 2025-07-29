@@ -3,12 +3,30 @@
 import { useState } from 'react';
 import { Search, MapPin, Zap, Clock, Star, Filter, Navigation, Phone, Globe, ChevronDown, Battery, Wifi, CreditCard, Shield } from 'lucide-react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+// Dynamically import the map component to avoid SSR issues
+const ChargingStationMap = dynamic(() => import('../components/ChargingStationMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center justify-center h-96 text-gray-500">
+        <div className="text-center">
+          <MapPin className="h-12 w-12 mx-auto mb-4" />
+          <h3 className="text-lg font-medium mb-2">Loading Map...</h3>
+          <p>Please wait while the map loads.</p>
+        </div>
+      </div>
+    </div>
+  )
+});
 
 const ChargingStationsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
+  const [selectedStation, setSelectedStation] = useState(null);
 
   // Mock charging stations data
   const chargingStations = [
@@ -464,15 +482,11 @@ const ChargingStationsPage = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-center h-96 text-gray-500">
-              <div className="text-center">
-                <MapPin className="h-12 w-12 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">Map View Coming Soon</h3>
-                <p>Interactive map with charging station locations will be available here.</p>
-              </div>
-            </div>
-          </div>
+          <ChargingStationMap 
+            stations={filteredStations}
+            selectedStation={selectedStation}
+            onStationSelect={setSelectedStation}
+          />
         )}
 
         {/* No Results */}
