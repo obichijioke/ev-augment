@@ -13,8 +13,7 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    fullName: '',
     username: '',
     email: '',
     password: '',
@@ -40,12 +39,8 @@ const RegisterPage = () => {
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
     
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    }
-    
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
     }
     
     if (!formData.username.trim()) {
@@ -114,16 +109,20 @@ const RegisterPage = () => {
     
     try {
       await register({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        fullName: formData.fullName,
         username: formData.username,
         email: formData.email,
         password: formData.password,
         subscribeNewsletter: formData.subscribeNewsletter
       });
-      router.push('/dashboard');
+      
+      console.log('Registration successful');
+      
+      // Redirect to login page after successful registration
+      router.push('/auth/login');
     } catch (error) {
       // Error is handled by the store
+      console.error('Registration error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -154,46 +153,30 @@ const RegisterPage = () => {
               </div>
             )}
             
-            {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name
-                </label>
+            {/* Full Name Field */}
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
                 <input
                   type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                    errors.firstName ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                    errors.fullName ? 'border-red-300 bg-red-50' : 'border-gray-300'
                   }`}
-                  placeholder="John"
+                  placeholder="John Doe"
                 />
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
-                )}
               </div>
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                    errors.lastName ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                  }`}
-                  placeholder="Doe"
-                />
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
-                )}
-              </div>
+              {errors.fullName && (
+                <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+              )}
             </div>
 
             {/* Username Field */}

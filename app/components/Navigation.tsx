@@ -125,18 +125,18 @@ const Navigation = () => {
                   className="flex items-center space-x-2 text-gray-600 hover:text-blue-600"
                 >
                   <img
-                    src={user.avatar || 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20placeholder%2C%20clean%20simple%20design&image_size=square'}
-                    alt={user.firstName}
+                    src={user.avatarUrl || 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20placeholder%2C%20clean%20simple%20design&image_size=square'}
+                    alt={user.fullName || user.username}
                     className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
                   />
-                  <span className="text-sm font-medium">{user.firstName}</span>
+                  <span className="text-sm font-medium">{user.fullName || user.username}</span>
                   <ChevronDown className={`h-4 w-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
                 {isUserMenuOpen && (
                   <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                     <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
+                      <p className="text-sm font-medium text-gray-900">{user.fullName || user.username}</p>
                       <p className="text-sm text-gray-600">@{user.username}</p>
                     </div>
                     
@@ -280,12 +280,12 @@ const Navigation = () => {
                 <div className="border-t border-gray-200 pt-2 mt-2">
                   <div className="flex items-center px-3 py-2 mb-2">
                     <img
-                      src={user.avatar || 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20placeholder%2C%20clean%20simple%20design&image_size=square'}
-                      alt={user.firstName}
+                      src={user.avatarUrl || 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20placeholder%2C%20clean%20simple%20design&image_size=square'}
+                      alt={user.fullName || user.username}
                       className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 mr-3"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
+                      <p className="text-sm font-medium text-gray-900">{user.fullName || user.username}</p>
                       <p className="text-xs text-gray-600">@{user.username}</p>
                     </div>
                   </div>

@@ -60,9 +60,11 @@ const LoginPage = () => {
     
     try {
       await login(formData.email, formData.password);
-      router.push('/dashboard');
+      // Don't manually redirect - ProtectedRoute will handle it
+      console.log('Login successful');
     } catch (error) {
       // Error is handled by the store
+      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }

@@ -4,6 +4,7 @@ import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
+import AuthProvider from "./providers/AuthProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,11 +24,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <Navigation />
-        <main className="min-h-screen">
-          {children}
-        </main>
-        <Footer />
+        <AuthProvider>
+          <Navigation />
+          <main className="min-h-screen">
+            {children}
+          </main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );

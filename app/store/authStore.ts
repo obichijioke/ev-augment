@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { authService, AuthResponse, ApiError } from '../services/authService';
 
 export interface User {
   id: string;
@@ -12,10 +13,11 @@ export interface User {
   location?: string;
   joinedDate: string;
   isVerified: boolean;
-  reputation: number;
-  evOwner: boolean;
+  emailConfirmed: boolean;
+  reputation?: number;
+  evOwner?: boolean;
   evModels?: string[];
-  preferences: {
+  preferences?: {
     emailNotifications: boolean;
     pushNotifications: boolean;
     publicProfile: boolean;
@@ -24,8 +26,16 @@ export interface User {
   };
 }
 
+export interface AuthSession {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+  expiresIn: number;
+}
+
 interface AuthState {
   user: User | null;
+  session: AuthSession | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -34,51 +44,72 @@ interface AuthState {
 interface AuthActions {
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  refreshToken: () => Promise<void>;
+  getCurrentUser: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (token: string, password: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 export interface RegisterData {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   username: string;
   email: string;
   password: string;
+  subscribeNewsletter?: boolean;
+  termsAccepted?: boolean;
 }
 
 type AuthStore = AuthState & AuthActions;
 
-// Mock user data for demonstration
-const mockUser: User = {
-  id: '1',
-  username: 'johndoe',
-  email: 'john@example.com',
-  firstName: 'John',
-  lastName: 'Doe',
-  avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20headshot%20of%20a%20friendly%20person%20smiling%2C%20clean%20background%2C%20high%20quality&image_size=square',
-  bio: 'EV enthusiast and early adopter. Love sharing knowledge about electric vehicles and sustainable transportation.',
-  location: 'San Francisco, CA',
-  joinedDate: '2023-01-15',
-  isVerified: true,
-  reputation: 1250,
-  evOwner: true,
-  evModels: ['Tesla Model 3', 'Nissan Leaf'],
-  preferences: {
-    emailNotifications: true,
-    pushNotifications: true,
-    publicProfile: true,
-    showEmail: false,
-    theme: 'auto'
-  }
+// Helper function to transform API user data to frontend User interface
+const transformApiUser = (apiUser: any): User => {
+  const [firstName, ...lastNameParts] = (apiUser.full_name || '').split(' ');
+  const lastName = lastNameParts.join(' ');
+  
+  return {
+    id: apiUser.id,
+    username: apiUser.username,
+    email: apiUser.email,
+    firstName: firstName || '',
+    lastName: lastName || '',
+    avatar: apiUser.avatar_url,
+    bio: apiUser.bio,
+    location: apiUser.location,
+    joinedDate: apiUser.join_date,
+    isVerified: apiUser.is_verified,
+    emailConfirmed: apiUser.email_confirmed,
+    reputation: 0, // Default values for optional fields
+    evOwner: false,
+    evModels: [],
+    preferences: {
+      emailNotifications: true,
+      pushNotifications: true,
+      publicProfile: true,
+      showEmail: false,
+      theme: 'auto'
+    }
+  };
 };
+
+// Helper function to transform API session data
+const transformApiSession = (apiSession: any): AuthSession => ({
+  accessToken: apiSession.access_token,
+  refreshToken: apiSession.refresh_token,
+  expiresAt: apiSession.expires_at,
+  expiresIn: apiSession.expires_in
+});
 
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       // Initial state
       user: null,
+      session: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -88,22 +119,20 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true, error: null });
         
         try {
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          const response = await authService.login({ email, password });
+          const user = transformApiUser(response.data.user);
+          const session = response.data.session ? transformApiSession(response.data.session) : null;
           
-          // Mock validation
-          if (email === 'john@example.com' && password === 'password123') {
-            set({ 
-              user: mockUser, 
-              isAuthenticated: true, 
-              isLoading: false 
-            });
-          } else {
-            throw new Error('Invalid email or password');
-          }
-        } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : 'Login failed', 
+            user, 
+            session,
+            isAuthenticated: true, 
+            isLoading: false 
+          });
+        } catch (error) {
+          const apiError = error as ApiError;
+          set({ 
+            error: apiError.message || 'Login failed', 
             isLoading: false 
           });
           throw error;
@@ -114,49 +143,147 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true, error: null });
         
         try {
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          const response = await authService.register(userData);
+          const user = transformApiUser(response.data.user);
           
-          // Create new user
-          const newUser: User = {
-            id: Date.now().toString(),
-            username: userData.username,
-            email: userData.email,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            joinedDate: new Date().toISOString(),
-            isVerified: false,
-            reputation: 0,
-            evOwner: false,
-            preferences: {
-              emailNotifications: true,
-              pushNotifications: true,
-              publicProfile: true,
-              showEmail: false,
-              theme: 'auto'
-            }
-          };
-          
+          // Registration successful but user needs to verify email
           set({ 
-            user: newUser, 
-            isAuthenticated: true, 
+            user, 
+            session: null, // No session until email is verified
+            isAuthenticated: false, // Not authenticated until email verified
             isLoading: false 
           });
         } catch (error) {
+          const apiError = error as ApiError;
           set({ 
-            error: error instanceof Error ? error.message : 'Registration failed', 
+            error: apiError.message || 'Registration failed', 
             isLoading: false 
           });
           throw error;
         }
       },
 
-      logout: () => {
-        set({ 
-          user: null, 
-          isAuthenticated: false, 
-          error: null 
-        });
+      logout: async () => {
+        const { session } = get();
+        
+        try {
+          if (session?.accessToken) {
+            await authService.logout(session.accessToken);
+          }
+        } catch (error) {
+          // Continue with logout even if API call fails
+          console.error('Logout API call failed:', error);
+        } finally {
+          set({ 
+            user: null, 
+            session: null,
+            isAuthenticated: false, 
+            error: null 
+          });
+        }
+      },
+
+      refreshToken: async () => {
+        const { session } = get();
+        
+        if (!session?.refreshToken) {
+          const error = new Error('No refresh token available') as ApiError;
+          error.statusCode = 401;
+          throw error;
+        }
+        
+        try {
+          const response = await authService.refreshToken(session.refreshToken);
+          const newSession = transformApiSession(response.data.session);
+          
+          set({ session: newSession });
+        } catch (error) {
+          // If refresh fails, logout user
+          set({ 
+            user: null, 
+            session: null,
+            isAuthenticated: false, 
+            error: 'Session expired. Please login again.' 
+          });
+          throw error;
+        }
+      },
+
+      getCurrentUser: async () => {
+        const { session } = get();
+        
+        if (!session?.accessToken) {
+          const error = new Error('No access token available') as ApiError;
+          error.statusCode = 401;
+          throw error;
+        }
+        
+        try {
+          const response = await authService.getCurrentUser(session.accessToken);
+          const user = transformApiUser(response.data.user);
+          
+          set({ user });
+        } catch (error) {
+          const apiError = error as ApiError;
+          set({ error: apiError.message || 'Failed to get user profile' });
+          throw error;
+        }
+      },
+
+      forgotPassword: async (email: string) => {
+        set({ isLoading: true, error: null });
+        
+        try {
+          await authService.forgotPassword(email);
+          set({ isLoading: false });
+        } catch (error) {
+          const apiError = error as ApiError;
+          set({ 
+            error: apiError.message || 'Failed to send password reset email', 
+            isLoading: false 
+          });
+          throw error;
+        }
+      },
+
+      resetPassword: async (token: string, password: string) => {
+        set({ isLoading: true, error: null });
+        
+        try {
+          await authService.resetPassword(token, password);
+          set({ isLoading: false });
+        } catch (error) {
+          const apiError = error as ApiError;
+          set({ 
+            error: apiError.message || 'Failed to reset password', 
+            isLoading: false 
+          });
+          throw error;
+        }
+      },
+
+      changePassword: async (currentPassword: string, newPassword: string) => {
+        const { session } = get();
+        
+        if (!session?.accessToken) {
+          const error = new Error('No access token available') as ApiError;
+          error.statusCode = 401;
+          throw error;
+        }
+        
+        set({ isLoading: true, error: null });
+        
+        try {
+          await authService.changePassword(session.accessToken, currentPassword, newPassword);
+          set({ isLoading: false });
+        } catch (error) {
+          const apiError = error as ApiError;
+          set({ 
+            error: apiError.message || 'Failed to change password', 
+            isLoading: false 
+          });
+          throw error;
+        }
       },
 
       updateUser: (userData: Partial<User>) => {
@@ -180,6 +307,7 @@ export const useAuthStore = create<AuthStore>()(
       name: 'auth-storage',
       partialize: (state) => ({ 
         user: state.user, 
+        session: state.session,
         isAuthenticated: state.isAuthenticated 
       })
     }
@@ -188,6 +316,20 @@ export const useAuthStore = create<AuthStore>()(
 
 // Utility hooks
 export const useUser = () => useAuthStore(state => state.user);
+export const useSession = () => useAuthStore(state => state.session);
 export const useIsAuthenticated = () => useAuthStore(state => state.isAuthenticated);
 export const useAuthLoading = () => useAuthStore(state => state.isLoading);
 export const useAuthError = () => useAuthStore(state => state.error);
+
+// Helper hook to check if token is expired
+export const useIsTokenExpired = () => {
+  const session = useSession();
+  if (!session) return true;
+  return Date.now() >= session.expiresAt * 1000;
+};
+
+// Helper hook to get access token
+export const useAccessToken = () => {
+  const session = useSession();
+  return session?.accessToken;
+};
