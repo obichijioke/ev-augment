@@ -298,6 +298,31 @@ class AuthService {
 
     return this.handleResponse<AuthResponse>(response);
   }
+
+  async uploadAvatar(token: string, file: File): Promise<AuthResponse> {
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    const response = await fetch(`${API_BASE_URL}/upload/avatar`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // Don't set Content-Type for FormData, let browser set it with boundary
+      },
+      body: formData,
+    });
+
+    return this.handleResponse<AuthResponse>(response);
+  }
+
+  async removeAvatar(token: string): Promise<AuthResponse> {
+    const response = await fetch(`${API_BASE_URL}/upload/avatar`, {
+      method: "DELETE",
+      headers: this.getAuthHeaders(token),
+    });
+
+    return this.handleResponse<AuthResponse>(response);
+  }
 }
 
 export const authService = new AuthService();

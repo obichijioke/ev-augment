@@ -62,6 +62,8 @@ interface AuthActions {
   getCurrentUser: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
   updateUserInfo: (userData: UpdateUserRequest) => Promise<void>;
+  uploadAvatar: (file: File) => Promise<void>;
+  removeAvatar: () => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
   forgotPassword: (email: string) => Promise<void>;
@@ -215,13 +217,13 @@ export const useAuthStore = create<AuthStore>()(
       refreshToken: async () => {
         const { session } = get();
 
-                  if (!session?.refreshToken) {
-            throw {
-              success: false,
-              message: "No refresh token available",
-              error: { status: 401 }
-            } as ApiError;
-          }
+        if (!session?.refreshToken) {
+          throw {
+            success: false,
+            message: "No refresh token available",
+            error: { status: 401 },
+          } as ApiError;
+        }
 
         try {
           const response = await authService.refreshToken(session.refreshToken);
@@ -245,11 +247,11 @@ export const useAuthStore = create<AuthStore>()(
         const { session } = get();
 
         if (!session?.accessToken) {
-                  throw {
-          success: false,
-          message: "No access token available",
-          error: { status: 401 }
-        } as ApiError;
+          throw {
+            success: false,
+            message: "No access token available",
+            error: { status: 401 },
+          } as ApiError;
         }
 
         try {
@@ -302,11 +304,11 @@ export const useAuthStore = create<AuthStore>()(
         const { session } = get();
 
         if (!session?.accessToken) {
-                  throw {
-          success: false,
-          message: "No access token available",
-          error: { status: 401 }
-        } as ApiError;
+          throw {
+            success: false,
+            message: "No access token available",
+            error: { status: 401 },
+          } as ApiError;
         }
 
         set({ isLoading: true, error: null });
@@ -328,45 +330,128 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-              updateUser: (userData: Partial<User>) => {
-          const currentUser = get().user;
-          if (currentUser) {
-            set({
-              user: { ...currentUser, ...userData },
-            });
-          }
-        },
+      updateUser: (userData: Partial<User>) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          set({
+            user: { ...currentUser, ...userData },
+          });
+        }
+      },
 
-        updateUserInfo: async (userData: UpdateUserRequest) => {
-          const { session } = get();
+      updateUserInfo: async (userData: UpdateUserRequest) => {
+        const { session } = get();
 
-          if (!session?.accessToken) {
-            throw {
-              success: false,
-              message: "No access token available",
-              error: { status: 401 }
-            } as ApiError;
-          }
+        if (!session?.accessToken) {
+          throw {
+            success: false,
+            message: "No access token available",
+            error: { status: 401 },
+          } as ApiError;
+        }
 
-          set({ isLoading: true, error: null });
+        set({ isLoading: true, error: null });
 
-          try {
-            const response = await authService.updateUser(
-              session.accessToken,
-              userData
-            );
-            const updatedUser = transformApiUser(response.data.user);
+        try {
+          const response = await authService.updateUser(
+            session.accessToken,
+            userData
+          );
+          const updatedUser = transformApiUser(response.data.user);
 
-            set({ user: updatedUser, isLoading: false });
-          } catch (error) {
-            const apiError = error as ApiError;
-            set({
-              error: apiError.message || "Failed to update user information",
-              isLoading: false,
-            });
-            throw error;
-          }
-        },
+          set({ user: updatedUser, isLoading: false });
+        } catch (error) {
+          const apiError = error as ApiError;
+          set({
+            error: apiError.message || "Failed to update user information",
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      uploadAvatar: async (file: File) => {
+        const { session } = get();
+
+        if (!session?.accessToken) {
+          throw {
+            success: false,
+            message: "No access token available",
+            error: { status: 401 },
+          } as ApiError;
+        }
+
+        // Validate file type
+        const allowedTypes = [
+          "image/jpeg",
+          "image/jpg",
+          "image/png",
+          "image/webp",
+        ];
+        if (!allowedTypes.includes(file.type)) {
+          throw {
+            success: false,
+            message: "Please select a JPEG, PNG, or WebP image",
+            error: { status: 400 },
+          } as ApiError;
+        }
+
+        // Validate file size (2MB)
+        if (file.size > 2 * 1024 * 1024) {
+          throw {
+            success: false,
+            message: "Avatar file size must be less than 2MB",
+            error: { status: 400 },
+          } as ApiError;
+        }
+
+        set({ isLoading: true, error: null });
+
+        try {
+          const response = await authService.uploadAvatar(
+            session.accessToken,
+            file
+          );
+          const updatedUser = transformApiUser(response.data.user);
+
+          set({ user: updatedUser, isLoading: false });
+        } catch (error) {
+          const apiError = error as ApiError;
+          set({
+            error: apiError.message || "Failed to upload avatar",
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      removeAvatar: async () => {
+        const { session } = get();
+
+        if (!session?.accessToken) {
+          throw {
+            success: false,
+            message: "No access token available",
+            error: { status: 401 },
+          } as ApiError;
+        }
+
+        set({ isLoading: true, error: null });
+
+        try {
+          const response = await authService.removeAvatar(session.accessToken);
+          const updatedUser = transformApiUser(response.data.user);
+
+          set({ user: updatedUser, isLoading: false });
+        } catch (error) {
+          const apiError = error as ApiError;
+          set({
+            error: apiError.message || "Failed to remove avatar",
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
 
       clearError: () => {
         set({ error: null });
@@ -380,11 +465,11 @@ export const useAuthStore = create<AuthStore>()(
         const { session } = get();
 
         if (!session?.accessToken) {
-                  throw {
-          success: false,
-          message: "No access token available",
-          error: { status: 401 }
-        } as ApiError;
+          throw {
+            success: false,
+            message: "No access token available",
+            error: { status: 401 },
+          } as ApiError;
         }
 
         try {
@@ -404,11 +489,11 @@ export const useAuthStore = create<AuthStore>()(
         const { session } = get();
 
         if (!session?.accessToken) {
-                  throw {
-          success: false,
-          message: "No access token available",
-          error: { status: 401 }
-        } as ApiError;
+          throw {
+            success: false,
+            message: "No access token available",
+            error: { status: 401 },
+          } as ApiError;
         }
 
         set({ isLoading: true, error: null });
@@ -435,11 +520,11 @@ export const useAuthStore = create<AuthStore>()(
         const { session } = get();
 
         if (!session?.accessToken) {
-                  throw {
-          success: false,
-          message: "No access token available",
-          error: { status: 401 }
-        } as ApiError;
+          throw {
+            success: false,
+            message: "No access token available",
+            error: { status: 401 },
+          } as ApiError;
         }
 
         set({ isLoading: true, error: null });

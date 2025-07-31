@@ -603,6 +603,14 @@ router.post(
         throw new Error("Avatar upload failed");
       }
 
+      // Get current user data from database to get old avatar_url BEFORE updating
+      const { data: currentUserForOldAvatar, error: fetchOldError } =
+        await supabaseAdmin
+          .from("users")
+          .select("avatar_url")
+          .eq("id", req.user.id)
+          .single();
+
       // Get public URL
       const { data: urlData } = supabaseAdmin.storage
         .from("avatars")
@@ -627,15 +635,41 @@ router.post(
         );
       }
 
+      console.log("🔍 Upload Avatar - Delete Old Debug:", {
+        userId: req.user.id,
+        oldAvatarUrl: currentUserForOldAvatar?.avatar_url,
+        newFileName: fileName,
+        fetchError: fetchOldError,
+      });
+
       // Delete old avatar if it exists
-      const userWithAvatar = req.user as any;
       if (
-        userWithAvatar.avatar_url &&
-        userWithAvatar.avatar_url.includes("avatars/")
+        currentUserForOldAvatar?.avatar_url &&
+        currentUserForOldAvatar.avatar_url.includes("avatars/")
       ) {
-        const oldFileName = userWithAvatar.avatar_url.split("/").pop();
-        if (oldFileName && oldFileName !== fileName) {
-          await deleteFile("avatars", `avatar/${req.user.id}/${oldFileName}`);
+        // Extract the file path from the full URL
+        // URL format: https://...supabase.co/storage/v1/object/public/avatars/avatar/userId/filename.ext
+        const urlParts = currentUserForOldAvatar.avatar_url.split("/avatars/");
+        console.log("🔍 Old Avatar URL Parts:", urlParts);
+
+        if (urlParts.length > 1) {
+          const oldFilePath = urlParts[1]; // This gets "avatar/userId/filename.ext"
+          console.log("🔍 Attempting to delete old avatar:", {
+            bucket: "avatars",
+            oldFilePath: oldFilePath,
+            newFileName: fileName,
+            fullUrl: currentUserForOldAvatar.avatar_url,
+          });
+
+          if (oldFilePath && oldFilePath !== fileName) {
+            try {
+              const deleteResult = await deleteFile("avatars", oldFilePath);
+              console.log("✅ Old avatar deleted successfully:", deleteResult);
+            } catch (deleteError) {
+              console.warn("Failed to delete old avatar:", deleteError);
+              // Don't throw error, as the new upload was successful
+            }
+          }
         }
       }
 
@@ -660,16 +694,54 @@ router.delete(
   authenticateToken,
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
+      // Get current user data from database to get latest avatar_url
+      const { data: currentUser, error: fetchError } = await supabaseAdmin
+        .from("users")
+        .select("avatar_url")
+        .eq("id", req.user.id)
+        .single();
+
+      console.log("🔍 Delete Avatar Debug:", {
+        userId: req.user.id,
+        currentAvatarUrl: currentUser?.avatar_url,
+        fetchError: fetchError,
+        hasAvatarUrl: !!currentUser?.avatar_url,
+        includesAvatars: currentUser?.avatar_url?.includes("avatars/"),
+      });
+
       // Delete current avatar from storage if it exists
-      const userWithAvatar = req.user as any;
       if (
-        userWithAvatar.avatar_url &&
-        userWithAvatar.avatar_url.includes("avatars/")
+        currentUser?.avatar_url &&
+        currentUser.avatar_url.includes("avatars/")
       ) {
-        const fileName = userWithAvatar.avatar_url.split("/").pop();
-        if (fileName) {
-          await deleteFile("avatars", `avatar/${req.user.id}/${fileName}`);
+        // Extract the file path from the full URL
+        // URL format: https://...supabase.co/storage/v1/object/public/avatars/avatar/userId/filename.ext
+        const urlParts = currentUser.avatar_url.split("/avatars/");
+        console.log("🔍 URL Parts:", urlParts);
+
+        if (urlParts.length > 1) {
+          const filePath = urlParts[1]; // This gets "avatar/userId/filename.ext"
+          console.log("🔍 Attempting to delete file:", {
+            bucket: "avatars",
+            filePath: filePath,
+            fullUrl: currentUser.avatar_url,
+          });
+
+          if (filePath) {
+            try {
+              const deleteResult = await deleteFile("avatars", filePath);
+              console.log("✅ Avatar deleted successfully:", deleteResult);
+            } catch (deleteError) {
+              console.error(
+                "❌ Failed to delete avatar from storage:",
+                deleteError
+              );
+              // Continue with database update even if storage deletion fails
+            }
+          }
         }
+      } else {
+        console.log("ℹ️ No avatar to delete or invalid avatar URL");
       }
 
       // Remove avatar URL from user record

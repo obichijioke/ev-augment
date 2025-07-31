@@ -29,6 +29,8 @@ const ProfilePage = () => {
     user,
     updateUser,
     updateUserInfo,
+    uploadAvatar,
+    removeAvatar,
     getProfile,
     updateProfile,
     isLoading,
@@ -43,6 +45,10 @@ const ProfilePage = () => {
     userProfile || {}
   );
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(
+    null
+  );
 
   // Handle URL parameters for tab navigation
   useEffect(() => {
@@ -110,6 +116,9 @@ const ProfilePage = () => {
 
       await updateUserInfo(updateData);
       setIsEditing(false);
+      // Clean up avatar preview state
+      setSelectedAvatarFile(null);
+      setAvatarPreview(null);
     } catch (error) {
       console.error("Failed to update profile:", error);
       // Error will be displayed via the error state
@@ -119,6 +128,9 @@ const ProfilePage = () => {
   const handleEditCancel = () => {
     setEditForm(user);
     setIsEditing(false);
+    // Clean up avatar preview state
+    setSelectedAvatarFile(null);
+    setAvatarPreview(null);
   };
 
   const handleProfileUpdate = async (
@@ -129,6 +141,47 @@ const ProfilePage = () => {
     } catch (error) {
       console.error("Failed to update profile:", error);
     }
+  };
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedAvatarFile(file);
+
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAvatarPreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!selectedAvatarFile) return;
+
+    try {
+      await uploadAvatar(selectedAvatarFile);
+      setSelectedAvatarFile(null);
+      setAvatarPreview(null);
+    } catch (error) {
+      console.error("Failed to upload avatar:", error);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    try {
+      await removeAvatar();
+      setSelectedAvatarFile(null);
+      setAvatarPreview(null);
+    } catch (error) {
+      console.error("Failed to remove avatar:", error);
+    }
+  };
+
+  const handleCancelAvatarChange = () => {
+    setSelectedAvatarFile(null);
+    setAvatarPreview(null);
   };
 
   const tabs = [
@@ -818,6 +871,90 @@ const ProfilePage = () => {
                 >
                   <X className="w-6 h-6" />
                 </button>
+              </div>
+
+              {/* Avatar Upload Section */}
+              <div className="mb-6 text-center border-b pb-6">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="relative">
+                    <img
+                      src={
+                        avatarPreview ||
+                        user.avatar ||
+                        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20placeholder%2C%20clean%20simple%20design&image_size=square"
+                      }
+                      alt="Avatar"
+                      className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
+                    />
+                    {selectedAvatarFile && (
+                      <div className="absolute -top-2 -right-2">
+                        <div className="bg-blue-600 text-white rounded-full p-1">
+                          <svg
+                            className="w-4 h-4"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    {!selectedAvatarFile ? (
+                      <div className="flex space-x-2">
+                        <label
+                          htmlFor="avatar-upload"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center space-x-2"
+                        >
+                          <Camera className="w-4 h-4" />
+                          <span>Change Avatar</span>
+                        </label>
+                        <input
+                          id="avatar-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarFileChange}
+                          className="hidden"
+                        />
+                        {user.avatar && (
+                          <button
+                            onClick={handleAvatarRemove}
+                            disabled={isLoading}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={handleAvatarUpload}
+                          disabled={isLoading}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                        >
+                          <Save className="w-4 h-4" />
+                          <span>
+                            {isLoading ? "Uploading..." : "Save Avatar"}
+                          </span>
+                        </button>
+                        <button
+                          onClick={handleCancelAvatarChange}
+                          disabled={isLoading}
+                          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-500">
+                      JPEG, PNG, or WebP. Max 2MB.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-4 max-h-96 overflow-y-auto">

@@ -88,26 +88,30 @@ const userSchemas = {
     website: Joi.string().uri().max(255),
     phone: Joi.string().pattern(/^[+]?[1-9]?[0-9]{7,15}$/),
     is_business: Joi.boolean(),
-    business_name: Joi.string().max(100).when('is_business', {
-      is: true,
-      then: Joi.string().required(),
-      otherwise: Joi.string().allow('', null)
-    }),
-    business_type: Joi.string().valid(
-      'dealership',
-      'charging_network', 
-      'service_center',
-      'parts_supplier',
-      'installer',
-      'fleet_management',
-      'manufacturer',
-      'consultant',
-      'other'
-    ).when('is_business', {
-      is: true,
-      then: Joi.string().required(),
-      otherwise: Joi.string().allow('', null)
-    }),
+    business_name: Joi.string()
+      .max(100)
+      .when("is_business", {
+        is: true,
+        then: Joi.string().required(),
+        otherwise: Joi.string().allow("", null),
+      }),
+    business_type: Joi.string()
+      .valid(
+        "dealership",
+        "charging_network",
+        "service_center",
+        "parts_supplier",
+        "installer",
+        "fleet_management",
+        "manufacturer",
+        "consultant",
+        "other"
+      )
+      .when("is_business", {
+        is: true,
+        then: Joi.string().required(),
+        otherwise: Joi.string().allow("", null),
+      }),
     privacy_settings: Joi.object(),
     notification_settings: Joi.object(),
   }),
