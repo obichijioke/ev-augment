@@ -1,13 +1,14 @@
-const { createError } = require('./errorHandler');
+import { Request, Response, NextFunction } from 'express';
+import { createError } from './errorHandler';
 
 // 404 Not Found middleware
-const notFound = (req, res, next) => {
+const notFound = (req: Request, res: Response, next: NextFunction): void => {
   const error = createError(`Route ${req.method} ${req.originalUrl} not found`, 404, 'ROUTE_NOT_FOUND');
   
   // Add additional context for 404 errors
-  error.path = req.path;
-  error.method = req.method;
-  error.availableRoutes = {
+  (error as any).path = req.path;
+  (error as any).method = req.method;
+  (error as any).availableRoutes = {
     auth: '/api/auth',
     users: '/api/users',
     vehicles: '/api/vehicles',
@@ -29,6 +30,5 @@ const notFound = (req, res, next) => {
   next(error);
 };
 
-module.exports = {
-  notFound
-};
+export { notFound };
+export default notFound;

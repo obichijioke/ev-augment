@@ -1,10 +1,48 @@
-const { supabaseAdmin } = require('./supabaseClient');
+import { supabaseAdmin } from './supabaseClient';
+
+// Push notification interfaces
+interface PushNotificationOptions {
+  userId: string;
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+  badge?: number;
+  sound?: string;
+  clickAction?: string;
+  icon?: string;
+  image?: string;
+  type?: string;
+}
+
+interface PushToken {
+  token: string;
+  platform: 'ios' | 'android' | 'web';
+}
+
+interface PushResult {
+  success: boolean;
+  sent: number;
+  total?: number;
+  messageId?: string;
+  message?: string;
+  results?: Array<{ token: string; success: boolean; messageId?: string; error?: string }>;
+}
+
+interface PushLogData {
+  userId: string;
+  title: string;
+  body: string;
+  tokensCount?: number;
+  successCount?: number;
+  status: 'sent' | 'failed' | 'sent_dev';
+  error?: string;
+}
 
 // Push notification service configuration
-let pushService;
+let pushService: any;
 
 // Initialize push notification service
-const initializePushService = () => {
+const initializePushService = (): void => {
   // For development, use console logging
   if (process.env.NODE_ENV === 'development') {
     console.log('Push notification service running in development mode - notifications will be logged to console');
@@ -43,7 +81,7 @@ const sendPushNotification = async ({
   clickAction,
   icon,
   image
-}) => {
+}: PushNotificationOptions): Promise<PushResult> => {
   try {
     // Get user's push tokens
     const { data: tokens, error } = await supabaseAdmin
@@ -198,7 +236,7 @@ const sendPushNotification = async ({
 };
 
 // Send push notification to multiple users
-const sendBulkPushNotifications = async (notifications) => {
+const sendBulkPushNotifications = async (notifications: PushNotificationOptions[]): Promise<Array<PushNotificationOptions & { success: boolean; result?: PushResult; error?: string }>> => {
   const results = [];
   
   for (const notification of notifications) {
@@ -214,7 +252,7 @@ const sendBulkPushNotifications = async (notifications) => {
 };
 
 // Register push token
-const registerPushToken = async (userId, token, platform, deviceInfo = {}) => {
+const registerPushToken = async (userId: string, token: string, platform: 'ios' | 'android' | 'web', deviceInfo: Record<string, any> = {}): Promise<{ success: boolean }> => {
   try {
     // Check if token already exists
     const { data: existingToken } = await supabaseAdmin
@@ -262,7 +300,7 @@ const registerPushToken = async (userId, token, platform, deviceInfo = {}) => {
 };
 
 // Unregister push token
-const unregisterPushToken = async (token) => {
+const unregisterPushToken = async (token: string): Promise<{ success: boolean }> => {
   try {
     const { error } = await supabaseAdmin
       .from('push_tokens')
@@ -287,7 +325,7 @@ const logPushNotification = async ({
   successCount,
   status,
   error
-}) => {
+}: PushLogData): Promise<void> => {
   try {
     await supabaseAdmin
       .from('push_notification_logs')
@@ -307,7 +345,7 @@ const logPushNotification = async ({
 };
 
 // Send notification based on user preferences
-const sendNotificationWithPreferences = async (userId, notification) => {
+const sendNotificationWithPreferences = async (userId: string, notification: Omit<PushNotificationOptions, 'userId'>): Promise<{ success: boolean }> => {
   try {
     // Get user's notification preferences
     const { data: user, error } = await supabaseAdmin
@@ -341,10 +379,12 @@ const sendNotificationWithPreferences = async (userId, notification) => {
 // Initialize on module load
 initializePushService();
 
-module.exports = {
+export {
   sendPushNotification,
   sendBulkPushNotifications,
   registerPushToken,
   unregisterPushToken,
   sendNotificationWithPreferences
 };
+
+export default sendPushNotification;

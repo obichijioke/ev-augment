@@ -1,15 +1,46 @@
-const nodemailer = require('nodemailer');
-const { supabaseAdmin } = require('./supabaseClient');
+import nodemailer, { Transporter } from 'nodemailer';
+import { supabaseAdmin } from './supabaseClient';
+import { getErrorMessage } from '../utils/typeUtils';
+
+// Email interfaces
+interface EmailOptions {
+  to: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  from?: string;
+  template?: string | null;
+  templateData?: Record<string, any>;
+}
+
+interface EmailResult {
+  success: boolean;
+  messageId: string;
+}
+
+interface EmailTemplate {
+  subject: string;
+  html: string;
+  text: string;
+}
+
+interface EmailLogData {
+  to: string;
+  subject: string;
+  messageId?: string;
+  status: 'sent' | 'failed';
+  error?: string;
+}
 
 // Email transporter configuration
-let transporter;
+let transporter: Transporter | null;
 
 // Initialize email transporter
-const initializeTransporter = () => {
+const initializeTransporter = (): void => {
   // Configure based on environment variables
-  const emailConfig = {
+  const emailConfig: any = {
     host: process.env.SMTP_HOST || 'localhost',
-    port: process.env.SMTP_PORT || 587,
+    port: parseInt(process.env.SMTP_PORT || '587'),
     secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
     auth: {
       user: process.env.SMTP_USER,
@@ -27,7 +58,7 @@ const initializeTransporter = () => {
     transporter = nodemailer.createTransport(emailConfig);
     console.log('Email service initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize email service:', error.message);
+    console.error('Failed to initialize email service:', getErrorMessage(error));
     transporter = null;
   }
 };
@@ -41,7 +72,7 @@ const sendEmail = async ({
   from = process.env.FROM_EMAIL || 'noreply@ev-community.com',
   template = null,
   templateData = {}
-}) => {
+}: EmailOptions): Promise<EmailResult> => {
   try {
     // If no transporter (development mode), log to console
     if (!transporter) {
@@ -83,22 +114,23 @@ const sendEmail = async ({
       messageId: info.messageId
     };
   } catch (error) {
-    console.error('Failed to send email:', error.message);
+    const errorMessage = getErrorMessage(error);
+    console.error('Failed to send email:', errorMessage);
     
     // Log email failed
     await logEmailSent({
       to,
       subject,
       status: 'failed',
-      error: error.message
+      error: errorMessage
     });
 
-    throw new Error(`Email sending failed: ${error.message}`);
+    throw new Error(`Email sending failed: ${errorMessage}`);
   }
 };
 
 // Generate email from template
-const generateEmailFromTemplate = async (template, data) => {
+const generateEmailFromTemplate = async (template: string, data: Record<string, any>): Promise<EmailTemplate> => {
   const templates = {
     welcome: {
       subject: 'Welcome to EV Community!',
@@ -166,7 +198,7 @@ const generateEmailFromTemplate = async (template, data) => {
 };
 
 // Log email activity
-const logEmailSent = async ({ to, subject, messageId, status, error }) => {
+const logEmailSent = async ({ to, subject, messageId, status, error }: EmailLogData): Promise<void> => {
   try {
     await supabaseAdmin
       .from('email_logs')
@@ -179,12 +211,12 @@ const logEmailSent = async ({ to, subject, messageId, status, error }) => {
         sent_at: new Date().toISOString()
       });
   } catch (logError) {
-    console.error('Failed to log email:', logError.message);
+    console.error('Failed to log email:', getErrorMessage(logError));
   }
 };
 
 // Send bulk emails
-const sendBulkEmails = async (emails) => {
+const sendBulkEmails = async (emails: EmailOptions[]): Promise<Array<EmailOptions & { success: boolean; result?: EmailResult; error?: string }>> => {
   const results = [];
   
   for (const email of emails) {
@@ -192,7 +224,7 @@ const sendBulkEmails = async (emails) => {
       const result = await sendEmail(email);
       results.push({ ...email, success: true, result });
     } catch (error) {
-      results.push({ ...email, success: false, error: error.message });
+      results.push({ ...email, success: false, error: getErrorMessage(error) });
     }
   }
   
@@ -200,20 +232,24 @@ const sendBulkEmails = async (emails) => {
 };
 
 // Send templated email
-const sendTemplatedEmail = async (to, template, data) => {
+const sendTemplatedEmail = async (to: string, template: string, data: Record<string, any>): Promise<EmailResult> => {
+  const templateContent = await generateEmailFromTemplate(template, data);
   return await sendEmail({
     to,
-    template,
-    templateData: data
+    subject: templateContent.subject,
+    html: templateContent.html,
+    text: templateContent.text
   });
 };
 
 // Initialize on module load
 initializeTransporter();
 
-module.exports = {
+export {
   sendEmail,
   sendBulkEmails,
   sendTemplatedEmail,
   generateEmailFromTemplate
 };
+
+export default sendEmail;

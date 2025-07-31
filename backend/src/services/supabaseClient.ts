@@ -1,7 +1,13 @@
-const { createClient } = require('@supabase/supabase-js');
+import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
+
+// Custom error interface
+interface CustomError extends Error {
+  statusCode?: number;
+  code?: string;
+}
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-  const error = new Error('Missing Supabase environment variables');
+  const error: CustomError = new Error('Missing Supabase environment variables');
   error.statusCode = 500;
   error.code = 'CONFIG_ERROR';
   throw error;
@@ -29,6 +35,13 @@ const supabase = createClient(
 );
 
 // Create admin client for service operations
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  const error: CustomError = new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable');
+  error.statusCode = 500;
+  error.code = 'CONFIG_ERROR';
+  throw error;
+}
+
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -44,7 +57,7 @@ const supabaseAdmin = createClient(
 );
 
 // Helper function to handle Supabase errors
-const handleSupabaseError = (error, operation = 'Database operation') => {
+const handleSupabaseError = (error: any, operation: string = 'Database operation'): { status: number; message: string } => {
   console.error(`${operation} error:`, error);
   
   if (error.code === 'PGRST116') {
@@ -82,15 +95,15 @@ const handleSupabaseError = (error, operation = 'Database operation') => {
 };
 
 // Helper function to validate UUID
-const isValidUUID = (uuid) => {
+const isValidUUID = (uuid: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 };
 
 // Helper function to build pagination
-const buildPagination = (page = 1, limit = 20) => {
-  const pageNum = Math.max(1, parseInt(page));
-  const limitNum = Math.min(parseInt(process.env.MAX_PAGE_SIZE) || 100, Math.max(1, parseInt(limit)));
+const buildPagination = (page: number = 1, limit: number = 20): { from: number; to: number; page: number; limit: number } => {
+  const pageNum = Math.max(1, typeof page === 'string' ? parseInt(page) : page);
+  const limitNum = Math.min(parseInt(process.env.MAX_PAGE_SIZE || '100'), Math.max(1, typeof limit === 'string' ? parseInt(limit) : limit));
   const offset = (pageNum - 1) * limitNum;
   
   return {
@@ -102,14 +115,14 @@ const buildPagination = (page = 1, limit = 20) => {
 };
 
 // Helper function to build search filters
-const buildSearchFilter = (query, searchFields = []) => {
+const buildSearchFilter = (query: string, searchFields: string[] = []): string | null => {
   if (!query || !searchFields.length) return null;
   
   return searchFields.map(field => `${field}.ilike.%${query}%`).join(',');
 };
 
 // Helper function to get user from token
-const getUserFromToken = async (token) => {
+const getUserFromToken = async (token: string): Promise<{ user?: User; error?: string }> => {
   try {
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
@@ -124,7 +137,7 @@ const getUserFromToken = async (token) => {
 };
 
 // Helper function to upload file to Supabase Storage
-const uploadFile = async (bucket, fileName, fileBuffer, contentType) => {
+const uploadFile = async (bucket: string, fileName: string, fileBuffer: Buffer, contentType: string): Promise<{ path: string; publicUrl: string; fullPath: string }> => {
   try {
     const { data, error } = await supabaseAdmin.storage
       .from(bucket)
@@ -147,15 +160,15 @@ const uploadFile = async (bucket, fileName, fileBuffer, contentType) => {
       publicUrl,
       fullPath: data.fullPath
     };
-  } catch (error) {
-    const uploadError = new Error(`File upload failed: ${error.message}`);
+  } catch (error: any) {
+    const uploadError: CustomError = new Error(`File upload failed: ${error.message}`);
     uploadError.statusCode = 500;
     throw uploadError;
   }
 };
 
 // Helper function to delete file from Supabase Storage
-const deleteFile = async (bucket, fileName) => {
+const deleteFile = async (bucket: string, fileName: string): Promise<boolean> => {
   try {
     const { error } = await supabaseAdmin.storage
       .from(bucket)
@@ -166,14 +179,14 @@ const deleteFile = async (bucket, fileName) => {
     }
     
     return true;
-  } catch (error) {
-    const deleteError = new Error(`File deletion failed: ${error.message}`);
+  } catch (error: any) {
+    const deleteError: CustomError = new Error(`File deletion failed: ${error.message}`);
     deleteError.statusCode = 500;
     throw deleteError;
   }
 };
 
-module.exports = {
+export {
   supabase,
   supabaseAdmin,
   handleSupabaseError,
@@ -184,3 +197,5 @@ module.exports = {
   uploadFile,
   deleteFile
 };
+
+export default supabase;

@@ -1,5 +1,7 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { Request, Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from '../types';
 
 // Create logs directory if it doesn't exist
 const logsDir = path.join(__dirname, '../../logs');
@@ -8,7 +10,7 @@ if (!fs.existsSync(logsDir)) {
 }
 
 // Request logger middleware
-const requestLogger = (req, res, next) => {
+const requestLogger = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   const start = Date.now();
   const timestamp = new Date().toISOString();
   const method = req.method;
@@ -30,7 +32,7 @@ const requestLogger = (req, res, next) => {
 
   // Override res.end to capture response details
   const originalEnd = res.end;
-  res.end = function(chunk, encoding) {
+  (res as any).end = function(chunk?: any, encoding?: any, cb?: any) {
     const duration = Date.now() - start;
     const statusCode = res.statusCode;
     const contentLength = res.get('Content-Length') || 0;
@@ -69,14 +71,14 @@ const requestLogger = (req, res, next) => {
     }
 
     // Call original end
-    originalEnd.call(this, chunk, encoding);
+    return originalEnd.call(this, chunk, encoding, cb);
   };
 
   next();
 };
 
 // Error logger middleware
-const errorLogger = (err, req, res, next) => {
+const errorLogger = (err: any, req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   const timestamp = new Date().toISOString();
   const method = req.method;
   const url = req.originalUrl || req.url;
@@ -119,7 +121,7 @@ const errorLogger = (err, req, res, next) => {
 };
 
 // Security event logger
-const securityLogger = (event, req, details = {}) => {
+const securityLogger = (event: string, req: AuthenticatedRequest, details: Record<string, any> = {}): void => {
   const timestamp = new Date().toISOString();
   const method = req.method;
   const url = req.originalUrl || req.url;
@@ -154,13 +156,13 @@ const securityLogger = (event, req, details = {}) => {
 };
 
 // Admin action logger
-const adminLogger = (action, req, targetResource = {}) => {
+const adminLogger = (action: string, req: AuthenticatedRequest, targetResource: Record<string, any> = {}): void => {
   const timestamp = new Date().toISOString();
   const method = req.method;
   const url = req.originalUrl || req.url;
   const ip = req.ip || req.connection.remoteAddress || 'Unknown';
   const adminId = req.user ? req.user.id : 'Unknown';
-  const adminUsername = req.user ? req.user.username : 'Unknown';
+  const adminUsername = req.user ? (req.user as any).username || req.user.email || 'Unknown' : 'Unknown';
 
   const adminLog = {
     timestamp,
@@ -189,7 +191,7 @@ const adminLogger = (action, req, targetResource = {}) => {
 };
 
 // Performance logger
-const performanceLogger = (req, res, duration) => {
+const performanceLogger = (req: Request, res: Response, duration: number): void => {
   // Log slow requests (> 1 second)
   if (duration > 1000) {
     const timestamp = new Date().toISOString();
@@ -221,7 +223,7 @@ const performanceLogger = (req, res, duration) => {
 };
 
 // Log cleanup function (remove old log files)
-const cleanupLogs = () => {
+const cleanupLogs = (): void => {
   const maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
   const now = Date.now();
 
@@ -256,7 +258,7 @@ const cleanupLogs = () => {
 // Run log cleanup daily
 setInterval(cleanupLogs, 24 * 60 * 60 * 1000);
 
-module.exports = {
+export {
   requestLogger,
   errorLogger,
   securityLogger,
@@ -264,3 +266,5 @@ module.exports = {
   performanceLogger,
   cleanupLogs
 };
+
+export default requestLogger;

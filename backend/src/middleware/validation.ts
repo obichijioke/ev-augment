@@ -1,9 +1,11 @@
-const Joi = require('joi');
-const { validationError } = require('./errorHandler');
+import Joi from 'joi';
+import { Request, Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from '../types';
+import { validationError } from './errorHandler';
 
 // Validation middleware factory
-const validate = (schema, property = 'body') => {
-  return (req, res, next) => {
+const validate = (schema: Joi.ObjectSchema, property: string = 'body'): ((req: AuthenticatedRequest, res: Response, next: NextFunction) => void) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     const { error, value } = schema.validate(req[property], {
       abortEarly: false,
       allowUnknown: false,
@@ -217,6 +219,10 @@ const blogSchemas = {
   createComment: Joi.object({
     content: Joi.string().min(1).max(1000).required(),
     parent_comment_id: Joi.string().uuid()
+  }),
+  
+  updateComment: Joi.object({
+    content: Joi.string().min(1).max(1000).required()
   })
 };
 
@@ -428,6 +434,32 @@ const notificationSchemas = {
     expires_at: Joi.date().optional()
   }),
   
+  updatePreferences: Joi.object({
+    email: Joi.object({
+      enabled: Joi.boolean().required(),
+      frequency: Joi.string().valid('immediate', 'daily', 'weekly', 'never').default('immediate')
+    }).optional(),
+    push: Joi.object({
+      enabled: Joi.boolean().required(),
+      quietHours: Joi.object({
+        enabled: Joi.boolean().default(false),
+        start: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        end: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+      }).optional()
+    }).optional(),
+    inApp: Joi.object({
+      enabled: Joi.boolean().required()
+    }).optional(),
+    types: Joi.object().pattern(
+      Joi.string(),
+      Joi.object({
+        email: Joi.boolean().required(),
+        push: Joi.boolean().required(),
+        inApp: Joi.boolean().required()
+      })
+    ).optional()
+  }),
+  
   broadcast: Joi.object({
     title: Joi.string().required().min(1).max(200),
     message: Joi.string().required().min(1).max(1000),
@@ -487,7 +519,7 @@ const adminSchemas = {
   })
 };
 
-module.exports = {
+export {
   validate,
   commonSchemas,
   userSchemas,
@@ -505,3 +537,5 @@ module.exports = {
   notificationSchemas,
   adminSchemas
 };
+
+export default validate;
