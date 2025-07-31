@@ -153,7 +153,7 @@ const ForumsPage = () => {
   });
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen py-8">
+    <div className="bg-gray-50 dark:bg-gray-800 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -168,8 +168,8 @@ const ForumsPage = () => {
         </div>
 
         {/* Category Navigation */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Categories</h2>
+        <div className="bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Categories</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             {categories.map((category) => (
               category.id === 'all' ? (

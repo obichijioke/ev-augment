@@ -14,8 +14,8 @@ export default function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="w-9 h-9 rounded-md border border-gray-200 dark:border-gray-700 flex items-center justify-center">
-        <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
+      <div className="w-9 h-9 rounded-md border border-gray-200 dark:border-gray-500 flex items-center justify-center">
+        <div className="w-4 h-4 bg-gray-300 dark:bg-gray-500 rounded animate-pulse" />
       </div>
     )
   }
@@ -34,7 +34,7 @@ export default function ThemeToggle() {
           const nextIndex = (currentIndex + 1) % themes.length
           setTheme(themes[nextIndex].name)
         }}
-        className="w-9 h-9 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
+        className="w-9 h-9 rounded-md border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-center"
         aria-label="Toggle theme"
       >
         {theme === 'light' && <Sun className="w-4 h-4 text-gray-700 dark:text-gray-300" />}
