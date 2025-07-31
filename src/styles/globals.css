@@ -5,33 +5,39 @@
   /* EV Platform Color Scheme */
   --primary-blue: #007BFF;
   --clean-white: #FFFFFF;
-  --dark-gray: #343A40;
-  --light-gray: #F8F9FA;
-  --green-accent: #28A745;
-  
+  --dark-gray: #374151;
+  --light-gray: #F9FAFB;
+  --green-accent: #10B981;
+
+  /* Light mode variables (default) */
   --background: var(--clean-white);
   --foreground: var(--dark-gray);
   --card-background: var(--clean-white);
-  --border: #E9ECEF;
+  --border: #E5E7EB;
   --muted: var(--light-gray);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1a1a1a;
-    --foreground: #ededed;
-    --card-background: #2d2d2d;
-    --border: #404040;
-    --muted: #404040;
-  }
+/* Dark mode variables (controlled by next-themes .dark class) */
+.dark {
+  --background: #1f2937;
+  --foreground: #d1d5db;
+  --card-background: #374151;
+  --border: #4b5563;
+  --muted: #374151;
 }
 
 body {
-  color: #1f2937;
+  color: #374151;
   background-color: #ffffff;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
   line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body {
+  color: #d1d5db;
+  background-color: #1f2937;
 }
 
 .btn-primary {
@@ -54,7 +60,7 @@ body {
 }
 
 .btn-secondary {
-  background-color: #f3f4f6;
+  background-color: #f9fafb;
   color: #374151;
   font-weight: 500;
   padding: 0.5rem 1rem;
@@ -67,9 +73,19 @@ body {
   text-decoration: none;
 }
 
+.dark .btn-secondary {
+  background-color: #4b5563;
+  color: #d1d5db;
+  border-color: #6b7280;
+}
+
 .btn-secondary:hover {
-  background-color: #e5e7eb;
+  background-color: #f3f4f6;
   transform: translateY(-1px);
+}
+
+.dark .btn-secondary:hover {
+  background-color: #6b7280;
 }
 
 .card {
@@ -78,21 +94,40 @@ body {
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   border: 1px solid #e5e7eb;
   padding: 1.5rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.dark .card {
+  background-color: #374151;
+  border-color: #4b5563;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.2), 0 1px 2px -1px rgb(0 0 0 / 0.2);
 }
 
 .nav-link {
-  color: #4b5563;
+  color: #6b7280;
   font-weight: 500;
   transition: color 0.2s;
+}
+
+.dark .nav-link {
+  color: #9ca3af;
 }
 
 .nav-link:hover {
   color: #007BFF;
 }
 
+.dark .nav-link:hover {
+  color: #3b82f6;
+}
+
 .nav-link-active {
   color: #007BFF;
   font-weight: 600;
+}
+
+.dark .nav-link-active {
+  color: #3b82f6;
 }
 
 /* Custom Animations */

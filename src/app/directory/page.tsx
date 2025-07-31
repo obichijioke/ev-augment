@@ -251,21 +251,21 @@ const DirectoryPage = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Business Directory</h1>
-          <p className="text-gray-600">Find EV dealerships, service centers, charging stations, and more</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Business Directory</h1>
+          <p className="text-gray-600 dark:text-gray-300">Find EV dealerships, service centers, charging stations, and more</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 sticky top-8">
               {/* Categories */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Categories</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Categories</h3>
                 <div className="space-y-2">
                   {categories.map(category => {
                     const IconComponent = category.icon;

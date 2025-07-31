@@ -83,21 +83,21 @@ const WhatsNewFeed = () => {
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'forum':
-        return 'text-blue-600 bg-blue-50';
+        return 'text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400';
       case 'marketplace':
-        return 'text-green-600 bg-green-50';
+        return 'text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400';
       case 'garage':
-        return 'text-purple-600 bg-purple-50';
+        return 'text-purple-600 bg-purple-50 dark:bg-purple-900/30 dark:text-purple-400';
       default:
-        return 'text-blue-600 bg-blue-50';
+        return 'text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400';
     }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">What's New</h2>
-        <Link href="/whats-new" className="text-blue-600 hover:text-blue-700 font-medium">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">What's New</h2>
+        <Link href="/whats-new" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
           View All
         </Link>
       </div>
@@ -123,9 +123,9 @@ const WhatsNewFeed = () => {
                       alt={item.author}
                       className="h-6 w-6 rounded-full"
                     />
-                    <span className="text-sm font-medium text-gray-900">{item.author}</span>
-                    <span className="text-sm text-gray-500">•</span>
-                    <span className="text-sm text-gray-500">{item.timestamp}</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{item.author}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">•</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{item.timestamp}</span>
                   </div>
 
                   <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-blue-600 cursor-pointer">

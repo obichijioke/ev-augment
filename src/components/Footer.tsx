@@ -64,7 +64,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-gray-900 text-white relative">
+    <footer className="bg-gray-900 dark:bg-gray-950 text-white relative">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
@@ -79,7 +79,7 @@ const Footer = () => {
                 <p className="text-sm text-gray-400">Electric Future</p>
               </div>
             </Link>
-            <p className="text-gray-300 mb-6 leading-relaxed">
+            <p className="text-gray-300 dark:text-gray-400 mb-6 leading-relaxed">
               Join the world's largest community of electric vehicle enthusiasts. 
               Discover, connect, and drive the future of sustainable transportation.
             </p>
@@ -190,10 +190,10 @@ const Footer = () => {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-gray-800">
+      <div className="border-t border-gray-800 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="text-gray-400 text-sm">
+            <div className="text-gray-400 dark:text-gray-500 text-sm">
               © 2024 EV Community Platform. All rights reserved.
             </div>
             
@@ -207,7 +207,7 @@ const Footer = () => {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-blue-400 transition-colors duration-200"
+                    className="text-gray-400 dark:text-gray-500 hover:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200"
                     aria-label={social.name}
                   >
                     <IconComponent className="h-5 w-5" />

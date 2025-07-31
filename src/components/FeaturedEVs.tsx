@@ -111,14 +111,14 @@ const FeaturedEVs = () => {
   };
 
   return (
-    <section className="bg-gradient-to-br from-gray-50 to-blue-50 py-16">
+    <section className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <TrendingUp className="h-8 w-8 text-blue-600" />
-            <h2 className="text-3xl font-bold text-gray-900">Trending Electric Vehicles</h2>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Trending Electric Vehicles</h2>
           </div>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             Discover the most popular and highly-rated electric vehicles that are making waves in the EV community
           </p>
         </div>
@@ -128,15 +128,15 @@ const FeaturedEVs = () => {
           {/* Navigation Buttons */}
           <button
             onClick={prevSlide}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:bg-white"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:bg-white dark:hover:bg-gray-700"
           >
-            <ChevronLeft className="h-6 w-6 text-gray-600" />
+            <ChevronLeft className="h-6 w-6 text-gray-600 dark:text-gray-300" />
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:bg-white"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:bg-white dark:hover:bg-gray-700"
           >
-            <ChevronRight className="h-6 w-6 text-gray-600" />
+            <ChevronRight className="h-6 w-6 text-gray-600 dark:text-gray-300" />
           </button>
 
           {/* Carousel */}
