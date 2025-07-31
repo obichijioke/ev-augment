@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { Search, Menu, X, User, Zap, ChevronDown, LogOut, Settings, Car, Activity, PenTool } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -47,7 +48,7 @@ const Navigation = () => {
   ];
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -55,24 +56,24 @@ const Navigation = () => {
             <div className="bg-blue-600 p-2 rounded-lg">
               <Zap className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">EV Community</span>
+            <span className="text-xl font-bold text-gray-900 dark:text-white">EV Community</span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-8">
-            <Link href="/" className="text-gray-700 hover:text-blue-600 transition-colors">
+            <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               Home
             </Link>
-            <Link href="/ev-listings" className="text-gray-700 hover:text-blue-600 transition-colors">
+            <Link href="/ev-listings" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               EV Listings
             </Link>
-            <Link href="/marketplace" className="text-gray-700 hover:text-blue-600 transition-colors">
+            <Link href="/marketplace" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               Marketplace
             </Link>
-            <Link href="/forums" className="text-gray-700 hover:text-blue-600 transition-colors">
+            <Link href="/forums" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               Forums
             </Link>
-            <Link href="/whats-new" className="text-gray-700 hover:text-blue-600 transition-colors">
+            <Link href="/whats-new" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               What's New
             </Link>
             
@@ -80,7 +81,7 @@ const Navigation = () => {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="text-gray-700 hover:text-blue-600 transition-colors flex items-center space-x-1"
+                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center space-x-1"
               >
                 <span>More</span>
                 <ChevronDown className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -103,7 +104,7 @@ const Navigation = () => {
             </div>
           </div>
 
-          {/* Search and User Menu */}
+          {/* Search, Theme Toggle and User Menu */}
           <div className="hidden md:flex items-center space-x-4">
             {/* Search Bar */}
             <div className="relative">
@@ -113,9 +114,12 @@ const Navigation = () => {
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               />
             </div>
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
             
             {/* User Menu */}
             {isAuthenticated && user ? (
@@ -217,11 +221,12 @@ const Navigation = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
+          {/* Mobile menu button and theme toggle */}
+          <div className="md:hidden flex items-center space-x-3">
+            <ThemeToggle />
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-600 hover:text-blue-600"
+              className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -231,7 +236,7 @@ const Navigation = () => {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
               {/* Mobile Search */}
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -240,24 +245,24 @@ const Navigation = () => {
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+                  className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 />
               </div>
               
               {/* Mobile Nav Items */}
-              <Link href="/" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+              <Link href="/" className="block px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 Home
               </Link>
-              <Link href="/ev-listings" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+              <Link href="/ev-listings" className="block px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 EV Listings
               </Link>
-              <Link href="/marketplace" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+              <Link href="/marketplace" className="block px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 Marketplace
               </Link>
-              <Link href="/forums" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+              <Link href="/forums" className="block px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 Forums
               </Link>
-              <Link href="/whats-new" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+              <Link href="/whats-new" className="block px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 What's New
               </Link>
               
