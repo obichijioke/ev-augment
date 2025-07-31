@@ -1,22 +1,29 @@
-import Joi from 'joi';
-import { Request, Response, NextFunction } from 'express';
-import { AuthenticatedRequest } from '../types';
-import { validationError } from './errorHandler';
+import Joi from "joi";
+import { Request, Response, NextFunction } from "express";
+import { AuthenticatedRequest } from "../types";
+import { validationError } from "./errorHandler";
 
 // Validation middleware factory
-const validate = (schema: Joi.ObjectSchema, property: string = 'body'): ((req: AuthenticatedRequest, res: Response, next: NextFunction) => void) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+const validate = (
+  schema: Joi.ObjectSchema,
+  property: string = "body"
+): ((req: AuthenticatedRequest, res: Response, next: NextFunction) => void) => {
+  return (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): void => {
     const { error, value } = schema.validate(req[property], {
       abortEarly: false,
       allowUnknown: false,
-      stripUnknown: true
+      stripUnknown: true,
     });
 
     if (error) {
       const errorMessage = error.details
-        .map(detail => detail.message.replace(/"/g, ''))
-        .join(', ');
-      
+        .map((detail) => detail.message.replace(/"/g, ""))
+        .join(", ");
+
       return next(validationError(errorMessage));
     }
 
@@ -30,23 +37,23 @@ const validate = (schema: Joi.ObjectSchema, property: string = 'body'): ((req: A
 const commonSchemas = {
   // UUID validation
   uuid: Joi.string().uuid().required(),
-  
+
   // Pagination
   pagination: Joi.object({
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(20),
-    sort: Joi.string().valid('asc', 'desc').default('desc'),
-    sortBy: Joi.string().default('created_at')
+    sort: Joi.string().valid("asc", "desc").default("desc"),
+    sortBy: Joi.string().default("created_at"),
   }),
-  
+
   // Search
   search: Joi.object({
     q: Joi.string().min(1).max(100),
     category: Joi.string().max(50),
     tags: Joi.array().items(Joi.string().max(30)),
-    location: Joi.string().max(100)
+    location: Joi.string().max(100),
   }),
-  
+
   // File upload
   fileUpload: Joi.object({
     fieldname: Joi.string().required(),
@@ -54,8 +61,8 @@ const commonSchemas = {
     encoding: Joi.string().required(),
     mimetype: Joi.string().required(),
     size: Joi.number().max(10485760), // 10MB
-    buffer: Joi.binary().required()
-  })
+    buffer: Joi.binary().required(),
+  }),
 };
 
 // User validation schemas
@@ -65,14 +72,14 @@ const userSchemas = {
     password: Joi.string().min(8).max(128).required(),
     username: Joi.string().alphanum().min(3).max(30).required(),
     full_name: Joi.string().min(2).max(100),
-    terms_accepted: Joi.boolean().valid(true).required()
+    terms_accepted: Joi.boolean().valid(true).required(),
   }),
-  
+
   login: Joi.object({
     email: Joi.string().email().required(),
-    password: Joi.string().required()
+    password: Joi.string().required(),
   }),
-  
+
   updateProfile: Joi.object({
     username: Joi.string().alphanum().min(3).max(30),
     full_name: Joi.string().min(2).max(100),
@@ -80,18 +87,72 @@ const userSchemas = {
     location: Joi.string().max(100),
     website: Joi.string().uri().max(255),
     phone: Joi.string().pattern(/^[+]?[1-9]?[0-9]{7,15}$/),
+    is_business: Joi.boolean(),
+    business_name: Joi.string().max(100).when('is_business', {
+      is: true,
+      then: Joi.string().required(),
+      otherwise: Joi.string().allow('', null)
+    }),
+    business_type: Joi.string().valid(
+      'dealership',
+      'charging_network', 
+      'service_center',
+      'parts_supplier',
+      'installer',
+      'fleet_management',
+      'manufacturer',
+      'consultant',
+      'other'
+    ).when('is_business', {
+      is: true,
+      then: Joi.string().required(),
+      otherwise: Joi.string().allow('', null)
+    }),
     privacy_settings: Joi.object(),
-    notification_settings: Joi.object()
+    notification_settings: Joi.object(),
   }),
-  
+
   forgotPassword: Joi.object({
-    email: Joi.string().email().required()
+    email: Joi.string().email().required(),
   }),
-  
+
   resetPassword: Joi.object({
     token: Joi.string().required(),
-    password: Joi.string().min(8).max(128).required()
-  })
+    password: Joi.string().min(8).max(128).required(),
+  }),
+
+  updateUserProfile: Joi.object({
+    role: Joi.string().valid("user", "moderator", "admin"),
+    preferences: Joi.object({
+      theme: Joi.string().valid("light", "dark", "auto"),
+      language: Joi.string().pattern(/^[a-z]{2}(-[A-Z]{2})?$/), // e.g., 'en', 'en-US'
+      notifications: Joi.object({
+        email: Joi.boolean(),
+        push: Joi.boolean(),
+        marketing: Joi.boolean(),
+        forum: Joi.boolean(),
+        marketplace: Joi.boolean(),
+        messages: Joi.boolean(),
+      }),
+      privacy: Joi.object({
+        show_email: Joi.boolean(),
+        show_location: Joi.boolean(),
+        show_phone: Joi.boolean(),
+        show_real_name: Joi.boolean(),
+        show_online_status: Joi.boolean(),
+      }),
+      display: Joi.object({
+        posts_per_page: Joi.number().integer().min(10).max(100),
+        date_format: Joi.string().valid(
+          "MM/DD/YYYY",
+          "DD/MM/YYYY",
+          "YYYY-MM-DD"
+        ),
+        time_format: Joi.string().valid("12h", "24h"),
+        timezone: Joi.string(),
+      }),
+    }),
+  }),
 };
 
 // Vehicle validation schemas
@@ -99,12 +160,18 @@ const vehicleSchemas = {
   create: Joi.object({
     make: Joi.string().max(50).required(),
     model: Joi.string().max(50).required(),
-    year: Joi.number().integer().min(1990).max(new Date().getFullYear() + 2).required(),
+    year: Joi.number()
+      .integer()
+      .min(1990)
+      .max(new Date().getFullYear() + 2)
+      .required(),
     trim: Joi.string().max(50),
     color: Joi.string().max(30),
-    vin: Joi.string().length(17).pattern(/^[A-HJ-NPR-Z0-9]+$/),
+    vin: Joi.string()
+      .length(17)
+      .pattern(/^[A-HJ-NPR-Z0-9]+$/),
     nickname: Joi.string().max(50),
-    purchase_date: Joi.date().max('now'),
+    purchase_date: Joi.date().max("now"),
     purchase_price: Joi.number().positive(),
     current_mileage: Joi.number().integer().min(0),
     battery_capacity: Joi.number().positive(),
@@ -112,18 +179,23 @@ const vehicleSchemas = {
     charging_speed: Joi.string().max(20),
     modifications: Joi.array().items(Joi.string().max(100)),
     notes: Joi.string().max(1000),
-    is_public: Joi.boolean().default(true)
+    is_public: Joi.boolean().default(true),
   }),
-  
+
   update: Joi.object({
     make: Joi.string().max(50),
     model: Joi.string().max(50),
-    year: Joi.number().integer().min(1990).max(new Date().getFullYear() + 2),
+    year: Joi.number()
+      .integer()
+      .min(1990)
+      .max(new Date().getFullYear() + 2),
     trim: Joi.string().max(50),
     color: Joi.string().max(30),
-    vin: Joi.string().length(17).pattern(/^[A-HJ-NPR-Z0-9]+$/),
+    vin: Joi.string()
+      .length(17)
+      .pattern(/^[A-HJ-NPR-Z0-9]+$/),
     nickname: Joi.string().max(50),
-    purchase_date: Joi.date().max('now'),
+    purchase_date: Joi.date().max("now"),
     purchase_price: Joi.number().positive(),
     current_mileage: Joi.number().integer().min(0),
     battery_capacity: Joi.number().positive(),
@@ -131,8 +203,8 @@ const vehicleSchemas = {
     charging_speed: Joi.string().max(20),
     modifications: Joi.array().items(Joi.string().max(100)),
     notes: Joi.string().max(1000),
-    is_public: Joi.boolean()
-  })
+    is_public: Joi.boolean(),
+  }),
 };
 
 // Marketplace validation schemas
@@ -143,34 +215,42 @@ const marketplaceSchemas = {
     category: Joi.string().max(50).required(),
     subcategory: Joi.string().max(50),
     price: Joi.number().positive(),
-    condition: Joi.string().valid('new', 'like-new', 'good', 'fair', 'poor').required(),
+    condition: Joi.string()
+      .valid("new", "like-new", "good", "fair", "poor")
+      .required(),
     brand: Joi.string().max(50),
     model: Joi.string().max(50),
-    year: Joi.number().integer().min(1990).max(new Date().getFullYear() + 2),
+    year: Joi.number()
+      .integer()
+      .min(1990)
+      .max(new Date().getFullYear() + 2),
     mileage: Joi.number().integer().min(0),
     location: Joi.string().max(100),
     specifications: Joi.object(),
     features: Joi.array().items(Joi.string().max(100)),
-    is_negotiable: Joi.boolean().default(true)
+    is_negotiable: Joi.boolean().default(true),
   }),
-  
+
   update: Joi.object({
     title: Joi.string().min(5).max(200),
     description: Joi.string().max(2000),
     category: Joi.string().max(50),
     subcategory: Joi.string().max(50),
     price: Joi.number().positive(),
-    condition: Joi.string().valid('new', 'like-new', 'good', 'fair', 'poor'),
+    condition: Joi.string().valid("new", "like-new", "good", "fair", "poor"),
     brand: Joi.string().max(50),
     model: Joi.string().max(50),
-    year: Joi.number().integer().min(1990).max(new Date().getFullYear() + 2),
+    year: Joi.number()
+      .integer()
+      .min(1990)
+      .max(new Date().getFullYear() + 2),
     mileage: Joi.number().integer().min(0),
     location: Joi.string().max(100),
     specifications: Joi.object(),
     features: Joi.array().items(Joi.string().max(100)),
     is_negotiable: Joi.boolean(),
-    is_active: Joi.boolean()
-  })
+    is_active: Joi.boolean(),
+  }),
 };
 
 // Forum validation schemas
@@ -179,19 +259,23 @@ const forumSchemas = {
     title: Joi.string().min(5).max(200).required(),
     content: Joi.string().min(10).max(10000).required(),
     category_id: Joi.string().uuid().required(),
-    tags: Joi.array().items(Joi.string().max(30)).max(10)
+    tags: Joi.array().items(Joi.string().max(30)).max(10),
   }),
-  
+
   updatePost: Joi.object({
     title: Joi.string().min(5).max(200),
     content: Joi.string().min(10).max(10000),
-    tags: Joi.array().items(Joi.string().max(30)).max(10)
+    tags: Joi.array().items(Joi.string().max(30)).max(10),
   }),
-  
+
   createReply: Joi.object({
     content: Joi.string().min(1).max(5000).required(),
-    parent_reply_id: Joi.string().uuid()
-  })
+    parent_reply_id: Joi.string().uuid(),
+  }),
+
+  updateReply: Joi.object({
+    content: Joi.string().min(1).max(5000).required(),
+  }),
 };
 
 // Blog validation schemas
@@ -202,28 +286,28 @@ const blogSchemas = {
     content: Joi.string().min(50).required(),
     category: Joi.string().max(50),
     tags: Joi.array().items(Joi.string().max(30)).max(10),
-    status: Joi.string().valid('draft', 'published').default('draft'),
-    is_featured: Joi.boolean().default(false)
+    status: Joi.string().valid("draft", "published").default("draft"),
+    is_featured: Joi.boolean().default(false),
   }),
-  
+
   update: Joi.object({
     title: Joi.string().min(5).max(200),
     excerpt: Joi.string().max(300),
     content: Joi.string().min(50),
     category: Joi.string().max(50),
     tags: Joi.array().items(Joi.string().max(30)).max(10),
-    status: Joi.string().valid('draft', 'published'),
-    is_featured: Joi.boolean()
+    status: Joi.string().valid("draft", "published"),
+    is_featured: Joi.boolean(),
   }),
-  
+
   createComment: Joi.object({
     content: Joi.string().min(1).max(1000).required(),
-    parent_comment_id: Joi.string().uuid()
+    parent_comment_id: Joi.string().uuid(),
   }),
-  
+
   updateComment: Joi.object({
-    content: Joi.string().min(1).max(1000).required()
-  })
+    content: Joi.string().min(1).max(1000).required(),
+  }),
 };
 
 // Review validation schemas
@@ -233,8 +317,16 @@ const reviewSchemas = {
     title: Joi.string().max(200),
     content: Joi.string().max(2000),
     pros: Joi.array().items(Joi.string().max(100)),
-    cons: Joi.array().items(Joi.string().max(100))
-  })
+    cons: Joi.array().items(Joi.string().max(100)),
+  }),
+
+  update: Joi.object({
+    rating: Joi.number().integer().min(1).max(5).optional(),
+    title: Joi.string().max(200).optional(),
+    content: Joi.string().max(2000).optional(),
+    pros: Joi.array().items(Joi.string().max(100)).optional(),
+    cons: Joi.array().items(Joi.string().max(100)).optional(),
+  }),
 };
 
 // Message validation schemas
@@ -243,8 +335,8 @@ const messageSchemas = {
     recipient_id: Joi.string().uuid().required(),
     subject: Joi.string().max(200),
     content: Joi.string().min(1).max(5000).required(),
-    parent_message_id: Joi.string().uuid()
-  })
+    parent_message_id: Joi.string().uuid(),
+  }),
 };
 
 // Wanted ads validation schemas
@@ -259,10 +351,12 @@ const wantedSchemas = {
     location: Joi.string().max(100),
     specifications: Joi.object(),
     features: Joi.array().items(Joi.string().max(100)),
-    urgency: Joi.string().valid('low', 'medium', 'high').default('medium'),
-    contact_method: Joi.string().valid('message', 'email', 'phone').default('message')
+    urgency: Joi.string().valid("low", "medium", "high").default("medium"),
+    contact_method: Joi.string()
+      .valid("message", "email", "phone")
+      .default("message"),
   }),
-  
+
   update: Joi.object({
     title: Joi.string().min(5).max(200),
     description: Joi.string().max(2000),
@@ -273,10 +367,10 @@ const wantedSchemas = {
     location: Joi.string().max(100),
     specifications: Joi.object(),
     features: Joi.array().items(Joi.string().max(100)),
-    urgency: Joi.string().valid('low', 'medium', 'high'),
-    contact_method: Joi.string().valid('message', 'email', 'phone'),
-    is_active: Joi.boolean()
-  })
+    urgency: Joi.string().valid("low", "medium", "high"),
+    contact_method: Joi.string().valid("message", "email", "phone"),
+    is_active: Joi.boolean(),
+  }),
 };
 
 // Charging station validation schemas
@@ -294,18 +388,22 @@ const chargingStationSchemas = {
     longitude: Joi.number().min(-180).max(180).required(),
     connector_types: Joi.array().items(Joi.string().max(50)).min(1).required(),
     power_kw: Joi.number().positive().required(),
-    power_level: Joi.string().valid('Level 1', 'Level 2', 'DC Fast').required(),
+    power_level: Joi.string().valid("Level 1", "Level 2", "DC Fast").required(),
     num_ports: Joi.number().integer().positive().required(),
     pricing: Joi.object(),
     hours: Joi.object(),
     amenities: Joi.array().items(Joi.string().max(50)),
-    access_type: Joi.string().valid('public', 'private', 'restricted').default('public'),
-    status: Joi.string().valid('operational', 'maintenance', 'offline').default('operational'),
+    access_type: Joi.string()
+      .valid("public", "private", "restricted")
+      .default("public"),
+    status: Joi.string()
+      .valid("operational", "maintenance", "offline")
+      .default("operational"),
     phone: Joi.string().max(20),
     website: Joi.string().uri().max(255),
-    notes: Joi.string().max(1000)
+    notes: Joi.string().max(1000),
   }),
-  
+
   update: Joi.object({
     name: Joi.string().min(2).max(200),
     description: Joi.string().max(1000),
@@ -319,18 +417,18 @@ const chargingStationSchemas = {
     longitude: Joi.number().min(-180).max(180),
     connector_types: Joi.array().items(Joi.string().max(50)).min(1),
     power_kw: Joi.number().positive(),
-    power_level: Joi.string().valid('Level 1', 'Level 2', 'DC Fast'),
+    power_level: Joi.string().valid("Level 1", "Level 2", "DC Fast"),
     num_ports: Joi.number().integer().positive(),
     pricing: Joi.object(),
     hours: Joi.object(),
     amenities: Joi.array().items(Joi.string().max(50)),
-    access_type: Joi.string().valid('public', 'private', 'restricted'),
-    status: Joi.string().valid('operational', 'maintenance', 'offline'),
+    access_type: Joi.string().valid("public", "private", "restricted"),
+    status: Joi.string().valid("operational", "maintenance", "offline"),
     phone: Joi.string().max(20),
     website: Joi.string().uri().max(255),
     notes: Joi.string().max(1000),
-    is_active: Joi.boolean()
-  })
+    is_active: Joi.boolean(),
+  }),
 };
 
 // Directory validation schemas
@@ -357,9 +455,9 @@ const directorySchemas = {
     certifications: Joi.array().items(Joi.string().max(100)),
     years_in_business: Joi.number().integer().min(0),
     employee_count: Joi.string().max(50),
-    service_area: Joi.string().max(200)
+    service_area: Joi.string().max(200),
   }),
-  
+
   update: Joi.object({
     business_name: Joi.string().min(2).max(200),
     description: Joi.string().max(2000),
@@ -383,24 +481,26 @@ const directorySchemas = {
     years_in_business: Joi.number().integer().min(0),
     employee_count: Joi.string().max(50),
     service_area: Joi.string().max(200),
-    is_active: Joi.boolean()
-  })
+    is_active: Joi.boolean(),
+  }),
 };
 
 // Like validation schemas
 const likeSchemas = {
   create: Joi.object({
-    entity_type: Joi.string().valid(
-      'forum_post', 
-      'forum_reply', 
-      'blog_post', 
-      'blog_comment', 
-      'marketplace_listing', 
-      'wanted_ad', 
-      'vehicle'
-    ).required(),
-    entity_id: Joi.string().uuid().required()
-  })
+    entity_type: Joi.string()
+      .valid(
+        "forum_post",
+        "forum_reply",
+        "blog_post",
+        "blog_comment",
+        "marketplace_listing",
+        "wanted_ad",
+        "vehicle"
+      )
+      .required(),
+    entity_id: Joi.string().uuid().required(),
+  }),
 };
 
 // Upload validation schemas
@@ -408,8 +508,8 @@ const uploadSchemas = {
   updateFile: Joi.object({
     alt_text: Joi.string().max(255),
     caption: Joi.string().max(500),
-    is_active: Joi.boolean()
-  })
+    is_active: Joi.boolean(),
+  }),
 };
 
 // Notification validation schemas
@@ -417,62 +517,68 @@ const notificationSchemas = {
   create: Joi.object({
     title: Joi.string().required().min(1).max(200),
     message: Joi.string().required().min(1).max(1000),
-    type: Joi.string().valid('info', 'warning', 'success', 'error').default('info'),
+    type: Joi.string()
+      .valid("info", "warning", "success", "error")
+      .default("info"),
     target_users: Joi.array().items(Joi.string().uuid()).optional(),
     target_roles: Joi.array().items(Joi.string()).optional(),
     send_email: Joi.boolean().default(false),
     send_push: Joi.boolean().default(true),
     scheduled_for: Joi.date().optional(),
-    expires_at: Joi.date().optional()
+    expires_at: Joi.date().optional(),
   }),
-  
+
   update: Joi.object({
     title: Joi.string().min(1).max(200).optional(),
     message: Joi.string().min(1).max(1000).optional(),
-    type: Joi.string().valid('info', 'warning', 'success', 'error').optional(),
+    type: Joi.string().valid("info", "warning", "success", "error").optional(),
     is_read: Joi.boolean().optional(),
-    expires_at: Joi.date().optional()
+    expires_at: Joi.date().optional(),
   }),
-  
+
   updatePreferences: Joi.object({
     email: Joi.object({
       enabled: Joi.boolean().required(),
-      frequency: Joi.string().valid('immediate', 'daily', 'weekly', 'never').default('immediate')
+      frequency: Joi.string()
+        .valid("immediate", "daily", "weekly", "never")
+        .default("immediate"),
     }).optional(),
     push: Joi.object({
       enabled: Joi.boolean().required(),
       quietHours: Joi.object({
         enabled: Joi.boolean().default(false),
         start: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
-        end: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
-      }).optional()
+        end: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
+      }).optional(),
     }).optional(),
     inApp: Joi.object({
-      enabled: Joi.boolean().required()
+      enabled: Joi.boolean().required(),
     }).optional(),
-    types: Joi.object().pattern(
-      Joi.string(),
-      Joi.object({
-        email: Joi.boolean().required(),
-        push: Joi.boolean().required(),
-        inApp: Joi.boolean().required()
-      })
-    ).optional()
+    types: Joi.object()
+      .pattern(
+        Joi.string(),
+        Joi.object({
+          email: Joi.boolean().required(),
+          push: Joi.boolean().required(),
+          inApp: Joi.boolean().required(),
+        })
+      )
+      .optional(),
   }),
-  
+
   broadcast: Joi.object({
     title: Joi.string().required().min(1).max(200),
     message: Joi.string().required().min(1).max(1000),
-    priority: Joi.string().valid('low', 'medium', 'high').default('medium'),
+    priority: Joi.string().valid("low", "medium", "high").default("medium"),
     action_url: Joi.string().uri().optional(),
     user_filter: Joi.object({
-      role: Joi.string().valid('user', 'moderator', 'admin').optional(),
+      role: Joi.string().valid("user", "moderator", "admin").optional(),
       created_after: Joi.date().optional(),
-      has_vehicles: Joi.boolean().optional()
+      has_vehicles: Joi.boolean().optional(),
     }).optional(),
     send_email: Joi.boolean().default(false),
-    send_push: Joi.boolean().default(false)
-  })
+    send_push: Joi.boolean().default(false),
+  }),
 };
 
 // Admin validation schemas
@@ -481,42 +587,44 @@ const adminSchemas = {
     username: Joi.string().alphanum().min(3).max(30).optional(),
     full_name: Joi.string().min(2).max(100).optional(),
     email: Joi.string().email().optional(),
-    role: Joi.string().valid('user', 'moderator', 'admin').optional(),
+    role: Joi.string().valid("user", "moderator", "admin").optional(),
     is_active: Joi.boolean().optional(),
     is_verified: Joi.boolean().optional(),
     bio: Joi.string().max(500).optional(),
-    location: Joi.string().max(100).optional()
+    location: Joi.string().max(100).optional(),
   }),
-  
+
   createUser: Joi.object({
     username: Joi.string().alphanum().min(3).max(30).required(),
     full_name: Joi.string().min(2).max(100).required(),
     email: Joi.string().email().required(),
     password: Joi.string().min(8).max(128).required(),
-    role: Joi.string().valid('user', 'moderator', 'admin').default('user'),
+    role: Joi.string().valid("user", "moderator", "admin").default("user"),
     is_active: Joi.boolean().default(true),
-    is_verified: Joi.boolean().default(false)
+    is_verified: Joi.boolean().default(false),
   }),
-  
+
   updateSettings: Joi.object({
     site_name: Joi.string().max(100).optional(),
     site_description: Joi.string().max(500).optional(),
     maintenance_mode: Joi.boolean().optional(),
     registration_enabled: Joi.boolean().optional(),
-    email_verification_required: Joi.boolean().optional()
+    email_verification_required: Joi.boolean().optional(),
   }),
-  
+
   resolveReport: Joi.object({
-    action: Joi.string().valid('dismiss', 'warn_user', 'suspend_user', 'delete_content').required(),
+    action: Joi.string()
+      .valid("dismiss", "warn_user", "suspend_user", "delete_content")
+      .required(),
     admin_notes: Joi.string().max(1000).optional(),
-    duration_days: Joi.number().integer().min(1).max(365).optional()
+    duration_days: Joi.number().integer().min(1).max(365).optional(),
   }),
-  
+
   rejectContent: Joi.object({
     reason: Joi.string().max(500).required(),
     admin_notes: Joi.string().max(1000).optional(),
-    notify_user: Joi.boolean().default(true)
-  })
+    notify_user: Joi.boolean().default(true),
+  }),
 };
 
 export {
@@ -535,7 +643,7 @@ export {
   likeSchemas,
   uploadSchemas,
   notificationSchemas,
-  adminSchemas
+  adminSchemas,
 };
 
 export default validate;

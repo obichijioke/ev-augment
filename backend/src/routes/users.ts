@@ -1,462 +1,640 @@
-import express, { Router } from 'express';
-import { supabaseAdmin } from '../services/supabaseClient';
-import { validate, userSchemas, commonSchemas } from '../middleware/validation';
-import { asyncHandler, notFoundError, forbiddenError, validationError } from '../middleware/errorHandler';
-import { authenticateToken, optionalAuth, requireOwnership, AuthenticatedRequest, OptionalAuthRequest } from '../middleware/auth';
-import { buildPagination, isValidUUID } from '../services/supabaseClient';
-import { toString, toNumber } from '../utils/typeUtils';
-
-// User interfaces
-interface UpdateProfileRequest {
-  username?: string;
-  full_name?: string;
-  bio?: string;
-  location?: string;
-  website?: string;
-  phone?: string;
-  business_name?: string;
-  business_type?: string;
-  privacy_settings?: Record<string, any>;
-  notification_settings?: Record<string, any>;
-}
-
-interface PaginationQuery {
-  page?: string;
-  limit?: string;
-  q?: string;
-}
-
-interface UserStats {
-  vehicles_count: number;
-  posts_count: number;
-  reviews_count: number;
-}
+import express, { Router } from "express";
+import {
+  supabaseAdmin,
+  buildPagination,
+  buildPaginationMetadata,
+  isValidUUID,
+} from "../services/supabaseClient";
+import { validate, userSchemas, commonSchemas } from "../middleware/validation";
+import {
+  asyncHandler,
+  notFoundError,
+  forbiddenError,
+} from "../middleware/errorHandler";
+import {
+  authenticateToken,
+  optionalAuth,
+  requireOwnership,
+} from "../middleware/auth";
+import { AuthenticatedRequest } from "../types";
+import {
+  User,
+  UserProfile,
+  ApiResponse,
+  PaginatedResponse,
+} from "../types/database";
 
 const router: Router = express.Router();
 
 // @route   GET /api/users/profile
 // @desc    Get current user's profile
 // @access  Private
-router.get('/profile', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: express.Response) => {
-  const { data: userProfile, error } = await supabaseAdmin
-    .from('users')
-    .select('*')
-    .eq('id', req.user.id)
-    .single();
-
-  if (error) {
-    throw notFoundError('User profile');
-  }
-
-  res.json({
-    success: true,
-    data: {
-      user: userProfile
-    }
-  });
-}));
-
-// @route   PUT /api/users/profile
-// @desc    Update current user's profile
-// @access  Private
-router.put('/profile', authenticateToken, validate(userSchemas.updateProfile), asyncHandler(async (req: AuthenticatedRequest<{}, {}, UpdateProfileRequest>, res: express.Response) => {
-  const updateData = {
-    ...req.body,
-    updated_at: new Date().toISOString()
-  };
-
-  // Check if username is being changed and if it's available
-  if (req.body.username) {
-    const { data: existingUser } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('username', req.body.username)
-      .neq('id', req.user.id)
+router.get(
+  "/profile",
+  authenticateToken,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { data: userProfile, error } = await supabaseAdmin
+      .from("users")
+      .select("*")
+      .eq("id", req.user!.id)
       .single();
 
-    if (existingUser) {
-      throw validationError('Username is already taken');
-    }
-  }
-
-  const { data: updatedUser, error } = await supabaseAdmin
-    .from('users')
-    .update(updateData)
-    .eq('id', req.user.id)
-    .select()
-    .single();
-
-  if (error) {
-    throw new Error('Failed to update profile');
-  }
-
-  res.json({
-    success: true,
-    message: 'Profile updated successfully',
-    data: {
-      user: updatedUser
-    }
-  });
-}));
-
-// @route   GET /api/users/:username
-// @desc    Get user profile by username
-// @access  Public
-router.get('/:username', optionalAuth, asyncHandler(async (req: OptionalAuthRequest<{ username: string }>, res: express.Response) => {
-  const { username } = req.params;
-
-  const { data: userProfile, error } = await supabaseAdmin
-    .from('users')
-    .select(`
-      id,
-      username,
-      full_name,
-      avatar_url,
-      bio,
-      location,
-      website,
-      is_verified,
-      is_business,
-      business_name,
-      business_type,
-      join_date,
-      last_active
-    `)
-    .eq('username', username)
-    .single();
-
-  if (error) {
-    throw notFoundError('User');
-  }
-
-  // Check privacy settings
-  const isOwnProfile = req.user && req.user.id === userProfile.id;
-  
-  if (!isOwnProfile) {
-    // Get privacy settings
-    const { data: privacyData } = await supabaseAdmin
-      .from('users')
-      .select('privacy_settings')
-      .eq('id', userProfile.id)
-      .single();
-
-    const privacySettings = privacyData?.privacy_settings || {};
-    
-    // Apply privacy filters
-    if (privacySettings.hide_last_active) {
-      delete userProfile.last_active;
-    }
-    
-    if (privacySettings.hide_location) {
-      delete userProfile.location;
-    }
-  }
-
-  // Get user statistics
-  const [vehiclesCount, postsCount, reviewsCount] = await Promise.all([
-    supabaseAdmin
-      .from('vehicles')
-      .select('id', { count: 'exact' })
-      .eq('owner_id', userProfile.id)
-      .eq('is_public', true),
-    
-    supabaseAdmin
-      .from('forum_posts')
-      .select('id', { count: 'exact' })
-      .eq('author_id', userProfile.id),
-    
-    supabaseAdmin
-      .from('reviews')
-      .select('id', { count: 'exact' })
-      .eq('reviewer_id', userProfile.id)
-  ]);
-
-  res.json({
-    success: true,
-    data: {
-      user: {
-        ...userProfile,
-        stats: {
-          vehicles_count: vehiclesCount.count || 0,
-          posts_count: postsCount.count || 0,
-          reviews_count: reviewsCount.count || 0
-        }
-      }
-    }
-  });
-}));
-
-// @route   GET /api/users/:username/vehicles
-// @desc    Get user's vehicles
-// @access  Public
-router.get('/:username/vehicles', optionalAuth, validate(commonSchemas.pagination, 'query'), asyncHandler(async (req: OptionalAuthRequest<{ username: string }>, res: express.Response) => {
-  const { username } = req.params;
-  const { page, limit } = req.query;
-  const { from, to } = buildPagination(toNumber(page, 1), toNumber(limit, 20));
-
-  // Get user ID from username
-  const { data: user, error: userError } = await supabaseAdmin
-    .from('users')
-    .select('id')
-    .eq('username', username)
-    .single();
-
-  if (userError) {
-    throw notFoundError('User');
-  }
-
-  const isOwnProfile = req.user && req.user.id === user.id;
-  
-  let query = supabaseAdmin
-    .from('vehicles')
-    .select('*', { count: 'exact' })
-    .eq('owner_id', user.id)
-    .order('created_at', { ascending: false })
-    .range(from, to);
-
-  // Only show public vehicles for other users
-  if (!isOwnProfile) {
-    query = query.eq('is_public', true);
-  }
-
-  const { data: vehicles, error, count } = await query;
-
-  if (error) {
-    throw new Error('Failed to fetch vehicles');
-  }
-
-  res.json({
-    success: true,
-    data: {
-      vehicles,
-      pagination: {
-        page: toNumber(page, 1),
-        limit: toNumber(limit, 20),
-        total: count,
-        pages: Math.ceil(count / toNumber(limit, 20))
-      }
-    }
-  });
-}));
-
-// @route   GET /api/users/:username/posts
-// @desc    Get user's forum posts
-// @access  Public
-router.get('/:username/posts', optionalAuth, validate(commonSchemas.pagination, 'query'), asyncHandler(async (req: OptionalAuthRequest<{ username: string }>, res: express.Response) => {
-  const { username } = req.params;
-  const { page, limit } = req.query;
-  const { from, to } = buildPagination(toNumber(page, 1), toNumber(limit, 20));
-
-  // Get user ID from username
-  const { data: user, error: userError } = await supabaseAdmin
-    .from('users')
-    .select('id')
-    .eq('username', username)
-    .single();
-
-  if (userError) {
-    throw notFoundError('User');
-  }
-
-  const { data: posts, error, count } = await supabaseAdmin
-    .from('forum_posts')
-    .select(`
-      *,
-      forum_categories(name, slug),
-      users(username, avatar_url)
-    `, { count: 'exact' })
-    .eq('author_id', user.id)
-    .order('created_at', { ascending: false })
-    .range(from, to);
-
-  if (error) {
-    throw new Error('Failed to fetch posts');
-  }
-
-  res.json({
-    success: true,
-    data: {
-      posts,
-      pagination: {
-        page: toNumber(page, 1),
-        limit: toNumber(limit, 20),
-        total: count,
-        pages: Math.ceil(count / toNumber(limit, 20))
-      }
-    }
-  });
-}));
-
-// @route   GET /api/users/:username/reviews
-// @desc    Get user's reviews
-// @access  Public
-router.get('/:username/reviews', optionalAuth, validate(commonSchemas.pagination, 'query'), asyncHandler(async (req: OptionalAuthRequest<{ username: string }>, res: express.Response) => {
-  const { username } = req.params;
-  const { page, limit } = req.query;
-  const { from, to } = buildPagination(toNumber(page, 1), toNumber(limit, 20));
-
-  // Get user ID from username
-  const { data: user, error: userError } = await supabaseAdmin
-    .from('users')
-    .select('id')
-    .eq('username', username)
-    .single();
-
-  if (userError) {
-    throw notFoundError('User');
-  }
-
-  const { data: reviews, error, count } = await supabaseAdmin
-    .from('reviews')
-    .select(`
-      *,
-      users(username, avatar_url)
-    `, { count: 'exact' })
-    .eq('reviewer_id', user.id)
-    .order('created_at', { ascending: false })
-    .range(from, to);
-
-  if (error) {
-    throw new Error('Failed to fetch reviews');
-  }
-
-  res.json({
-    success: true,
-    data: {
-      reviews,
-      pagination: {
-        page: toNumber(page, 1),
-        limit: toNumber(limit, 20),
-        total: count,
-        pages: Math.ceil(count / toNumber(limit, 20))
-      }
-    }
-  });
-}));
-
-// @route   POST /api/users/upload-avatar
-// @desc    Upload user avatar
-// @access  Private
-router.post('/upload-avatar', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: express.Response) => {
-  // This will be implemented with the upload middleware
-  // For now, return a placeholder response
-  res.json({
-    success: true,
-    message: 'Avatar upload endpoint - to be implemented with file upload middleware'
-  });
-}));
-
-// @route   DELETE /api/users/account
-// @desc    Delete user account
-// @access  Private
-router.delete('/account', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: express.Response) => {
-  const userId = req.user.id;
-
-  // Start a transaction-like operation
-  try {
-    // Delete user data in order (respecting foreign key constraints)
-    await Promise.all([
-      // Delete user's likes
-      supabaseAdmin.from('likes').delete().eq('user_id', userId),
-      // Delete user's messages
-      supabaseAdmin.from('messages').delete().or(`sender_id.eq.${userId},recipient_id.eq.${userId}`),
-      // Delete user's reviews
-      supabaseAdmin.from('reviews').delete().eq('reviewer_id', userId),
-      // Delete user's blog comments
-      supabaseAdmin.from('blog_comments').delete().eq('author_id', userId),
-      // Delete user's forum replies
-      supabaseAdmin.from('forum_replies').delete().eq('author_id', userId)
-    ]);
-
-    // Delete user's content
-    await Promise.all([
-      // Delete user's blog posts
-      supabaseAdmin.from('blog_posts').delete().eq('author_id', userId),
-      // Delete user's forum posts
-      supabaseAdmin.from('forum_posts').delete().eq('author_id', userId),
-      // Delete user's marketplace listings
-      supabaseAdmin.from('marketplace_listings').delete().eq('seller_id', userId),
-      // Delete user's wanted ads
-      supabaseAdmin.from('wanted_ads').delete().eq('user_id', userId),
-      // Delete user's vehicles
-      supabaseAdmin.from('vehicles').delete().eq('owner_id', userId),
-      // Delete user's directory businesses
-      supabaseAdmin.from('directory_businesses').delete().eq('owner_id', userId)
-    ]);
-
-    // Delete user profile
-    const { error: profileError } = await supabaseAdmin
-      .from('users')
-      .delete()
-      .eq('id', userId);
-
-    if (profileError) {
-      throw new Error('Failed to delete user profile');
-    }
-
-    // Delete auth user
-    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-
-    if (authError) {
-      throw new Error('Failed to delete user authentication');
+    if (error) {
+      throw notFoundError("User profile");
     }
 
     res.json({
       success: true,
-      message: 'Account deleted successfully'
-    });
-  } catch (error) {
-    throw new Error(`Failed to delete account: ${error.message}`);
-  }
-}));
+      data: {
+        user: userProfile,
+      },
+    } as ApiResponse<{ user: User }>);
+  })
+);
 
-// @route   GET /api/users
-// @desc    Get users list (for admin/search purposes)
-// @access  Public
-router.get('/', validate(commonSchemas.pagination, 'query'), asyncHandler(async (req: express.Request<{}, {}, {}, PaginationQuery>, res: express.Response) => {
-  const { page, limit, q } = req.query;
-  const { from, to } = buildPagination(toNumber(page, 1), toNumber(limit, 20));
+// @route   PUT /api/users/profile
+// @desc    Update current user's profile
+// @access  Private
+router.put(
+  "/profile",
+  authenticateToken,
+  validate(userSchemas.updateProfile),
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const updateData = {
+      ...req.body,
+      updated_at: new Date().toISOString(),
+    };
 
-  let query = supabaseAdmin
-    .from('users')
-    .select(`
-      id,
-      username,
-      full_name,
-      avatar_url,
-      bio,
-      location,
-      is_verified,
-      is_business,
-      business_name,
-      join_date
-    `, { count: 'exact' })
-    .order('join_date', { ascending: false })
-    .range(from, to);
+    // Check if username is being changed and if it's available
+    if (req.body.username) {
+      const { data: existingUser } = await supabaseAdmin
+        .from("users")
+        .select("id")
+        .eq("username", req.body.username)
+        .neq("id", req.user!.id)
+        .single();
 
-  // Add search filter if query provided
-  if (q) {
-    query = query.or(`username.ilike.%${q}%,full_name.ilike.%${q}%,business_name.ilike.%${q}%`);
-  }
-
-  const { data: users, error, count } = await query;
-
-  if (error) {
-    throw new Error('Failed to fetch users');
-  }
-
-  res.json({
-    success: true,
-    data: {
-      users,
-      pagination: {
-        page: toNumber(page, 1),
-        limit: toNumber(limit, 20),
-        total: count,
-        pages: Math.ceil(count / toNumber(limit, 20))
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          error: "Username already taken",
+        } as ApiResponse);
       }
     }
-  });
-}));
+
+    // Update user profile
+    const { data: updatedUser, error } = await supabaseAdmin
+      .from("users")
+      .update(updateData)
+      .eq("id", req.user!.id)
+      .select()
+      .single();
+
+    if (error) {
+      throw notFoundError("User profile");
+    }
+
+    res.json({
+      success: true,
+      message: "Profile updated successfully",
+      data: {
+        user: updatedUser,
+      },
+    } as ApiResponse<{ user: User }>);
+  })
+);
+
+// @route   GET /api/users/search
+// @desc    Search users
+// @access  Public
+router.get(
+  "/search",
+  optionalAuth,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const {
+      q: query = "",
+      page = "1",
+      limit = "20",
+      sort = "username",
+      order = "asc",
+    } = req.query as Record<string, string>;
+
+    if (!query || query.length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: "Search query must be at least 2 characters long",
+      } as ApiResponse);
+    }
+
+    let queryBuilder = supabaseAdmin
+      .from("users")
+      .select(
+        "id, username, full_name, avatar_url, is_verified, is_business, business_name, join_date"
+      )
+      .or(
+        `username.ilike.%${query}%, full_name.ilike.%${query}%, business_name.ilike.%${query}%`
+      )
+      .eq("is_active", true);
+
+    // Apply sorting
+    const validSorts = ["username", "full_name", "join_date"];
+    const sortField = validSorts.includes(sort) ? sort : "username";
+    const sortOrder = order === "desc" ? "desc" : "asc";
+
+    queryBuilder = queryBuilder.order(sortField, {
+      ascending: sortOrder === "asc",
+    });
+
+    // Apply pagination
+    const pageNum = Math.max(1, parseInt(page));
+    const pageSize = Math.min(50, Math.max(1, parseInt(limit)));
+    const offset = (pageNum - 1) * pageSize;
+
+    queryBuilder = queryBuilder.range(offset, offset + pageSize - 1);
+
+    const { data: users, error, count } = await queryBuilder;
+
+    if (error) {
+      throw new Error("Failed to search users");
+    }
+
+    // Get total count for pagination
+    const { count: totalCount } = await supabaseAdmin
+      .from("users")
+      .select("*", { count: "exact", head: true })
+      .or(
+        `username.ilike.%${query}%, full_name.ilike.%${query}%, business_name.ilike.%${query}%`
+      )
+      .eq("is_active", true);
+
+    const pagination = buildPaginationMetadata(
+      pageNum,
+      pageSize,
+      totalCount || 0
+    );
+
+    res.json({
+      success: true,
+      data: users || [],
+      pagination,
+    } as PaginatedResponse<Partial<User>>);
+  })
+);
+
+// @route   GET /api/users/:username
+// @desc    Get user profile by username
+// @access  Public
+router.get(
+  "/:username",
+  optionalAuth,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { username } = req.params;
+
+    if (!username) {
+      throw notFoundError("Username");
+    }
+
+    // Base user data
+    let selectFields =
+      "id, username, full_name, avatar_url, bio, location, website, is_verified, is_business, business_name, business_type, join_date";
+
+    // Get current user's profile to check ownership
+    let currentUserProfile = null;
+    if (req.user) {
+      const { data: profile } = await supabaseAdmin
+        .from("users")
+        .select("username, role")
+        .eq("id", req.user.id)
+        .single();
+      currentUserProfile = profile;
+    }
+
+    // Add private fields if user is viewing own profile or is admin
+    const isOwnProfile =
+      currentUserProfile && currentUserProfile.username === username;
+    const isAdmin =
+      currentUserProfile &&
+      (currentUserProfile.role === "admin" ||
+        currentUserProfile.role === "moderator");
+
+    if (isOwnProfile || isAdmin) {
+      selectFields +=
+        ", email, phone, privacy_settings, notification_settings, last_active";
+    }
+
+    const { data: userProfile, error } = await supabaseAdmin
+      .from("users")
+      .select(selectFields)
+      .eq("username", username)
+      .eq("is_active", true)
+      .single();
+
+    if (error || !userProfile) {
+      throw notFoundError("User");
+    }
+
+    // Type assertion to ensure userProfile is the correct type
+    const user = userProfile as any;
+
+    // Get user's vehicles count (public only unless own profile)
+    const vehicleQuery = supabaseAdmin
+      .from("vehicles")
+      .select("*", { count: "exact", head: true })
+      .eq("owner_id", user.id);
+
+    if (!isOwnProfile && !isAdmin) {
+      vehicleQuery.eq("is_public", true);
+    }
+
+    const { count: vehicleCount } = await vehicleQuery;
+
+    // Get user's forum posts count
+    const { count: postCount } = await supabaseAdmin
+      .from("forum_posts")
+      .select("*", { count: "exact", head: true })
+      .eq("author_id", user.id);
+
+    // Get user's marketplace listings count (active only)
+    const { count: listingCount } = await supabaseAdmin
+      .from("marketplace_listings")
+      .select("*", { count: "exact", head: true })
+      .eq("seller_id", user.id)
+      .eq("is_active", true);
+
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          full_name: user.full_name,
+          avatar_url: user.avatar_url,
+          bio: user.bio,
+          location: user.location,
+          website: user.website,
+          phone: user.phone,
+          is_verified: user.is_verified,
+          is_business: user.is_business,
+          business_name: user.business_name,
+          business_type: user.business_type,
+          join_date: user.join_date,
+          last_active: user.last_active,
+          privacy_settings: user.privacy_settings,
+          notification_settings: user.notification_settings,
+          created_at: user.created_at || new Date().toISOString(),
+          updated_at: user.updated_at || new Date().toISOString(),
+          stats: {
+            vehicles: vehicleCount || 0,
+            posts: postCount || 0,
+            listings: listingCount || 0,
+          },
+        },
+      },
+    });
+  })
+);
+
+// @route   GET /api/users/:username/vehicles
+// @desc    Get user's vehicles
+// @access  Public (filtered based on privacy)
+router.get(
+  "/:username/vehicles",
+  optionalAuth,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { username } = req.params;
+    const { page = "1", limit = "20" } = req.query as Record<string, string>;
+
+    // Get user ID from username
+    const { data: user, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("username", username)
+      .eq("is_active", true)
+      .single();
+
+    if (userError || !user) {
+      throw notFoundError("User");
+    }
+
+    const isOwnProfile = req.user && req.user.id === user.id;
+    const isAdmin =
+      req.user && (req.user.role === "admin" || req.user.role === "moderator");
+
+    let vehicleQuery = supabaseAdmin
+      .from("vehicles")
+      .select("*")
+      .eq("owner_id", user.id)
+      .order("created_at", { ascending: false });
+
+    // Filter by privacy unless own profile or admin
+    if (!isOwnProfile && !isAdmin) {
+      vehicleQuery = vehicleQuery.eq("is_public", true);
+    }
+
+    // Apply pagination
+    const pageNum = Math.max(1, parseInt(page));
+    const pageSize = Math.min(50, Math.max(1, parseInt(limit)));
+    const offset = (pageNum - 1) * pageSize;
+
+    vehicleQuery = vehicleQuery.range(offset, offset + pageSize - 1);
+
+    const { data: vehicles, error } = await vehicleQuery;
+
+    if (error) {
+      throw new Error("Failed to fetch user vehicles");
+    }
+
+    // Get total count
+    let countQuery = supabaseAdmin
+      .from("vehicles")
+      .select("*", { count: "exact", head: true })
+      .eq("owner_id", user.id);
+
+    if (!isOwnProfile && !isAdmin) {
+      countQuery = countQuery.eq("is_public", true);
+    }
+
+    const { count: totalCount } = await countQuery;
+
+    const pagination = buildPaginationMetadata(
+      pageNum,
+      pageSize,
+      totalCount || 0
+    );
+
+    res.json({
+      success: true,
+      data: vehicles || [],
+      pagination,
+    } as PaginatedResponse);
+  })
+);
+
+// @route   GET /api/users/:username/posts
+// @desc    Get user's forum posts
+// @access  Public
+router.get(
+  "/:username/posts",
+  optionalAuth,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { username } = req.params;
+    const { page = "1", limit = "20" } = req.query as Record<string, string>;
+
+    // Get user ID from username
+    const { data: user, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("username", username)
+      .eq("is_active", true)
+      .single();
+
+    if (userError || !user) {
+      throw notFoundError("User");
+    }
+
+    // Apply pagination
+    const pageNum = Math.max(1, parseInt(page));
+    const pageSize = Math.min(50, Math.max(1, parseInt(limit)));
+    const offset = (pageNum - 1) * pageSize;
+
+    const { data: posts, error } = await supabaseAdmin
+      .from("forum_posts")
+      .select(
+        `
+      *,
+      category:forum_categories(name, slug, color),
+      author:users(username, full_name, avatar_url, is_verified)
+    `
+      )
+      .eq("author_id", user.id)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      throw new Error("Failed to fetch user posts");
+    }
+
+    // Get total count
+    const { count: totalCount } = await supabaseAdmin
+      .from("forum_posts")
+      .select("*", { count: "exact", head: true })
+      .eq("author_id", user.id);
+
+    const pagination = buildPaginationMetadata(
+      pageNum,
+      pageSize,
+      totalCount || 0
+    );
+
+    res.json({
+      success: true,
+      data: posts || [],
+      pagination,
+    } as PaginatedResponse);
+  })
+);
+
+// @route   POST /api/users/:username/follow
+// @desc    Follow/unfollow a user
+// @access  Private
+router.post(
+  "/:username/follow",
+  authenticateToken,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { username } = req.params;
+
+    // Get target user
+    const { data: targetUser, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("username", username)
+      .eq("is_active", true)
+      .single();
+
+    if (userError || !targetUser) {
+      throw notFoundError("User");
+    }
+
+    // Can't follow yourself
+    if (targetUser.id === req.user!.id) {
+      return res.status(400).json({
+        success: false,
+        error: "Cannot follow yourself",
+      } as ApiResponse);
+    }
+
+    // Check if already following
+    const { data: existingFollow } = await supabaseAdmin
+      .from("user_follows")
+      .select("id")
+      .eq("follower_id", req.user!.id)
+      .eq("following_id", targetUser.id)
+      .single();
+
+    if (existingFollow) {
+      // Unfollow
+      const { error: unfollowError } = await supabaseAdmin
+        .from("user_follows")
+        .delete()
+        .eq("follower_id", req.user!.id)
+        .eq("following_id", targetUser.id);
+
+      if (unfollowError) {
+        throw new Error("Failed to unfollow user");
+      }
+
+      res.json({
+        success: true,
+        message: "User unfollowed successfully",
+        data: { following: false },
+      } as ApiResponse<{ following: boolean }>);
+    } else {
+      // Follow
+      const { error: followError } = await supabaseAdmin
+        .from("user_follows")
+        .insert({
+          follower_id: req.user!.id,
+          following_id: targetUser.id,
+        });
+
+      if (followError) {
+        throw new Error("Failed to follow user");
+      }
+
+      res.json({
+        success: true,
+        message: "User followed successfully",
+        data: { following: true },
+      } as ApiResponse<{ following: boolean }>);
+    }
+  })
+);
+
+// @route   GET /api/users/:username/followers
+// @desc    Get user's followers
+// @access  Public
+router.get(
+  "/:username/followers",
+  optionalAuth,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { username } = req.params;
+    const { page = "1", limit = "20" } = req.query as Record<string, string>;
+
+    // Get user ID from username
+    const { data: user, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("username", username)
+      .eq("is_active", true)
+      .single();
+
+    if (userError || !user) {
+      throw notFoundError("User");
+    }
+
+    // Apply pagination
+    const pageNum = Math.max(1, parseInt(page));
+    const pageSize = Math.min(50, Math.max(1, parseInt(limit)));
+    const offset = (pageNum - 1) * pageSize;
+
+    const { data: followers, error } = await supabaseAdmin
+      .from("user_follows")
+      .select(
+        `
+      created_at,
+      follower:users(id, username, full_name, avatar_url, is_verified)
+    `
+      )
+      .eq("following_id", user.id)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      throw new Error("Failed to fetch followers");
+    }
+
+    // Get total count
+    const { count: totalCount } = await supabaseAdmin
+      .from("user_follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", user.id);
+
+    const pagination = buildPaginationMetadata(
+      pageNum,
+      pageSize,
+      totalCount || 0
+    );
+
+    res.json({
+      success: true,
+      data: followers || [],
+      pagination,
+    } as PaginatedResponse);
+  })
+);
+
+// @route   GET /api/users/:username/following
+// @desc    Get users that this user is following
+// @access  Public
+router.get(
+  "/:username/following",
+  optionalAuth,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { username } = req.params;
+    const { page = "1", limit = "20" } = req.query as Record<string, string>;
+
+    // Get user ID from username
+    const { data: user, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("username", username)
+      .eq("is_active", true)
+      .single();
+
+    if (userError || !user) {
+      throw notFoundError("User");
+    }
+
+    // Apply pagination
+    const pageNum = Math.max(1, parseInt(page));
+    const pageSize = Math.min(50, Math.max(1, parseInt(limit)));
+    const offset = (pageNum - 1) * pageSize;
+
+    const { data: following, error } = await supabaseAdmin
+      .from("user_follows")
+      .select(
+        `
+      created_at,
+      following:users(id, username, full_name, avatar_url, is_verified)
+    `
+      )
+      .eq("follower_id", user.id)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      throw new Error("Failed to fetch following");
+    }
+
+    // Get total count
+    const { count: totalCount } = await supabaseAdmin
+      .from("user_follows")
+      .select("*", { count: "exact", head: true })
+      .eq("follower_id", user.id);
+
+    const pagination = buildPaginationMetadata(
+      pageNum,
+      pageSize,
+      totalCount || 0
+    );
+
+    res.json({
+      success: true,
+      data: following || [],
+      pagination,
+    } as PaginatedResponse);
+  })
+);
 
 export default router;

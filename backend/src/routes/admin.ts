@@ -1,5 +1,4 @@
-import * as express from 'express';
-import { Request, Response, Router } from 'express';
+import express, { Request, Response, Router } from 'express';
 import { AuthenticatedRequest } from '../types';
 import { supabaseAdmin } from '../services/supabaseClient';
 import { validate, adminSchemas } from '../middleware/validation';

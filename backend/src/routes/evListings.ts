@@ -1,17 +1,31 @@
-import express, { Request, Response, Router } from 'express';
-import { createClient } from '@supabase/supabase-js';
-import { authenticateToken, optionalAuth } from '../middleware/auth';
-import { validate } from '../middleware/validation';
-import { toString, toNumber } from '../utils/typeUtils';
-import Joi from 'joi';
+import express, { Request, Response, Router } from "express";
+import {
+  supabaseAdmin,
+  buildPagination,
+  buildPaginationMetadata,
+  isValidUUID,
+} from "../services/supabaseClient";
+import { authenticateToken, optionalAuth } from "../middleware/auth";
+import { validate, commonSchemas } from "../middleware/validation";
+import {
+  asyncHandler,
+  notFoundError,
+  forbiddenError,
+  createError,
+} from "../middleware/errorHandler";
+import { AuthenticatedRequest } from "../types";
+import {
+  EVListing,
+  User,
+  ApiResponse,
+  PaginatedResponse,
+} from "../types/database";
+import { toString, toNumber } from "../utils/typeUtils";
+import Joi from "joi";
 
 const router: Router = express.Router();
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Using supabaseAdminAdmin from services
 
 // TypeScript interfaces
 interface EVListingsQuery {
@@ -24,9 +38,9 @@ interface EVListingsQuery {
   min_range?: number;
   max_range?: number;
   body_type?: string;
-  availability_status?: 'available' | 'coming_soon' | 'discontinued';
-  sort?: 'year' | 'price' | 'range' | 'created_at';
-  order?: 'asc' | 'desc';
+  availability_status?: "available" | "coming_soon" | "discontinued";
+  sort?: "year" | "price" | "range" | "created_at";
+  order?: "asc" | "desc";
   search?: string;
 }
 
@@ -46,7 +60,7 @@ interface CreateEVListingRequest {
   charging_speed_ac?: number;
   starting_price?: number;
   max_price?: number;
-  availability_status?: 'available' | 'coming_soon' | 'discontinued';
+  availability_status?: "available" | "coming_soon" | "discontinued";
   images?: string[];
   specifications?: object;
   features?: string[];
@@ -56,14 +70,18 @@ interface CreateEVListingRequest {
 
 interface UpdateEVListingRequest extends CreateEVListingRequest {}
 
-// Validation schemas
+// Validation schemas - using local definition since not in validation middleware
 const evListingSchema = Joi.object({
   make: Joi.string().required().max(50),
   model: Joi.string().required().max(50),
-  year: Joi.number().integer().min(2010).max(new Date().getFullYear() + 2).required(),
-  trim: Joi.string().max(50).allow(''),
-  body_type: Joi.string().max(30).allow(''),
-  drivetrain: Joi.string().max(20).allow(''),
+  year: Joi.number()
+    .integer()
+    .min(2010)
+    .max(new Date().getFullYear() + 2)
+    .required(),
+  trim: Joi.string().max(50).allow(""),
+  body_type: Joi.string().max(30).allow(""),
+  drivetrain: Joi.string().max(20).allow(""),
   battery_capacity: Joi.number().positive().allow(null),
   range_epa: Joi.number().integer().positive().allow(null),
   range_wltp: Joi.number().integer().positive().allow(null),
@@ -73,35 +91,48 @@ const evListingSchema = Joi.object({
   charging_speed_ac: Joi.number().positive().allow(null),
   starting_price: Joi.number().positive().allow(null),
   max_price: Joi.number().positive().allow(null),
-  availability_status: Joi.string().valid('available', 'coming_soon', 'discontinued').default('available'),
+  availability_status: Joi.string()
+    .valid("available", "coming_soon", "discontinued")
+    .default("available"),
   images: Joi.array().items(Joi.string().uri()).max(10),
   specifications: Joi.object(),
   features: Joi.array().items(Joi.string().max(100)),
-  description: Joi.string().max(2000).allow(''),
-  manufacturer_website: Joi.string().uri().allow('')
+  description: Joi.string().max(2000).allow(""),
+  manufacturer_website: Joi.string().uri().allow(""),
 });
 
-const querySchema = Joi.object({
-  page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(50).default(20),
-  make: Joi.string().max(50),
-  year: Joi.number().integer().min(2010).max(new Date().getFullYear() + 2),
-  min_price: Joi.number().positive(),
-  max_price: Joi.number().positive(),
-  min_range: Joi.number().integer().positive(),
-  max_range: Joi.number().integer().positive(),
-  body_type: Joi.string().max(30),
-  availability_status: Joi.string().valid('available', 'coming_soon', 'discontinued'),
-  sort: Joi.string().valid('year', 'price', 'range', 'created_at').default('created_at'),
-  order: Joi.string().valid('asc', 'desc').default('desc'),
-  search: Joi.string().max(100)
-});
+const evListingSchemas = {
+  create: evListingSchema,
+  update: evListingSchema.fork(
+    Object.keys(evListingSchema.describe().keys),
+    (schema) => schema.optional()
+  ),
+};
+
+// Using imported commonSchemas instead of local definition
+// const querySchema = Joi.object({
+//   page: Joi.number().integer().min(1).default(1),
+//   limit: Joi.number().integer().min(1).max(50).default(20),
+//   make: Joi.string().max(50),
+//   year: Joi.number().integer().min(2010).max(new Date().getFullYear() + 2),
+//   min_price: Joi.number().positive(),
+//   max_price: Joi.number().positive(),
+//   min_range: Joi.number().integer().positive(),
+//   max_range: Joi.number().integer().positive(),
+//   body_type: Joi.string().max(30),
+//   availability_status: Joi.string().valid('available', 'coming_soon', 'discontinued'),
+//   sort: Joi.string().valid('year', 'price', 'range', 'created_at').default('created_at'),
+//   order: Joi.string().valid('asc', 'desc').default('desc'),
+//   search: Joi.string().max(100)
+// });
 
 // @route   GET /api/ev-listings
 // @desc    Get all EV listings with filtering and pagination
 // @access  Public
-router.get('/', validate(querySchema, 'query'), async (req: Request<{}, {}, {}, EVListingsQuery>, res: Response) => {
-  try {
+router.get(
+  "/",
+  validate(commonSchemas.pagination, "query"),
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     const {
       page,
       limit,
@@ -115,55 +146,57 @@ router.get('/', validate(querySchema, 'query'), async (req: Request<{}, {}, {}, 
       availability_status,
       sort,
       order,
-      search
+      search,
     } = req.query;
 
     const offset = (toNumber(page, 1) - 1) * toNumber(limit, 20);
 
     // Build query
-    let query = supabase
-      .from('ev_listings')
-      .select('*', { count: 'exact' });
+    let query = supabaseAdmin
+      .from("ev_listings")
+      .select("*", { count: "exact" });
 
     // Apply filters
     if (make) {
-      query = query.ilike('make', `%${make}%`);
+      query = query.ilike("make", `%${make}%`);
     }
 
     if (year) {
-      query = query.eq('year', year);
+      query = query.eq("year", year);
     }
 
     if (min_price) {
-      query = query.gte('starting_price', min_price);
+      query = query.gte("starting_price", min_price);
     }
 
     if (max_price) {
-      query = query.lte('starting_price', max_price);
+      query = query.lte("starting_price", max_price);
     }
 
     if (min_range) {
-      query = query.gte('range_epa', min_range);
+      query = query.gte("range_epa", min_range);
     }
 
     if (max_range) {
-      query = query.lte('range_epa', max_range);
+      query = query.lte("range_epa", max_range);
     }
 
     if (body_type) {
-      query = query.eq('body_type', body_type);
+      query = query.eq("body_type", body_type);
     }
 
     if (availability_status) {
-      query = query.eq('availability_status', availability_status);
+      query = query.eq("availability_status", availability_status);
     }
 
     if (search) {
-      query = query.or(`make.ilike.%${search}%,model.ilike.%${search}%,description.ilike.%${search}%`);
+      query = query.or(
+        `make.ilike.%${search}%,model.ilike.%${search}%,description.ilike.%${search}%`
+      );
     }
 
     // Apply sorting
-    query = query.order(sort, { ascending: order === 'asc' });
+    query = query.order(sort, { ascending: order === "asc" });
 
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
@@ -171,10 +204,10 @@ router.get('/', validate(querySchema, 'query'), async (req: Request<{}, {}, {}, 
     const { data: listings, error, count } = await query;
 
     if (error) {
-      console.error('Error fetching EV listings:', error);
+      console.error("Error fetching EV listings:", error);
       return res.status(500).json({
         success: false,
-        message: 'Failed to fetch EV listings'
+        message: "Failed to fetch EV listings",
       });
     }
 
@@ -189,277 +222,246 @@ router.get('/', validate(querySchema, 'query'), async (req: Request<{}, {}, {}, 
         total: count,
         totalPages,
         hasNext: page < totalPages,
-        hasPrev: page > 1
-      }
+        hasPrev: page > 1,
+      },
     });
-  } catch (error) {
-    console.error('Error in GET /ev-listings:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
-});
+  })
+);
 
 // @route   GET /api/ev-listings/:id
 // @desc    Get EV listing by ID
 // @access  Public
-router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
-  try {
+router.get(
+  "/:id",
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     const { id } = req.params;
 
-    const { data: listing, error } = await supabase
-      .from('ev_listings')
-      .select('*')
-      .eq('id', id)
+    const { data: listing, error } = await supabaseAdmin
+      .from("ev_listings")
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      if (error.code === "PGRST116") {
         return res.status(404).json({
           success: false,
-          message: 'EV listing not found'
+          message: "EV listing not found",
         });
       }
-      console.error('Error fetching EV listing:', error);
+      console.error("Error fetching EV listing:", error);
       return res.status(500).json({
         success: false,
-        message: 'Failed to fetch EV listing'
+        message: "Failed to fetch EV listing",
       });
     }
 
     res.json({
       success: true,
-      data: listing
+      data: listing,
     });
-  } catch (error) {
-    console.error('Error in GET /ev-listings/:id:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
-});
+  })
+);
 
 // @route   POST /api/ev-listings
 // @desc    Create new EV listing (Admin only)
 // @access  Private (Admin)
-router.post('/', authenticateToken, validate(evListingSchema), async (req: AuthenticatedRequest<{}, {}, CreateEVListingRequest>, res: Response) => {
-  try {
+router.post(
+  "/",
+  authenticateToken,
+  validate(evListingSchemas.create),
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     // Check if user is admin
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', req.user.id)
+    const { data: userProfile } = await supabaseAdmin
+      .from("user_profiles")
+      .select("role")
+      .eq("id", req.user.id)
       .single();
 
-    if (!userProfile || userProfile.role !== 'admin') {
+    if (!userProfile || userProfile.role !== "admin") {
       return res.status(403).json({
         success: false,
-        message: 'Admin access required'
+        message: "Admin access required",
       });
     }
 
-    const { data: listing, error } = await supabase
-      .from('ev_listings')
+    const { data: listing, error } = await supabaseAdmin
+      .from("ev_listings")
       .insert([req.body])
       .select()
       .single();
 
     if (error) {
-      console.error('Error creating EV listing:', error);
+      console.error("Error creating EV listing:", error);
       return res.status(500).json({
         success: false,
-        message: 'Failed to create EV listing'
+        message: "Failed to create EV listing",
       });
     }
 
     res.status(201).json({
       success: true,
       data: listing,
-      message: 'EV listing created successfully'
+      message: "EV listing created successfully",
     });
-  } catch (error) {
-    console.error('Error in POST /ev-listings:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
-});
+  })
+);
 
 // @route   PUT /api/ev-listings/:id
 // @desc    Update EV listing (Admin only)
 // @access  Private (Admin)
-router.put('/:id', authenticateToken, validate(evListingSchema), async (req: AuthenticatedRequest<{ id: string }, {}, UpdateEVListingRequest>, res: Response) => {
-  try {
+router.put(
+  "/:id",
+  authenticateToken,
+  validate(evListingSchemas.update),
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     const { id } = req.params;
 
     // Check if user is admin
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', req.user.id)
+    const { data: userProfile } = await supabaseAdmin
+      .from("user_profiles")
+      .select("role")
+      .eq("id", req.user.id)
       .single();
 
-    if (!userProfile || userProfile.role !== 'admin') {
+    if (!userProfile || userProfile.role !== "admin") {
       return res.status(403).json({
         success: false,
-        message: 'Admin access required'
+        message: "Admin access required",
       });
     }
 
-    const { data: listing, error } = await supabase
-      .from('ev_listings')
+    const { data: listing, error } = await supabaseAdmin
+      .from("ev_listings")
       .update({ ...req.body, updated_at: new Date().toISOString() })
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      if (error.code === "PGRST116") {
         return res.status(404).json({
           success: false,
-          message: 'EV listing not found'
+          message: "EV listing not found",
         });
       }
-      console.error('Error updating EV listing:', error);
+      console.error("Error updating EV listing:", error);
       return res.status(500).json({
         success: false,
-        message: 'Failed to update EV listing'
+        message: "Failed to update EV listing",
       });
     }
 
     res.json({
       success: true,
       data: listing,
-      message: 'EV listing updated successfully'
+      message: "EV listing updated successfully",
     });
-  } catch (error) {
-    console.error('Error in PUT /ev-listings/:id:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
-});
+  })
+);
 
 // @route   DELETE /api/ev-listings/:id
 // @desc    Delete EV listing (Admin only)
 // @access  Private (Admin)
-router.delete('/:id', authenticateToken, async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
-  try {
+router.delete(
+  "/:id",
+  authenticateToken,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     const { id } = req.params;
 
     // Check if user is admin
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', req.user.id)
+    const { data: userProfile } = await supabaseAdmin
+      .from("user_profiles")
+      .select("role")
+      .eq("id", req.user.id)
       .single();
 
-    if (!userProfile || userProfile.role !== 'admin') {
+    if (!userProfile || userProfile.role !== "admin") {
       return res.status(403).json({
         success: false,
-        message: 'Admin access required'
+        message: "Admin access required",
       });
     }
 
-    const { error } = await supabase
-      .from('ev_listings')
+    const { error } = await supabaseAdmin
+      .from("ev_listings")
       .delete()
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) {
-      console.error('Error deleting EV listing:', error);
+      console.error("Error deleting EV listing:", error);
       return res.status(500).json({
         success: false,
-        message: 'Failed to delete EV listing'
+        message: "Failed to delete EV listing",
       });
     }
 
     res.json({
       success: true,
-      message: 'EV listing deleted successfully'
+      message: "EV listing deleted successfully",
     });
-  } catch (error) {
-    console.error('Error in DELETE /ev-listings/:id:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
-});
+  })
+);
 
 // @route   GET /api/ev-listings/makes
 // @desc    Get all available makes
 // @access  Public
-router.get('/meta/makes', async (req: Request, res: Response) => {
-  try {
-    const { data: makes, error } = await supabase
-      .from('ev_listings')
-      .select('make')
-      .order('make');
+router.get(
+  "/meta/makes",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { data: makes, error } = await supabaseAdmin
+      .from("ev_listings")
+      .select("make")
+      .order("make");
 
     if (error) {
-      console.error('Error fetching makes:', error);
+      console.error("Error fetching makes:", error);
       return res.status(500).json({
         success: false,
-        message: 'Failed to fetch makes'
+        message: "Failed to fetch makes",
       });
     }
 
     // Get unique makes
-    const uniqueMakes = [...new Set(makes.map(item => item.make))];
+    const uniqueMakes = [...new Set(makes.map((item) => item.make))];
 
     res.json({
       success: true,
-      data: uniqueMakes
+      data: uniqueMakes,
     });
-  } catch (error) {
-    console.error('Error in GET /ev-listings/meta/makes:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
-});
+  })
+);
 
 // @route   GET /api/ev-listings/models/:make
 // @desc    Get models for a specific make
 // @access  Public
-router.get('/meta/models/:make', async (req: Request<{ make: string }>, res: Response) => {
-  try {
+router.get(
+  "/meta/models/:make",
+  asyncHandler(async (req: Request<{ make: string }>, res: Response) => {
     const { make } = req.params;
 
-    const { data: models, error } = await supabase
-      .from('ev_listings')
-      .select('model')
-      .eq('make', make)
-      .order('model');
+    const { data: models, error } = await supabaseAdmin
+      .from("ev_listings")
+      .select("model")
+      .eq("make", make)
+      .order("model");
 
     if (error) {
-      console.error('Error fetching models:', error);
+      console.error("Error fetching models:", error);
       return res.status(500).json({
         success: false,
-        message: 'Failed to fetch models'
+        message: "Failed to fetch models",
       });
     }
 
     // Get unique models
-    const uniqueModels = [...new Set(models.map(item => item.model))];
+    const uniqueModels = [...new Set(models.map((item) => item.model))];
 
     res.json({
       success: true,
-      data: uniqueModels
+      data: uniqueModels,
     });
-  } catch (error) {
-    console.error('Error in GET /ev-listings/meta/models/:make:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
-});
+  })
+);
 
 export default router;

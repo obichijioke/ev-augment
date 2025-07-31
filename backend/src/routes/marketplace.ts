@@ -3,7 +3,9 @@ import { supabaseAdmin } from '../services/supabaseClient';
 import { validate, marketplaceSchemas, commonSchemas } from '../middleware/validation';
 import { asyncHandler, notFoundError, forbiddenError, validationError } from '../middleware/errorHandler';
 import { authenticateToken, optionalAuth, requireOwnership } from '../middleware/auth';
-import { buildPagination, isValidUUID } from '../services/supabaseClient';
+import { buildPagination, buildPaginationMetadata, isValidUUID } from '../services/supabaseClient';
+import { AuthenticatedRequest } from '../types';
+import { MarketplaceListing, User, ApiResponse, PaginatedResponse } from '../types/database';
 
 // TypeScript interfaces
 interface MarketplaceQuery {

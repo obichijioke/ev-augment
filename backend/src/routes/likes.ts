@@ -3,7 +3,9 @@ import { supabaseAdmin } from '../services/supabaseClient';
 import { validate, likeSchemas, commonSchemas } from '../middleware/validation';
 import { asyncHandler, notFoundError, forbiddenError, validationError } from '../middleware/errorHandler';
 import { authenticateToken, optionalAuth } from '../middleware/auth';
-import { buildPagination, isValidUUID } from '../services/supabaseClient';
+import { buildPagination, buildPaginationMetadata, isValidUUID } from '../services/supabaseClient';
+import { AuthenticatedRequest } from '../types';
+import { User, ApiResponse, PaginatedResponse } from '../types/database';
 import { toString, toNumber } from '../utils/typeUtils';
 
 // TypeScript interfaces
@@ -239,7 +241,7 @@ router.post('/', authenticateToken, validate(likeSchemas.create), asyncHandler(a
 // @route   GET /api/likes/entity/:entityType/:entityId
 // @desc    Get likes for a specific entity
 // @access  Public
-router.get('/entity/:entityType/:entityId', optionalAuth, validate(commonSchemas.pagination, 'query'), asyncHandler(async (req: Request, res: Response) => {
+router.get('/entity/:entityType/:entityId', optionalAuth, validate(commonSchemas.pagination, 'query'), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { entityType, entityId } = req.params;
   const { page, limit } = req.query;
   const { from, to } = buildPagination(parseInt(page as string), parseInt(limit as string));
@@ -301,7 +303,7 @@ router.get('/entity/:entityType/:entityId', optionalAuth, validate(commonSchemas
 router.get('/user/:userId', validate(commonSchemas.pagination, 'query'), asyncHandler(async (req: Request, res: Response) => {
   const { userId } = req.params;
   const { page, limit, entity_type } = req.query;
-  const { from, to } = buildPagination(page, limit);
+  const { from, to } = buildPagination(toNumber(page, 1), toNumber(limit, 20));
 
   if (!isValidUUID(userId)) {
     throw validationError('Invalid user ID format');
@@ -320,8 +322,9 @@ router.get('/user/:userId', validate(commonSchemas.pagination, 'query'), asyncHa
       'marketplace_listing', 'wanted_ad', 'vehicle'
     ];
     
-    if (validEntityTypes.includes(entity_type)) {
-      query = query.eq('entity_type', entity_type);
+    const entityTypeStr = toString(entity_type);
+    if (validEntityTypes.includes(entityTypeStr)) {
+      query = query.eq('entity_type', entityTypeStr);
     }
   }
 
@@ -616,7 +619,7 @@ router.delete('/:id', authenticateToken, asyncHandler(async (req: Request, res: 
 router.get('/popular/:entityType', validate(commonSchemas.pagination, 'query'), asyncHandler(async (req: Request, res: Response) => {
   const { entityType } = req.params;
   const { page, limit, timeframe = '30' } = req.query;
-  const { from, to } = buildPagination(page, limit);
+  const { from, to } = buildPagination(toNumber(page, 1), toNumber(limit, 20));
 
   const validEntityTypes = [
     'forum_post', 'forum_reply', 'blog_post', 'blog_comment', 

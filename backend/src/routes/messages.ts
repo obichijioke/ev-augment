@@ -3,7 +3,8 @@ import { supabaseAdmin } from '../services/supabaseClient';
 import { validate, messageSchemas, commonSchemas } from '../middleware/validation';
 import { asyncHandler, notFoundError, forbiddenError, validationError } from '../middleware/errorHandler';
 import { authenticateToken } from '../middleware/auth';
-import { buildPagination, isValidUUID } from '../services/supabaseClient';
+import { buildPagination, buildPaginationMetadata, isValidUUID } from '../services/supabaseClient';
+import { User, ApiResponse, PaginatedResponse } from '../types/database';
 import { toString, toNumber } from '../utils/typeUtils';
 import { AuthenticatedRequest } from '../types';
 

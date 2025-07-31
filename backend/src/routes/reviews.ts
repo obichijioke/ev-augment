@@ -1,16 +1,18 @@
-const express = require('express');
-const { supabaseAdmin } = require('../services/supabaseClient');
-const { validate, reviewSchemas, commonSchemas } = require('../middleware/validation');
-const { asyncHandler, notFoundError, forbiddenError, validationError } = require('../middleware/errorHandler');
-const { authenticateToken, optionalAuth, requireOwnership, requireModerator } = require('../middleware/auth');
-const { buildPagination, isValidUUID } = require('../services/supabaseClient');
+import express, { Router, Response } from 'express';
+import { supabaseAdmin, buildPagination, buildPaginationMetadata, isValidUUID } from '../services/supabaseClient';
+import { validate, reviewSchemas, commonSchemas } from '../middleware/validation';
+import { asyncHandler, notFoundError, forbiddenError, validationError } from '../middleware/errorHandler';
+import { authenticateToken, optionalAuth, requireOwnership, requireModerator } from '../middleware/auth';
+import { AuthenticatedRequest } from '../types';
+import { User, ApiResponse, PaginatedResponse } from '../types/database';
+import { toString, toNumber } from '../utils/typeUtils';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 // @route   GET /api/reviews
 // @desc    Get all reviews (with filtering)
 // @access  Public
-router.get('/', optionalAuth, validate(commonSchemas.pagination, 'query'), asyncHandler(async (req, res) => {
+router.get('/', optionalAuth, validate(commonSchemas.pagination, 'query'), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { 
     page, 
     limit, 
@@ -22,7 +24,7 @@ router.get('/', optionalAuth, validate(commonSchemas.pagination, 'query'), async
     sort, 
     sortBy 
   } = req.query;
-  const { from, to } = buildPagination(page, limit);
+  const { from, to } = buildPagination(toNumber(page, 1), toNumber(limit, 20));
 
   let query = supabaseAdmin
     .from('reviews')
@@ -37,20 +39,20 @@ router.get('/', optionalAuth, validate(commonSchemas.pagination, 'query'), async
   if (entity_type) {
     query = query.eq('entity_type', entity_type);
   }
-  if (entity_id && isValidUUID(entity_id)) {
+  if (entity_id && isValidUUID(toString(entity_id))) {
     query = query.eq('entity_id', entity_id);
   }
-  if (reviewer_id && isValidUUID(reviewer_id)) {
+  if (reviewer_id && isValidUUID(toString(reviewer_id))) {
     query = query.eq('reviewer_id', reviewer_id);
   }
   if (rating_min) {
-    const minRating = parseInt(rating_min);
+    const minRating = parseInt(toString(rating_min));
     if (minRating >= 1 && minRating <= 5) {
       query = query.gte('rating', minRating);
     }
   }
   if (rating_max) {
-    const maxRating = parseInt(rating_max);
+    const maxRating = parseInt(toString(rating_max));
     if (maxRating >= 1 && maxRating <= 5) {
       query = query.lte('rating', maxRating);
     }
@@ -58,7 +60,7 @@ router.get('/', optionalAuth, validate(commonSchemas.pagination, 'query'), async
 
   // Apply sorting
   const validSortFields = ['created_at', 'updated_at', 'rating', 'helpful_count'];
-  const sortField = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+  const sortField = validSortFields.includes(toString(sortBy)) ? toString(sortBy) : 'created_at';
   const sortOrder = sort === 'asc' ? { ascending: true } : { ascending: false };
   
   query = query.order(sortField, sortOrder);
@@ -74,10 +76,10 @@ router.get('/', optionalAuth, validate(commonSchemas.pagination, 'query'), async
     data: {
       reviews,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: toNumber(page, 1),
+        limit: toNumber(limit, 20),
         total: count,
-        pages: Math.ceil(count / limit)
+        pages: Math.ceil(count / toNumber(limit, 20))
       }
     }
   });
@@ -86,11 +88,11 @@ router.get('/', optionalAuth, validate(commonSchemas.pagination, 'query'), async
 // @route   POST /api/reviews
 // @desc    Create a new review
 // @access  Private
-router.post('/', authenticateToken, validate(reviewSchemas.create), asyncHandler(async (req, res) => {
+router.post('/', authenticateToken, validate(reviewSchemas.create), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { entity_type, entity_id, rating, title, content, pros, cons } = req.body;
 
   // Validate entity_id format
-  if (!isValidUUID(entity_id)) {
+  if (!isValidUUID(toString(entity_id))) {
     throw validationError('Invalid entity ID format');
   }
 
@@ -202,7 +204,7 @@ router.post('/', authenticateToken, validate(reviewSchemas.create), asyncHandler
 // @route   GET /api/reviews/:id
 // @desc    Get review by ID
 // @access  Public
-router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
+router.get('/:id', optionalAuth, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -250,7 +252,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
 // @route   PUT /api/reviews/:id
 // @desc    Update review
 // @access  Private (Owner only)
-router.put('/:id', authenticateToken, requireOwnership('id', 'reviewer_id'), validate(reviewSchemas.update), asyncHandler(async (req, res) => {
+router.put('/:id', authenticateToken, requireOwnership('id', 'reviewer_id'), validate(reviewSchemas.update), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -303,7 +305,7 @@ router.put('/:id', authenticateToken, requireOwnership('id', 'reviewer_id'), val
 // @route   DELETE /api/reviews/:id
 // @desc    Delete review
 // @access  Private (Owner or Moderator)
-router.delete('/:id', authenticateToken, asyncHandler(async (req, res) => {
+router.delete('/:id', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -350,7 +352,7 @@ router.delete('/:id', authenticateToken, asyncHandler(async (req, res) => {
 // @route   POST /api/reviews/:id/helpful
 // @desc    Mark review as helpful or not helpful
 // @access  Private
-router.post('/:id/helpful', authenticateToken, asyncHandler(async (req, res) => {
+router.post('/:id/helpful', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
   const { is_helpful } = req.body;
 
@@ -474,10 +476,10 @@ router.post('/:id/helpful', authenticateToken, asyncHandler(async (req, res) => 
 // @route   GET /api/reviews/entity/:entityType/:entityId
 // @desc    Get reviews for a specific entity
 // @access  Public
-router.get('/entity/:entityType/:entityId', validate(commonSchemas.pagination, 'query'), asyncHandler(async (req, res) => {
+router.get('/entity/:entityType/:entityId', validate(commonSchemas.pagination, 'query'), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { entityType, entityId } = req.params;
   const { page, limit, rating_filter, sort, sortBy } = req.query;
-  const { from, to } = buildPagination(page, limit);
+  const { from, to } = buildPagination(toNumber(page, 1), toNumber(limit, 20));
 
   if (!isValidUUID(entityId)) {
     throw validationError('Invalid entity ID format');
@@ -501,7 +503,7 @@ router.get('/entity/:entityType/:entityId', validate(commonSchemas.pagination, '
 
   // Apply rating filter
   if (rating_filter) {
-    const rating = parseInt(rating_filter);
+    const rating = parseInt(toString(rating_filter));
     if (rating >= 1 && rating <= 5) {
       query = query.eq('rating', rating);
     }
@@ -509,7 +511,7 @@ router.get('/entity/:entityType/:entityId', validate(commonSchemas.pagination, '
 
   // Apply sorting
   const validSortFields = ['created_at', 'updated_at', 'rating', 'helpful_count'];
-  const sortField = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+  const sortField = validSortFields.includes(toString(sortBy)) ? toString(sortBy) : 'created_at';
   const sortOrder = sort === 'asc' ? { ascending: true } : { ascending: false };
   
   query = query.order(sortField, sortOrder);
@@ -548,10 +550,10 @@ router.get('/entity/:entityType/:entityId', validate(commonSchemas.pagination, '
       reviews,
       rating_stats: ratingStats,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: toNumber(page, 1),
+        limit: toNumber(limit, 20),
         total: count,
-        pages: Math.ceil(count / limit)
+        pages: Math.ceil(count / toNumber(limit, 20))
       }
     }
   });
@@ -560,10 +562,10 @@ router.get('/entity/:entityType/:entityId', validate(commonSchemas.pagination, '
 // @route   GET /api/reviews/user/:userId
 // @desc    Get reviews by a specific user
 // @access  Public
-router.get('/user/:userId', validate(commonSchemas.pagination, 'query'), asyncHandler(async (req, res) => {
+router.get('/user/:userId', validate(commonSchemas.pagination, 'query'), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { userId } = req.params;
   const { page, limit, entity_type } = req.query;
-  const { from, to } = buildPagination(page, limit);
+  const { from, to } = buildPagination(toNumber(page, 1), toNumber(limit, 20));
 
   if (!isValidUUID(userId)) {
     throw validationError('Invalid user ID format');
@@ -582,7 +584,7 @@ router.get('/user/:userId', validate(commonSchemas.pagination, 'query'), asyncHa
 
   if (entity_type) {
     const validEntityTypes = ['charging_station', 'marketplace_listing', 'directory_listing', 'vehicle'];
-    if (validEntityTypes.includes(entity_type)) {
+    if (validEntityTypes.includes(toString(entity_type))) {
       query = query.eq('entity_type', entity_type);
     }
   }
@@ -598,10 +600,10 @@ router.get('/user/:userId', validate(commonSchemas.pagination, 'query'), asyncHa
     data: {
       reviews,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: toNumber(page, 1),
+        limit: toNumber(limit, 20),
         total: count,
-        pages: Math.ceil(count / limit)
+        pages: Math.ceil(count / toNumber(limit, 20))
       }
     }
   });
@@ -610,7 +612,7 @@ router.get('/user/:userId', validate(commonSchemas.pagination, 'query'), asyncHa
 // @route   GET /api/reviews/stats/:entityType/:entityId
 // @desc    Get review statistics for an entity
 // @access  Public
-router.get('/stats/:entityType/:entityId', asyncHandler(async (req, res) => {
+router.get('/stats/:entityType/:entityId', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { entityType, entityId } = req.params;
 
   if (!isValidUUID(entityId)) {
@@ -657,4 +659,4 @@ router.get('/stats/:entityType/:entityId', asyncHandler(async (req, res) => {
   });
 }));
 
-module.exports = router;
+export default router;

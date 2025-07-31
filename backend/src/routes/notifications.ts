@@ -1,7 +1,9 @@
 import express, { Request, Response } from 'express';
 import crypto from 'crypto';
 import { supabaseAdmin } from '../services/supabaseClient';
-import { authenticateToken, requireModerator, AuthenticatedRequest } from '../middleware/auth';
+import { authenticateToken, requireModerator } from '../middleware/auth';
+import { AuthenticatedRequest } from '../types';
+import { Notification, User, ApiResponse, PaginatedResponse } from '../types/database';
 import { validate, notificationSchemas } from '../middleware/validation';
 import { asyncHandler, notFoundError, forbiddenError, validationError } from '../middleware/errorHandler';
 import { sendEmail } from '../services/emailService';

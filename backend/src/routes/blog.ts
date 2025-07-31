@@ -1,10 +1,11 @@
 import express, { Router } from 'express';
-import { supabaseAdmin, buildPagination, isValidUUID } from '../services/supabaseClient';
+import { supabaseAdmin, buildPagination, buildPaginationMetadata, isValidUUID } from '../services/supabaseClient';
 import { validate, blogSchemas, commonSchemas } from '../middleware/validation';
 import { asyncHandler, notFoundError, forbiddenError, validationError } from '../middleware/errorHandler';
 import { authenticateToken, optionalAuth, requireOwnership, requireModerator } from '../middleware/auth';
+import { AuthenticatedRequest } from '../types';
+import { BlogPost, User, ApiResponse, PaginatedResponse } from '../types/database';
 import { toString, toNumber } from '../utils/typeUtils';
-import { AuthenticatedRequest } from '../middleware/auth';
 
 // TypeScript interfaces removed to fix compilation errors
 

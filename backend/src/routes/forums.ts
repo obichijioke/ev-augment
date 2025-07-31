@@ -1,7 +1,10 @@
 import express, { Request, Response, Router } from 'express';
-import { supabase } from '../config/supabase';
+import { supabaseAdminAdmin, buildPagination, buildPaginationMetadata, isValidUUID } from '../services/supabaseAdminClient';
 import { authenticateToken, optionalAuth } from '../middleware/auth';
-import { validate } from '../middleware/validation';
+import { validate, forumSchemas, commonSchemas } from '../middleware/validation';
+import { asyncHandler, notFoundError, forbiddenError, validationError } from '../middleware/errorHandler';
+import { AuthenticatedRequest } from '../types';
+import { ForumPost, User, ApiResponse, PaginatedResponse } from '../types/database';
 import { toString, toNumber } from '../utils/typeUtils';
 import Joi from 'joi';
 
@@ -42,7 +45,7 @@ const querySchema = Joi.object({
 // @access  Public
 router.get('/categories', async (req: Request, res: Response) => {
   try {
-    const { data: categories, error } = await supabase
+    const { data: categories, error } = await supabaseAdmin
       .from('forum_categories')
       .select('*')
       .eq('is_active', true)
@@ -91,7 +94,7 @@ router.get('/posts', validate(querySchema, 'query'), async (req: Request, res: R
     const offset = (pageNum - 1) * limitNum;
 
     // Build query with joins for author and category info
-    let query = supabase
+    let query = supabaseAdmin
       .from('forum_posts')
       .select(`
         *,
@@ -167,7 +170,7 @@ router.get('/posts/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
 
     // Get post with author and category info
-    const { data: post, error: postError } = await supabase
+    const { data: post, error: postError } = await supabaseAdmin
       .from('forum_posts')
       .select(`
         *,
@@ -192,7 +195,7 @@ router.get('/posts/:id', async (req: Request, res: Response) => {
     }
 
     // Get comments for the post
-    const { data: comments, error: commentsError } = await supabase
+    const { data: comments, error: commentsError } = await supabaseAdmin
       .from('forum_comments')
       .select(`
         *,
@@ -210,7 +213,7 @@ router.get('/posts/:id', async (req: Request, res: Response) => {
     }
 
     // Increment view count
-    await supabase
+    await supabaseAdmin
       .from('forum_posts')
       .update({ view_count: post.view_count + 1 })
       .eq('id', id);
@@ -240,7 +243,7 @@ router.post('/posts', authenticateToken, validate(postSchema), async (req: Reque
     const { title, content, category_id, is_pinned, is_featured } = req.body;
 
     // Check if user has permission to pin or feature posts
-    const { data: userProfile } = await supabase
+    const { data: userProfile } = await supabaseAdmin
       .from('user_profiles')
       .select('role')
       .eq('id', (req as any).user.id)
@@ -264,7 +267,7 @@ router.post('/posts', authenticateToken, validate(postSchema), async (req: Reque
       is_featured: canModerate ? is_featured : false
     };
 
-    const { data: post, error } = await supabase
+    const { data: post, error } = await supabaseAdmin
       .from('forum_posts')
       .insert([postData])
       .select(`
@@ -305,7 +308,7 @@ router.put('/posts/:id', authenticateToken, validate(postSchema), async (req: Re
     const { title, content, category_id, is_pinned, is_featured } = req.body;
 
     // Get existing post
-    const { data: existingPost, error: fetchError } = await supabase
+    const { data: existingPost, error: fetchError } = await supabaseAdmin
       .from('forum_posts')
       .select('author_id')
       .eq('id', id)
@@ -326,7 +329,7 @@ router.put('/posts/:id', authenticateToken, validate(postSchema), async (req: Re
     }
 
     // Check permissions
-    const { data: userProfile } = await supabase
+    const { data: userProfile } = await supabaseAdmin
       .from('user_profiles')
       .select('role')
       .eq('id', (req as any).user.id)
@@ -362,7 +365,7 @@ router.put('/posts/:id', authenticateToken, validate(postSchema), async (req: Re
       updateData.is_featured = is_featured;
     }
 
-    const { data: post, error } = await supabase
+    const { data: post, error } = await supabaseAdmin
       .from('forum_posts')
       .update(updateData)
       .eq('id', id)
@@ -403,7 +406,7 @@ router.delete('/posts/:id', authenticateToken, async (req: Request, res: Respons
     const { id } = req.params;
 
     // Get existing post
-    const { data: existingPost, error: fetchError } = await supabase
+    const { data: existingPost, error: fetchError } = await supabaseAdmin
       .from('forum_posts')
       .select('author_id')
       .eq('id', id)
@@ -424,7 +427,7 @@ router.delete('/posts/:id', authenticateToken, async (req: Request, res: Respons
     }
 
     // Check permissions
-    const { data: userProfile } = await supabase
+    const { data: userProfile } = await supabaseAdmin
       .from('user_profiles')
       .select('role')
       .eq('id', (req as any).user.id)
@@ -440,7 +443,7 @@ router.delete('/posts/:id', authenticateToken, async (req: Request, res: Respons
       });
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('forum_posts')
       .delete()
       .eq('id', id);
@@ -475,7 +478,7 @@ router.post('/posts/:id/comments', authenticateToken, validate(commentSchema), a
     const { content, parent_id } = req.body;
 
     // Verify post exists
-    const { data: post, error: postError } = await supabase
+    const { data: post, error: postError } = await supabaseAdmin
       .from('forum_posts')
       .select('id, is_locked')
       .eq('id', postId)
@@ -509,7 +512,7 @@ router.post('/posts/:id/comments', authenticateToken, validate(commentSchema), a
       parent_id
     };
 
-    const { data: comment, error } = await supabase
+    const { data: comment, error } = await supabaseAdmin
       .from('forum_comments')
       .insert([commentData])
       .select(`
@@ -549,7 +552,7 @@ router.put('/posts/:id/pin', authenticateToken, async (req: Request, res: Respon
     const { is_pinned } = req.body;
 
     // Check if user is moderator or admin
-    const { data: userProfile } = await supabase
+    const { data: userProfile } = await supabaseAdmin
       .from('user_profiles')
       .select('role')
       .eq('id', (req as any).user.id)
@@ -562,7 +565,7 @@ router.put('/posts/:id/pin', authenticateToken, async (req: Request, res: Respon
       });
     }
 
-    const { data: post, error } = await supabase
+    const { data: post, error } = await supabaseAdmin
       .from('forum_posts')
       .update({ is_pinned, updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -606,7 +609,7 @@ router.put('/posts/:id/lock', authenticateToken, async (req: Request, res: Respo
     const { is_locked } = req.body;
 
     // Check if user is moderator or admin
-    const { data: userProfile } = await supabase
+    const { data: userProfile } = await supabaseAdmin
       .from('user_profiles')
       .select('role')
       .eq('id', (req as any).user.id)
@@ -619,7 +622,7 @@ router.put('/posts/:id/lock', authenticateToken, async (req: Request, res: Respo
       });
     }
 
-    const { data: post, error } = await supabase
+    const { data: post, error } = await supabaseAdmin
       .from('forum_posts')
       .update({ is_locked, updated_at: new Date().toISOString() })
       .eq('id', id)

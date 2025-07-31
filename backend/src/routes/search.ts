@@ -1,15 +1,14 @@
-const express = require('express');
-const router = express.Router();
-const { createClient } = require('@supabase/supabase-js');
-const { optionalAuth } = require('../middleware/auth');
-const { validate } = require('../middleware/validation');
-const Joi = require('joi');
+import express, { Router, Request, Response } from 'express';
+import { supabaseAdmin, buildPagination, buildPaginationMetadata, isValidUUID } from '../services/supabaseClient';
+import { optionalAuth } from '../middleware/auth';
+import { validate, commonSchemas } from '../middleware/validation';
+import { asyncHandler, notFoundError, validationError } from '../middleware/errorHandler';
+import { AuthenticatedRequest } from '../types';
+import { toString, toNumber } from '../utils/typeUtils';
+import { ApiResponse, PaginatedResponse } from '../types/database';
+import Joi from 'joi';
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const router: Router = express.Router();
 
 // Validation schemas
 const searchSchema = Joi.object({
@@ -35,7 +34,7 @@ const suggestionsSchema = Joi.object({
 // @route   GET /api/search
 // @desc    Global search across all content types
 // @access  Public
-router.get('/', optionalAuth, validate(searchSchema, 'query'), async (req, res) => {
+router.get('/', optionalAuth, validate(searchSchema, 'query'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
       q: query,
@@ -75,7 +74,7 @@ router.get('/', optionalAuth, validate(searchSchema, 'query'), async (req, res) 
 
     // Search marketplace listings
     if (type === 'all' || type === 'marketplace') {
-      let marketplaceQuery = supabase
+      let marketplaceQuery = supabaseAdmin
         .from('marketplace_listings')
         .select(`
           id, title, description, price, location, category, condition,
@@ -121,7 +120,7 @@ router.get('/', optionalAuth, validate(searchSchema, 'query'), async (req, res) 
 
     // Search forum posts
     if (type === 'all' || type === 'forums') {
-      let forumQuery = supabase
+      let forumQuery = supabaseAdmin
         .from('forum_posts')
         .select(`
           id, title, content, created_at, updated_at, view_count, like_count, comment_count,
@@ -161,7 +160,7 @@ router.get('/', optionalAuth, validate(searchSchema, 'query'), async (req, res) 
 
     // Search blog posts
     if (type === 'all' || type === 'blog') {
-      let blogQuery = supabase
+      let blogQuery = supabaseAdmin
         .from('blog_posts')
         .select(`
           id, title, excerpt, content, created_at, updated_at, view_count, like_count,
@@ -202,7 +201,7 @@ router.get('/', optionalAuth, validate(searchSchema, 'query'), async (req, res) 
 
     // Search directory businesses
     if (type === 'all' || type === 'directory') {
-      let directoryQuery = supabase
+      let directoryQuery = supabaseAdmin
         .from('directory_businesses')
         .select(`
           id, name, description, category, location, phone, email, website,
@@ -245,7 +244,7 @@ router.get('/', optionalAuth, validate(searchSchema, 'query'), async (req, res) 
 
     // Search charging stations
     if (type === 'all' || type === 'charging') {
-      let chargingQuery = supabase
+      let chargingQuery = supabaseAdmin
         .from('charging_stations')
         .select(`
           id, name, description, location, address, latitude, longitude,
@@ -287,7 +286,7 @@ router.get('/', optionalAuth, validate(searchSchema, 'query'), async (req, res) 
 
     // Search users (if authenticated)
     if ((type === 'all' || type === 'users') && req.user) {
-      let userQuery = supabase
+      let userQuery = supabaseAdmin
         .from('users')
         .select(`
           id, username, email, avatar_url, bio, location,
@@ -327,7 +326,7 @@ router.get('/', optionalAuth, validate(searchSchema, 'query'), async (req, res) 
 
     // Search vehicles
     if (type === 'all' || type === 'vehicles') {
-      let vehicleQuery = supabase
+      let vehicleQuery = supabaseAdmin
         .from('vehicles')
         .select(`
           id, make, model, year, trim, color, vin,
@@ -407,14 +406,14 @@ router.get('/', optionalAuth, validate(searchSchema, 'query'), async (req, res) 
 // @route   GET /api/search/suggestions
 // @desc    Get search suggestions/autocomplete
 // @access  Public
-router.get('/suggestions', validate(suggestionsSchema, 'query'), async (req, res) => {
+router.get('/suggestions', validate(suggestionsSchema, 'query'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { q: query, type, limit } = req.query;
     const suggestions = [];
 
     // Get marketplace suggestions
     if (type === 'all' || type === 'marketplace') {
-      const { data: marketplaceSuggestions } = await supabase
+      const { data: marketplaceSuggestions } = await supabaseAdmin
         .from('marketplace_listings')
         .select('title, category')
         .eq('status', 'active')
@@ -433,7 +432,7 @@ router.get('/suggestions', validate(suggestionsSchema, 'query'), async (req, res
 
     // Get forum suggestions
     if (type === 'all' || type === 'forums') {
-      const { data: forumSuggestions } = await supabase
+      const { data: forumSuggestions } = await supabaseAdmin
         .from('forum_posts')
         .select('title')
         .ilike('title', `%${query}%`)
@@ -450,7 +449,7 @@ router.get('/suggestions', validate(suggestionsSchema, 'query'), async (req, res
 
     // Get blog suggestions
     if (type === 'all' || type === 'blog') {
-      const { data: blogSuggestions } = await supabase
+      const { data: blogSuggestions } = await supabaseAdmin
         .from('blog_posts')
         .select('title, tags')
         .eq('status', 'published')
@@ -469,7 +468,7 @@ router.get('/suggestions', validate(suggestionsSchema, 'query'), async (req, res
 
     // Get directory suggestions
     if (type === 'all' || type === 'directory') {
-      const { data: directorySuggestions } = await supabase
+      const { data: directorySuggestions } = await supabaseAdmin
         .from('directory_businesses')
         .select('name, category')
         .eq('status', 'active')
@@ -488,7 +487,7 @@ router.get('/suggestions', validate(suggestionsSchema, 'query'), async (req, res
 
     // Get user suggestions (if authenticated)
     if ((type === 'all' || type === 'users') && req.user) {
-      const { data: userSuggestions } = await supabase
+      const { data: userSuggestions } = await supabaseAdmin
         .from('users')
         .select('username')
         .ilike('username', `%${query}%`)
@@ -529,7 +528,7 @@ router.get('/suggestions', validate(suggestionsSchema, 'query'), async (req, res
 // @route   GET /api/search/trending
 // @desc    Get trending search terms
 // @access  Public
-router.get('/trending', async (req, res) => {
+router.get('/trending', async (req: AuthenticatedRequest, res: Response) => {
   try {
     // This would typically come from a search analytics table
     // For now, we'll return some static trending terms
@@ -563,14 +562,14 @@ router.get('/trending', async (req, res) => {
 // @route   GET /api/search/filters
 // @desc    Get available search filters
 // @access  Public
-router.get('/filters', async (req, res) => {
+router.get('/filters', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { type } = req.query;
-    const filters = {};
+    const filters: any = {};
 
     // Get marketplace categories
     if (!type || type === 'marketplace') {
-      const { data: marketplaceCategories } = await supabase
+      const { data: marketplaceCategories } = await supabaseAdmin
         .from('marketplace_listings')
         .select('category')
         .eq('status', 'active')
@@ -584,7 +583,7 @@ router.get('/filters', async (req, res) => {
 
     // Get forum categories
     if (!type || type === 'forums') {
-      const { data: forumCategories } = await supabase
+      const { data: forumCategories } = await supabaseAdmin
         .from('forum_categories')
         .select('name, slug')
         .eq('is_active', true)
@@ -597,7 +596,7 @@ router.get('/filters', async (req, res) => {
 
     // Get directory categories
     if (!type || type === 'directory') {
-      const { data: directoryCategories } = await supabase
+      const { data: directoryCategories } = await supabaseAdmin
         .from('directory_businesses')
         .select('category')
         .eq('status', 'active')
@@ -610,7 +609,7 @@ router.get('/filters', async (req, res) => {
     }
 
     // Get common locations
-    const { data: locations } = await supabase
+    const { data: locations } = await supabaseAdmin
       .from('marketplace_listings')
       .select('location')
       .eq('status', 'active')
@@ -619,7 +618,7 @@ router.get('/filters', async (req, res) => {
 
     if (locations) {
       const uniqueLocations = [...new Set(locations.map(item => item.location))]
-        .filter(location => location && location.trim())
+        .filter(location => location && (location as string).trim())
         .sort()
         .slice(0, 20);
       filters.locations = uniqueLocations;
@@ -627,7 +626,7 @@ router.get('/filters', async (req, res) => {
 
     // Get price ranges for marketplace
     if (!type || type === 'marketplace') {
-      const { data: priceData } = await supabase
+      const { data: priceData } = await supabaseAdmin
         .from('marketplace_listings')
         .select('price')
         .eq('status', 'active')
@@ -661,4 +660,4 @@ router.get('/filters', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
