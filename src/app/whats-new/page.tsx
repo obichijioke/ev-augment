@@ -169,13 +169,13 @@ const WhatsNewPage = () => {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'announcement': return 'bg-blue-100 text-blue-800';
-      case 'forum': return 'bg-green-100 text-green-800';
-      case 'marketplace': return 'bg-purple-100 text-purple-800';
-      case 'garage': return 'bg-orange-100 text-orange-800';
-      case 'directory': return 'bg-indigo-100 text-indigo-800';
-      case 'achievement': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'announcement': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
+      case 'forum': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+      case 'marketplace': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400';
+      case 'garage': return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400';
+      case 'directory': return 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400';
+      case 'achievement': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+      default: return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
     }
   };
 
@@ -191,12 +191,12 @@ const WhatsNewPage = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">What&apos;s New</h1>
-          <p className="text-gray-600">Stay updated with the latest from our EV community</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">What&apos;s New</h1>
+          <p className="text-gray-600 dark:text-gray-300">Stay updated with the latest from our EV community</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

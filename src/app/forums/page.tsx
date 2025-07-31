@@ -153,13 +153,13 @@ const ForumsPage = () => {
   });
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Community Forums</h1>
-            <p className="text-gray-600 mt-2">Connect with fellow EV enthusiasts, share experiences, and get answers to your questions.</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Community Forums</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">Connect with fellow EV enthusiasts, share experiences, and get answers to your questions.</p>
           </div>
           <Link href="/forums/new" className="btn-primary">
             <Plus className="h-4 w-4 mr-2" />
@@ -168,8 +168,8 @@ const ForumsPage = () => {
         </div>
 
         {/* Category Navigation */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Categories</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Categories</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             {categories.map((category) => (
               category.id === 'all' ? (
@@ -178,14 +178,14 @@ const ForumsPage = () => {
                   onClick={() => setSelectedCategory(category.id)}
                   className={`p-4 rounded-lg border-2 transition-all duration-200 ${
                     selectedCategory === category.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-700'
                   }`}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-2">{category.icon}</div>
-                    <h3 className="text-sm font-medium text-gray-900 mb-1">{category.name}</h3>
-                    <div className="text-xs text-gray-500">
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">{category.name}</h3>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
                       <div>{category.threads} threads</div>
                       <div>{category.posts} posts</div>
                     </div>
@@ -197,8 +197,8 @@ const ForumsPage = () => {
                   href={`/forums/category/${category.id}`}
                   className={`p-4 rounded-lg border-2 transition-all duration-200 block ${
                     selectedCategory === category.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-700'
                   }`}
                 >
                   <div className="text-center">
@@ -207,8 +207,8 @@ const ForumsPage = () => {
                     ) : (
                       <div className="text-2xl mb-2">{category.icon}</div>
                     )}
-                    <h3 className="text-sm font-medium text-gray-900 mb-1">{category.name}</h3>
-                    <div className="text-xs text-gray-500">
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">{category.name}</h3>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
                       <div>{category.threads} threads</div>
                       <div>{category.posts} posts</div>
                     </div>
@@ -223,7 +223,7 @@ const ForumsPage = () => {
           {/* Main Content */}
           <div className="lg:col-span-3">
             {/* Search and Filters */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -237,7 +237,7 @@ const ForumsPage = () => {
                         window.location.href = `/forums/search?q=${encodeURIComponent(searchQuery.trim())}`;
                       }
                     }}
-                    className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -250,7 +250,7 @@ const ForumsPage = () => {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="latest">Latest Activity</option>
                     <option value="popular">Most Popular</option>
@@ -266,17 +266,17 @@ const ForumsPage = () => {
             </div>
 
             {/* Thread List */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {selectedCategory === 'all' ? 'All Discussions' : `${categories.find(c => c.id === selectedCategory)?.name} Discussions`}
-                  <span className="ml-2 text-sm text-gray-500">({filteredThreads.length} threads)</span>
+                  <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">({filteredThreads.length} threads)</span>
                 </h2>
               </div>
               
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredThreads.map((thread) => (
-                  <div key={thread.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
+                  <div key={thread.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
                     <div className="flex items-start space-x-4">
                       <img
                         src={thread.avatar}
@@ -290,30 +290,30 @@ const ForumsPage = () => {
                             <Pin className="h-4 w-4 text-green-600" />
                           )}
                           {thread.isHot && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400">
                               🔥 Hot
                             </span>
                           )}
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">
                             {thread.category}
                           </span>
                         </div>
                         
-                        <Link href={`/forums/${thread.id}`} className="text-lg font-semibold text-gray-900 hover:text-blue-600 cursor-pointer mb-2 block">
+                        <Link href={`/forums/${thread.id}`} className="text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer mb-2 block">
                           {thread.title}
                         </Link>
                         
                         <div className="flex flex-wrap gap-2 mb-3">
                           {thread.tags.map((tag, index) => (
-                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                               #{tag}
                             </span>
                           ))}
                         </div>
                         
-                        <div className="flex items-center justify-between text-sm text-gray-500">
+                        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                           <div className="flex items-center space-x-4">
-                            <span>by <Link href={`/users/${thread.author}`} className="font-medium text-blue-600 hover:text-blue-800">{thread.author}</Link></span>
+                            <span>by <Link href={`/users/${thread.author}`} className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">{thread.author}</Link></span>
                             <div className="flex items-center space-x-1">
                               <MessageSquare className="h-4 w-4" />
                               <span>{thread.replies} replies</span>
@@ -325,7 +325,7 @@ const ForumsPage = () => {
                           </div>
                           <div className="flex items-center space-x-1">
                             <Clock className="h-4 w-4" />
-                            <span>Last reply {thread.lastActivity} by <Link href={`/users/${thread.lastUser}`} className="text-blue-600 hover:text-blue-800">{thread.lastUser}</Link></span>
+                            <span>Last reply {thread.lastActivity} by <Link href={`/users/${thread.lastUser}`} className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">{thread.lastUser}</Link></span>
                           </div>
                         </div>
                       </div>
@@ -340,43 +340,43 @@ const ForumsPage = () => {
           <div className="lg:col-span-1">
             <div className="space-y-6">
               {/* Forum Stats */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Forum Statistics</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Forum Statistics</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Total Threads</span>
-                    <span className="font-semibold">3,421</span>
+                    <span className="text-gray-600 dark:text-gray-300">Total Threads</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">3,421</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Total Posts</span>
-                    <span className="font-semibold">45,892</span>
+                    <span className="text-gray-600 dark:text-gray-300">Total Posts</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">45,892</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Active Members</span>
-                    <span className="font-semibold">12,847</span>
+                    <span className="text-gray-600 dark:text-gray-300">Active Members</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">12,847</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Online Now</span>
-                    <span className="font-semibold text-green-600">234</span>
+                    <span className="text-gray-600 dark:text-gray-300">Online Now</span>
+                    <span className="font-semibold text-green-600 dark:text-green-400">234</span>
                   </div>
                 </div>
               </div>
 
               {/* Recent Activity */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
                 <div className="space-y-3">
                   <div className="text-sm">
-                    <p className="text-gray-900 font-medium">New reply in Tesla FSD Discussion</p>
-                    <p className="text-gray-500">2 minutes ago</p>
+                    <p className="text-gray-900 dark:text-white font-medium">New reply in Tesla FSD Discussion</p>
+                    <p className="text-gray-500 dark:text-gray-400">2 minutes ago</p>
                   </div>
                   <div className="text-sm">
-                    <p className="text-gray-900 font-medium">New thread: Charging Network Update</p>
-                    <p className="text-gray-500">15 minutes ago</p>
+                    <p className="text-gray-900 dark:text-white font-medium">New thread: Charging Network Update</p>
+                    <p className="text-gray-500 dark:text-gray-400">15 minutes ago</p>
                   </div>
                   <div className="text-sm">
-                    <p className="text-gray-900 font-medium">EVExpert joined the community</p>
-                    <p className="text-gray-500">1 hour ago</p>
+                    <p className="text-gray-900 dark:text-white font-medium">EVExpert joined the community</p>
+                    <p className="text-gray-500 dark:text-gray-400">1 hour ago</p>
                   </div>
                 </div>
               </div>
