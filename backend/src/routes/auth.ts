@@ -120,7 +120,8 @@ router.post('/login', validate(userSchemas.login), asyncHandler(async (req: expr
         full_name: userProfile.full_name,
         avatar_url: userProfile.avatar_url,
         is_verified: userProfile.is_verified,
-        email_confirmed: !!data.user.email_confirmed_at
+        email_confirmed: !!data.user.email_confirmed_at,
+        join_date: userProfile.join_date
       },
       session: {
         access_token: data.session.access_token,

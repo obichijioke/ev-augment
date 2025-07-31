@@ -117,6 +117,7 @@ router.post('/login', validate(userSchemas.login), asyncHandler(async (req, res)
         full_name: userProfile.full_name,
         avatar_url: userProfile.avatar_url,
         is_verified: userProfile.is_verified,
+        join_date: userProfile.join_date,
         email_confirmed: !!data.user.email_confirmed_at
       },
       session: {
