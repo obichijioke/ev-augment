@@ -107,7 +107,11 @@ const transformApiUser = (apiUser: any): User => {
     is_business: apiUser.is_business || false,
     business_name: apiUser.business_name,
     business_type: apiUser.business_type,
-    joinedDate: apiUser.join_date,
+    joinedDate: apiUser.join_date
+      ? apiUser.join_date instanceof Date
+        ? apiUser.join_date.toISOString()
+        : apiUser.join_date
+      : new Date().toISOString(),
     isVerified: apiUser.is_verified,
     emailConfirmed: apiUser.email_confirmed,
     reputation: 0, // Default values for optional fields
