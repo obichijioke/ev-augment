@@ -8,7 +8,8 @@
   --dark-gray: #343A40;
   --light-gray: #F8F9FA;
   --green-accent: #28A745;
-  
+
+  /* Light mode variables (default) */
   --background: var(--clean-white);
   --foreground: var(--dark-gray);
   --card-background: var(--clean-white);
@@ -16,14 +17,32 @@
   --muted: var(--light-gray);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1a1a1a;
-    --foreground: #ededed;
-    --card-background: #2d2d2d;
-    --border: #404040;
-    --muted: #404040;
-  }
+/* Dark mode variables (controlled by next-themes .dark class) */
+.dark {
+  --background: #1a1a1a;
+  --foreground: #ededed;
+  --card-background: #2d2d2d;
+  --border: #404040;
+  --muted: #404040;
+}
+
+/* Prevent browser color scheme from interfering with our theme system */
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* Override any browser default dark mode styles */
+* {
+  border-color: inherit;
+}
+
+/* Ensure form elements don't inherit browser dark mode */
+input, textarea, select {
+  color-scheme: inherit;
 }
 
 body {
@@ -33,11 +52,14 @@ body {
   font-size: 16px;
   line-height: 1.6;
   transition: background-color 0.3s ease, color 0.3s ease;
+  /* Force override any browser defaults */
+  color-scheme: light;
 }
 
 .dark body {
   color: #e5e7eb;
   background-color: #111827;
+  color-scheme: dark;
 }
 
 .btn-primary {

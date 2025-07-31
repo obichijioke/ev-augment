@@ -15,6 +15,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "EV Community Platform",
   description: "Connect with EV enthusiasts, explore vehicles, and discover the electric future",
+  other: {
+    'color-scheme': 'light dark',
+  },
 };
 
 export default function RootLayout({
@@ -27,9 +30,10 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
+          defaultTheme="light"
+          enableSystem={true}
+          disableTransitionOnChange={false}
+          storageKey="ev-community-theme"
         >
           <AuthProvider>
             <Navigation />
