@@ -1,8 +1,21 @@
-'use client';
+"use client";
 
-import { useState, use } from 'react';
-import { ArrowLeft, Search, Filter, SortAsc, MessageSquare, Eye, Clock, Pin, Lock, TrendingUp, Users, Plus } from 'lucide-react';
-import Link from 'next/link';
+import { useState, use } from "react";
+import {
+  ArrowLeft,
+  Search,
+  Filter,
+  SortAsc,
+  MessageSquare,
+  Eye,
+  Clock,
+  Pin,
+  Lock,
+  TrendingUp,
+  Users,
+  Plus,
+} from "lucide-react";
+import Link from "next/link";
 
 interface CategoryPageProps {
   params: Promise<{
@@ -12,165 +25,189 @@ interface CategoryPageProps {
 
 const CategoryPage = ({ params }: CategoryPageProps) => {
   const resolvedParams = use(params);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('latest');
-  const [filterBy, setFilterBy] = useState('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("latest");
+  const [filterBy, setFilterBy] = useState("all");
 
   // Mock category data - in real app, fetch based on resolvedParams.slug
   const categoryData = {
     tesla: {
-      name: 'Tesla',
-      description: 'Discussions about Tesla vehicles, software updates, and experiences',
-      icon: '🚗',
-      color: 'bg-red-500',
+      name: "Tesla",
+      description:
+        "Discussions about Tesla vehicles, software updates, and experiences",
+      icon: "🚗",
+      color: "bg-red-500",
       subscribers: 15420,
       threads: 2847,
-      posts: 18392
+      posts: 18392,
     },
     charging: {
-      name: 'Charging Infrastructure',
-      description: 'Everything about EV charging stations, home charging, and infrastructure',
-      icon: '⚡',
-      color: 'bg-yellow-500',
+      name: "Charging Infrastructure",
+      description:
+        "Everything about EV charging stations, home charging, and infrastructure",
+      icon: "⚡",
+      color: "bg-yellow-500",
       subscribers: 8932,
       threads: 1456,
-      posts: 9823
+      posts: 9823,
     },
     general: {
-      name: 'General Discussion',
-      description: 'General EV topics, news, and community discussions',
-      icon: '💬',
-      color: 'bg-blue-500',
+      name: "General Discussion",
+      description: "General EV topics, news, and community discussions",
+      icon: "💬",
+      color: "bg-blue-500",
       subscribers: 12045,
       threads: 3201,
-      posts: 21456
-    }
+      posts: 21456,
+    },
   };
 
-  const category = categoryData[resolvedParams.slug as keyof typeof categoryData] || categoryData.general;
+  const category =
+    categoryData[resolvedParams.slug as keyof typeof categoryData] ||
+    categoryData.general;
 
   // Mock threads data
   const threads = [
     {
       id: 1,
-      title: 'Tesla FSD Beta vs Autopilot: Real World Comparison',
-      author: 'TechReviewer',
-      authorAvatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20tech%20reviewer&image_size=square',
+      title: "Tesla FSD Beta vs Autopilot: Real World Comparison",
+      author: "TechReviewer",
+      authorAvatar:
+        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20tech%20reviewer&image_size=square",
       replies: 23,
       views: 2847,
-      lastActivity: '2 hours ago',
-      lastActivityBy: 'EVExpert',
+      lastActivity: "2 hours ago",
+      lastActivityBy: "EVExpert",
       isPinned: true,
       isLocked: false,
-      tags: ['FSD', 'Autopilot', 'Comparison'],
-      excerpt: 'I\'ve been testing both Tesla\'s FSD Beta and standard Autopilot for the past 6 months...'
+      tags: ["FSD", "Autopilot", "Comparison"],
+      excerpt:
+        "I've been testing both Tesla's FSD Beta and standard Autopilot for the past 6 months...",
     },
     {
       id: 2,
-      title: 'Model Y vs Model 3: Which Should I Choose?',
-      author: 'NewBuyer2024',
-      authorAvatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20new%20car%20buyer&image_size=square',
+      title: "Model Y vs Model 3: Which Should I Choose?",
+      author: "NewBuyer2024",
+      authorAvatar:
+        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20new%20car%20buyer&image_size=square",
       replies: 45,
       views: 1923,
-      lastActivity: '4 hours ago',
-      lastActivityBy: 'TeslaOwner',
+      lastActivity: "4 hours ago",
+      lastActivityBy: "TeslaOwner",
       isPinned: false,
       isLocked: false,
-      tags: ['Model Y', 'Model 3', 'Buying Guide'],
-      excerpt: 'I\'m torn between the Model Y and Model 3. Looking for real owner experiences...'
+      tags: ["Model Y", "Model 3", "Buying Guide"],
+      excerpt:
+        "I'm torn between the Model Y and Model 3. Looking for real owner experiences...",
     },
     {
       id: 3,
-      title: 'Supercharger Network Expansion 2024',
-      author: 'ChargingExpert',
-      authorAvatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20charging%20expert&image_size=square',
+      title: "Supercharger Network Expansion 2024",
+      author: "ChargingExpert",
+      authorAvatar:
+        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20charging%20expert&image_size=square",
       replies: 67,
       views: 4521,
-      lastActivity: '6 hours ago',
-      lastActivityBy: 'RoadTripper',
+      lastActivity: "6 hours ago",
+      lastActivityBy: "RoadTripper",
       isPinned: false,
       isLocked: false,
-      tags: ['Supercharger', 'Infrastructure', 'News'],
-      excerpt: 'Tesla announced major expansion plans for the Supercharger network...'
+      tags: ["Supercharger", "Infrastructure", "News"],
+      excerpt:
+        "Tesla announced major expansion plans for the Supercharger network...",
     },
     {
       id: 4,
-      title: 'Winter Driving Tips for Tesla Owners',
-      author: 'WinterDriver',
-      authorAvatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20winter%20driver&image_size=square',
+      title: "Winter Driving Tips for Tesla Owners",
+      author: "WinterDriver",
+      authorAvatar:
+        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20winter%20driver&image_size=square",
       replies: 34,
       views: 1876,
-      lastActivity: '1 day ago',
-      lastActivityBy: 'ColdWeatherPro',
+      lastActivity: "1 day ago",
+      lastActivityBy: "ColdWeatherPro",
       isPinned: false,
       isLocked: false,
-      tags: ['Winter', 'Tips', 'Battery'],
-      excerpt: 'Here are some essential tips for driving your Tesla in winter conditions...'
+      tags: ["Winter", "Tips", "Battery"],
+      excerpt:
+        "Here are some essential tips for driving your Tesla in winter conditions...",
     },
     {
       id: 5,
-      title: 'Software Update 2024.2.7 Discussion',
-      author: 'UpdateTracker',
-      authorAvatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20software%20update%20tracker&image_size=square',
+      title: "Software Update 2024.2.7 Discussion",
+      author: "UpdateTracker",
+      authorAvatar:
+        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20software%20update%20tracker&image_size=square",
       replies: 89,
       views: 6234,
-      lastActivity: '1 day ago',
-      lastActivityBy: 'BetaTester',
+      lastActivity: "1 day ago",
+      lastActivityBy: "BetaTester",
       isPinned: false,
       isLocked: true,
-      tags: ['Software Update', 'Features', 'Bug Fixes'],
-      excerpt: 'The latest software update brings several new features and improvements...'
-    }
+      tags: ["Software Update", "Features", "Bug Fixes"],
+      excerpt:
+        "The latest software update brings several new features and improvements...",
+    },
   ];
 
-  const filteredThreads = threads.filter(thread => {
-    const matchesSearch = thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         thread.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (filterBy === 'pinned') return thread.isPinned && matchesSearch;
-    if (filterBy === 'locked') return thread.isLocked && matchesSearch;
-    if (filterBy === 'trending') return thread.views > 2000 && matchesSearch;
-    
+  const filteredThreads = threads.filter((thread) => {
+    const matchesSearch =
+      thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      thread.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (filterBy === "pinned") return thread.isPinned && matchesSearch;
+    if (filterBy === "locked") return thread.isLocked && matchesSearch;
+    if (filterBy === "trending") return thread.views > 2000 && matchesSearch;
+
     return matchesSearch;
   });
 
   const sortedThreads = [...filteredThreads].sort((a, b) => {
-    if (sortBy === 'latest') {
+    if (sortBy === "latest") {
       // Sort pinned threads first, then by activity
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
       return 0; // In real app, sort by actual timestamp
     }
-    if (sortBy === 'popular') return b.views - a.views;
-    if (sortBy === 'replies') return b.replies - a.replies;
+    if (sortBy === "popular") return b.views - a.views;
+    if (sortBy === "replies") return b.replies - a.replies;
     return 0;
   });
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
+    <div className=" min-h-screen py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <div className="mb-6">
-          <Link href="/forums" className="inline-flex items-center text-blue-600 hover:text-blue-800">
+          <Link
+            href="/forums"
+            className="inline-flex items-center text-blue-600 hover:text-blue-800"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Forums
           </Link>
         </div>
 
         {/* Category Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="rounded-lg shadow-sm border p-6 mb-8">
           <div className="flex items-start justify-between">
             <div className="flex items-start space-x-4">
-              <div className={`w-16 h-16 ${category.color} rounded-lg flex items-center justify-center text-2xl`}>
+              <div
+                className={`w-16 h-16 ${category.color} rounded-lg flex items-center justify-center text-2xl`}
+              >
                 {category.icon}
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{category.name}</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  {category.name}
+                </h1>
                 <p className="text-gray-600 mb-4">{category.description}</p>
                 <div className="flex items-center space-x-6 text-sm text-gray-500">
                   <div className="flex items-center space-x-1">
                     <Users className="h-4 w-4" />
-                    <span>{category.subscribers.toLocaleString()} subscribers</span>
+                    <span>
+                      {category.subscribers.toLocaleString()} subscribers
+                    </span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <MessageSquare className="h-4 w-4" />
@@ -244,7 +281,10 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
             {/* Threads List */}
             <div className="space-y-4">
               {sortedThreads.map((thread) => (
-                <div key={thread.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div
+                  key={thread.id}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                >
                   <div className="flex items-start space-x-4">
                     <div className="flex-shrink-0">
                       <img
@@ -268,20 +308,33 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
                           {thread.title}
                         </Link>
                       </div>
-                      
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">{thread.excerpt}</p>
-                      
+
+                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                        {thread.excerpt}
+                      </p>
+
                       <div className="flex items-center space-x-2 mb-3">
                         {thread.tags.map((tag, index) => (
-                          <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700"
+                          >
                             #{tag}
                           </span>
                         ))}
                       </div>
-                      
+
                       <div className="flex items-center justify-between text-sm text-gray-500">
                         <div className="flex items-center space-x-4">
-                          <span>by <Link href={`/users/${thread.author}`} className="text-blue-600 hover:text-blue-800">{thread.author}</Link></span>
+                          <span>
+                            by{" "}
+                            <Link
+                              href={`/users/${thread.author}`}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              {thread.author}
+                            </Link>
+                          </span>
                           <div className="flex items-center space-x-1">
                             <MessageSquare className="h-4 w-4" />
                             <span>{thread.replies}</span>
@@ -293,7 +346,15 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
                         </div>
                         <div className="flex items-center space-x-1">
                           <Clock className="h-4 w-4" />
-                          <span>Last activity {thread.lastActivity} by <Link href={`/users/${thread.lastActivityBy}`} className="text-blue-600 hover:text-blue-800">{thread.lastActivityBy}</Link></span>
+                          <span>
+                            Last activity {thread.lastActivity} by{" "}
+                            <Link
+                              href={`/users/${thread.lastActivityBy}`}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              {thread.lastActivityBy}
+                            </Link>
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -305,12 +366,21 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
             {/* Pagination */}
             <div className="mt-8 flex items-center justify-center">
               <div className="flex items-center space-x-2">
-                <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50" disabled>
+                <button
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  disabled
+                >
                   Previous
                 </button>
-                <button className="px-3 py-2 bg-blue-600 text-white rounded-lg">1</button>
-                <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">2</button>
-                <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">3</button>
+                <button className="px-3 py-2 bg-blue-600 text-white rounded-lg">
+                  1
+                </button>
+                <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                  2
+                </button>
+                <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                  3
+                </button>
                 <button className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                   Next
                 </button>
@@ -323,42 +393,67 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
             <div className="space-y-6">
               {/* Category Stats */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Category Stats</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Category Stats
+                </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total Threads</span>
-                    <span className="font-semibold">{category.threads.toLocaleString()}</span>
+                    <span className="font-semibold">
+                      {category.threads.toLocaleString()}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total Posts</span>
-                    <span className="font-semibold">{category.posts.toLocaleString()}</span>
+                    <span className="font-semibold">
+                      {category.posts.toLocaleString()}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subscribers</span>
-                    <span className="font-semibold">{category.subscribers.toLocaleString()}</span>
+                    <span className="font-semibold">
+                      {category.subscribers.toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </div>
 
               {/* Related Categories */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Related Categories</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Related Categories
+                </h3>
                 <div className="space-y-2">
-                  <Link href="/forums/category/bmw" className="block p-2 rounded-lg hover:bg-gray-50">
+                  <Link
+                    href="/forums/category/bmw"
+                    className="block p-2 rounded-lg hover:bg-gray-50"
+                  >
                     <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-sm">🚙</div>
+                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-sm">
+                        🚙
+                      </div>
                       <span className="text-gray-700">BMW</span>
                     </div>
                   </Link>
-                  <Link href="/forums/category/charging" className="block p-2 rounded-lg hover:bg-gray-50">
+                  <Link
+                    href="/forums/category/charging"
+                    className="block p-2 rounded-lg hover:bg-gray-50"
+                  >
                     <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center text-sm">⚡</div>
+                      <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center text-sm">
+                        ⚡
+                      </div>
                       <span className="text-gray-700">Charging</span>
                     </div>
                   </Link>
-                  <Link href="/forums/category/technology" className="block p-2 rounded-lg hover:bg-gray-50">
+                  <Link
+                    href="/forums/category/technology"
+                    className="block p-2 rounded-lg hover:bg-gray-50"
+                  >
                     <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center text-sm">🔧</div>
+                      <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center text-sm">
+                        🔧
+                      </div>
                       <span className="text-gray-700">Technology</span>
                     </div>
                   </Link>
@@ -367,7 +462,9 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
 
               {/* Top Contributors */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Contributors</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Top Contributors
+                </h3>
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <img
@@ -376,7 +473,12 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
                       className="w-8 h-8 rounded-full"
                     />
                     <div className="flex-1">
-                      <Link href="/users/TechReviewer" className="text-sm font-medium text-gray-900 hover:text-blue-600">TechReviewer</Link>
+                      <Link
+                        href="/users/TechReviewer"
+                        className="text-sm font-medium text-gray-900 hover:text-blue-600"
+                      >
+                        TechReviewer
+                      </Link>
                       <p className="text-xs text-gray-500">247 posts</p>
                     </div>
                   </div>
@@ -387,7 +489,12 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
                       className="w-8 h-8 rounded-full"
                     />
                     <div className="flex-1">
-                      <Link href="/users/EVExpert" className="text-sm font-medium text-gray-900 hover:text-blue-600">EVExpert</Link>
+                      <Link
+                        href="/users/EVExpert"
+                        className="text-sm font-medium text-gray-900 hover:text-blue-600"
+                      >
+                        EVExpert
+                      </Link>
                       <p className="text-xs text-gray-500">189 posts</p>
                     </div>
                   </div>
@@ -398,7 +505,12 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
                       className="w-8 h-8 rounded-full"
                     />
                     <div className="flex-1">
-                      <Link href="/users/ChargingExpert" className="text-sm font-medium text-gray-900 hover:text-blue-600">ChargingExpert</Link>
+                      <Link
+                        href="/users/ChargingExpert"
+                        className="text-sm font-medium text-gray-900 hover:text-blue-600"
+                      >
+                        ChargingExpert
+                      </Link>
                       <p className="text-xs text-gray-500">156 posts</p>
                     </div>
                   </div>
