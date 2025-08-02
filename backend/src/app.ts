@@ -18,6 +18,7 @@ import { requestLogger } from "./middleware/logging";
 import authRoutes from "./routes/auth";
 import userRoutes from "./routes/users";
 import vehicleRoutes from "./routes/vehicles";
+import vehicleListingRoutes from "./routes/vehicleListings";
 import evListingRoutes from "./routes/evListings";
 import marketplaceRoutes from "./routes/marketplace";
 import forumRoutes from "./routes/forum";
@@ -161,6 +162,7 @@ app.get("/health", (req: Request, res: Response) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/vehicle-listings", vehicleListingRoutes);
 app.use("/api/ev-listings", evListingRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/forums", forumRoutes);
