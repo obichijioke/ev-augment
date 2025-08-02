@@ -118,15 +118,52 @@ const VehicleManagementForm: React.FC<VehicleManagementFormProps> = ({
           // If editing existing vehicle, populate form
           // Extract feature IDs from vehicle features
           const vehicleFeatureIds: string[] = [];
+          console.log("Vehicle features data:", vehicle.features);
+
           if (vehicle.features) {
-            Object.values(vehicle.features).forEach((categoryFeatures) => {
-              categoryFeatures.forEach((vehicleFeature) => {
-                if (vehicleFeature.feature?.id) {
-                  vehicleFeatureIds.push(vehicleFeature.feature.id);
+            // Handle both possible structures:
+            // 1. Array of vehicle_features (from admin API)
+            // 2. Object grouped by category (from public API)
+
+            if (Array.isArray(vehicle.features)) {
+              // New structure: array of vehicle_features
+              vehicle.features.forEach((vehicleFeature, index) => {
+                // Debug: Log the structure of the first feature
+                if (index === 0) {
+                  console.log(
+                    "Sample vehicleFeature structure:",
+                    vehicleFeature
+                  );
+                }
+
+                const featureId =
+                  vehicleFeature.feature?.id || vehicleFeature.feature_id;
+                if (featureId) {
+                  vehicleFeatureIds.push(featureId);
                 }
               });
-            });
+            } else {
+              // Old structure: object grouped by category
+              Object.values(vehicle.features).forEach((categoryFeatures) => {
+                categoryFeatures.forEach((vehicleFeature, index) => {
+                  // Debug: Log the structure of the first feature
+                  if (index === 0) {
+                    console.log(
+                      "Sample vehicleFeature structure:",
+                      vehicleFeature
+                    );
+                  }
+
+                  const featureId =
+                    vehicleFeature.feature?.id || vehicleFeature.featureId;
+                  if (featureId) {
+                    vehicleFeatureIds.push(featureId);
+                  }
+                });
+              });
+            }
           }
+          console.log("Extracted feature IDs:", vehicleFeatureIds);
 
           setFormData({
             name: vehicle.name || "",
@@ -152,6 +189,8 @@ const VehicleManagementForm: React.FC<VehicleManagementFormProps> = ({
             environmentalSpecs: vehicle.environmentalSpecs?.[0] || {},
             features: vehicleFeatureIds, // Populate with actual feature IDs
           });
+
+          console.log("Form data features set to:", vehicleFeatureIds);
 
           // Set selected manufacturer and load models
           if (vehicle.model?.manufacturer?.id) {
@@ -1554,37 +1593,48 @@ const VehicleManagementForm: React.FC<VehicleManagementFormProps> = ({
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {availableFeatures.map((feature) => (
-              <label key={feature.id} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.features?.includes(feature.id) || false}
-                  onChange={(e) => {
-                    const currentFeatures = formData.features || [];
-                    if (e.target.checked) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        features: [...currentFeatures, feature.id],
-                      }));
-                    } else {
-                      setFormData((prev) => ({
-                        ...prev,
-                        features: currentFeatures.filter(
-                          (id) => id !== feature.id
-                        ),
-                      }));
-                    }
-                  }}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">
-                  {feature.name}
-                  <span className="text-gray-500 ml-1">
-                    ({feature.category.name})
+            {availableFeatures.map((feature) => {
+              const isChecked =
+                formData.features?.includes(feature.id) || false;
+              if (feature.name === "Autopilot") {
+                console.log(`Feature ${feature.name} (${feature.id}):`, {
+                  formDataFeatures: formData.features,
+                  isChecked,
+                  includes: formData.features?.includes(feature.id),
+                });
+              }
+              return (
+                <label key={feature.id} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={(e) => {
+                      const currentFeatures = formData.features || [];
+                      if (e.target.checked) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          features: [...currentFeatures, feature.id],
+                        }));
+                      } else {
+                        setFormData((prev) => ({
+                          ...prev,
+                          features: currentFeatures.filter(
+                            (id) => id !== feature.id
+                          ),
+                        }));
+                      }
+                    }}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    {feature.name}
+                    <span className="text-gray-500 ml-1">
+                      ({feature.category.name})
+                    </span>
                   </span>
-                </span>
-              </label>
-            ))}
+                </label>
+              );
+            })}
           </div>
         </div>
 

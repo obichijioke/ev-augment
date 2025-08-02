@@ -475,6 +475,13 @@ router.get(
         model:vehicle_models(
           *,
           manufacturer:vehicle_manufacturers(*)
+        ),
+        features:vehicle_features(
+          *,
+          feature:features(
+            *,
+            category:feature_categories(*)
+          )
         )
       `,
         { count: "exact" }
