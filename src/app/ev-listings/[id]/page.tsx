@@ -22,6 +22,7 @@ import {
   BarChart3,
   Leaf,
   Loader2,
+  Edit,
 } from "lucide-react";
 import { VehicleListing } from "@/types/vehicle";
 import {
@@ -30,6 +31,7 @@ import {
   toggleVehicleLike,
   ApiError,
 } from "@/services/vehicleApi";
+import { useAuthStore } from "@/store/authStore";
 
 interface VehicleDetailsProps {
   params: Promise<{ id: string }>;
@@ -37,12 +39,16 @@ interface VehicleDetailsProps {
 
 const VehicleDetailsPage: React.FC<VehicleDetailsProps> = ({ params }) => {
   const { id } = React.use(params);
+  const { userProfile, isAuthenticated } = useAuthStore();
   const [isFavorited, setIsFavorited] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [activeSpecCategory, setActiveSpecCategory] = useState("performance");
   const [vehicle, setVehicle] = useState<VehicleListing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if user is admin
+  const isAdmin = isAuthenticated && userProfile?.role === "admin";
 
   // Load vehicle details from API
   const loadVehicleDetails = async () => {
@@ -134,13 +140,27 @@ const VehicleDetailsPage: React.FC<VehicleDetailsProps> = ({ params }) => {
               <ArrowLeft className="w-5 h-5 mr-2" />
               Back to Vehicle Listings
             </Link>
-            <div className="text-right">
-              <h1 className="text-xl font-semibold text-gray-900">
-                {vehicle.name}
-              </h1>
-              <p className="text-sm text-gray-600">
-                {vehicle.model?.manufacturer?.name} • {vehicle.year}
-              </p>
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <h1 className="text-xl font-semibold text-gray-900">
+                  {vehicle.name}
+                </h1>
+                <p className="text-sm text-gray-600">
+                  {vehicle.model?.manufacturer?.name} • {vehicle.year}
+                </p>
+              </div>
+
+              {/* Admin Edit Button */}
+              {isAdmin && (
+                <Link
+                  href={`/admin/vehicles?edit=${vehicle.id}`}
+                  className="flex items-center px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium shadow-sm"
+                  title="Edit Vehicle (Admin)"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Link>
+              )}
             </div>
           </div>
         </div>

@@ -1,49 +1,72 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
-import { Search, Menu, X, User, Zap, ChevronDown, LogOut, Settings, Car, Activity, PenTool } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
+import Link from "next/link";
+import { useState, useEffect, useRef } from "react";
+import {
+  Search,
+  Menu,
+  X,
+  User,
+  Zap,
+  ChevronDown,
+  LogOut,
+  Settings,
+  Car,
+  Activity,
+  PenTool,
+  Shield,
+} from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout, userProfile } = useAuthStore();
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false);
       }
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
         setIsUserMenuOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
+  useEffect(() => {
+    console.log(userProfile);
+  }, [userProfile]);
+
   const mainNavItems = [
-    { name: 'Home', href: '/' },
-    { name: 'EV Listings', href: '/ev-listings' },
-    { name: 'Marketplace', href: '/marketplace' },
-    { name: 'Forums', href: '/forums' },
-    { name: 'What\'s New', href: '/whats-new' },
+    { name: "Home", href: "/" },
+    { name: "EV Listings", href: "/ev-listings" },
+    { name: "Marketplace", href: "/marketplace" },
+    { name: "Forums", href: "/forums" },
+    { name: "What's New", href: "/whats-new" },
   ];
 
   const dropdownItems = [
-    { name: 'Community Garage', href: '/garage' },
-    { name: 'Directory', href: '/directory' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'Charging Stations', href: '/charging' },
+    { name: "Community Garage", href: "/garage" },
+    { name: "Directory", href: "/directory" },
+    { name: "Blog", href: "/blog" },
+    { name: "Charging Stations", href: "/charging" },
   ];
 
   return (
@@ -55,27 +78,44 @@ const Navigation = () => {
             <div className="bg-blue-600 p-2 rounded-lg">
               <Zap className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">EV Community</span>
+            <span className="text-xl font-bold text-gray-900">
+              EV Community
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-8">
-            <Link href="/" className="text-gray-700 hover:text-blue-600 transition-colors">
+            <Link
+              href="/"
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
               Home
             </Link>
-            <Link href="/ev-listings" className="text-gray-700 hover:text-blue-600 transition-colors">
+            <Link
+              href="/ev-listings"
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
               EV Listings
             </Link>
-            <Link href="/marketplace" className="text-gray-700 hover:text-blue-600 transition-colors">
+            <Link
+              href="/marketplace"
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
               Marketplace
             </Link>
-            <Link href="/forums" className="text-gray-700 hover:text-blue-600 transition-colors">
+            <Link
+              href="/forums"
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
               Forums
             </Link>
-            <Link href="/whats-new" className="text-gray-700 hover:text-blue-600 transition-colors">
+            <Link
+              href="/whats-new"
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
               What's New
             </Link>
-            
+
             {/* More Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
@@ -83,9 +123,13 @@ const Navigation = () => {
                 className="text-gray-700 hover:text-blue-600 transition-colors flex items-center space-x-1"
               >
                 <span>More</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${
+                    isDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
               </button>
-              
+
               {isDropdownOpen && (
                 <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   {dropdownItems.map((item) => (
@@ -116,7 +160,7 @@ const Navigation = () => {
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
               />
             </div>
-            
+
             {/* User Menu */}
             {isAuthenticated && user ? (
               <div className="relative" ref={userMenuRef}>
@@ -125,21 +169,32 @@ const Navigation = () => {
                   className="flex items-center space-x-2 text-gray-600 hover:text-blue-600"
                 >
                   <img
-                    src={user.avatar || 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20placeholder%2C%20clean%20simple%20design&image_size=square'}
+                    src={
+                      user.avatar ||
+                      "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20placeholder%2C%20clean%20simple%20design&image_size=square"
+                    }
                     alt={user.firstName || user.username}
                     className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
                   />
-                  <span className="text-sm font-medium">{user.firstName || user.username}</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                  <span className="text-sm font-medium">
+                    {user.firstName || user.username}
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${
+                      isUserMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
-                
+
                 {isUserMenuOpen && (
                   <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                     <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">{user.firstName || user.username}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {user.firstName || user.username}
+                      </p>
                       <p className="text-sm text-gray-600">@{user.username}</p>
                     </div>
-                    
+
                     <div className="py-1">
                       <Link
                         href="/dashboard"
@@ -165,6 +220,27 @@ const Navigation = () => {
                         <Car className="w-4 h-4 mr-3" />
                         My Garage
                       </Link>
+
+                      {/* Admin Section */}
+                      {userProfile?.role === "admin" && (
+                        <>
+                          <div className="border-t border-gray-100 my-1"></div>
+                          <div className="px-4 py-2">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                              Admin
+                            </p>
+                          </div>
+                          <Link
+                            href="/admin/vehicles"
+                            className="flex items-center px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition-colors font-medium"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            <Shield className="w-4 h-4 mr-3" />
+                            Vehicle Management
+                          </Link>
+                        </>
+                      )}
+
                       <div className="border-t border-gray-100 my-1"></div>
                       <Link
                         href="/blog/create"
@@ -183,7 +259,7 @@ const Navigation = () => {
                         Settings
                       </Link>
                     </div>
-                    
+
                     <div className="border-t border-gray-100 py-1">
                       <button
                         onClick={() => {
@@ -223,7 +299,11 @@ const Navigation = () => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-gray-600 hover:text-blue-600"
             >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
@@ -243,24 +323,39 @@ const Navigation = () => {
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
                 />
               </div>
-              
+
               {/* Mobile Nav Items */}
-              <Link href="/" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+              <Link
+                href="/"
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors"
+              >
                 Home
               </Link>
-              <Link href="/ev-listings" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+              <Link
+                href="/ev-listings"
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors"
+              >
                 EV Listings
               </Link>
-              <Link href="/marketplace" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+              <Link
+                href="/marketplace"
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors"
+              >
                 Marketplace
               </Link>
-              <Link href="/forums" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+              <Link
+                href="/forums"
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors"
+              >
                 Forums
               </Link>
-              <Link href="/whats-new" className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors">
+              <Link
+                href="/whats-new"
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors"
+              >
                 What's New
               </Link>
-              
+
               {/* Mobile dropdown items */}
               <div className="border-t border-gray-200 pt-2 mt-2">
                 {dropdownItems.map((item) => (
@@ -274,22 +369,27 @@ const Navigation = () => {
                   </Link>
                 ))}
               </div>
-              
+
               {/* Mobile User */}
               {isAuthenticated && user ? (
                 <div className="border-t border-gray-200 pt-2 mt-2">
                   <div className="flex items-center px-3 py-2 mb-2">
                     <img
-                      src={user.avatar || 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20placeholder%2C%20clean%20simple%20design&image_size=square'}
+                      src={
+                        user.avatar ||
+                        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20placeholder%2C%20clean%20simple%20design&image_size=square"
+                      }
                       alt={user.firstName || user.username}
                       className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 mr-3"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{user.firstName || user.username}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {user.firstName || user.username}
+                      </p>
                       <p className="text-xs text-gray-600">@{user.username}</p>
                     </div>
                   </div>
-                  
+
                   <Link
                     href="/dashboard"
                     className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-md"
@@ -314,6 +414,19 @@ const Navigation = () => {
                     <Car className="h-5 w-5 mr-2" />
                     My Garage
                   </Link>
+
+                  {/* Admin Section - Mobile */}
+                  {userProfile?.role === "admin" && (
+                    <Link
+                      href="/admin/vehicles"
+                      className="flex items-center px-3 py-2 text-base font-medium text-purple-600 hover:bg-purple-50 rounded-md"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Shield className="h-5 w-5 mr-2" />
+                      Vehicle Management
+                    </Link>
+                  )}
+
                   <Link
                     href="/blog/create"
                     className="flex items-center px-3 py-2 text-base font-medium text-blue-600 hover:bg-blue-50 rounded-md"

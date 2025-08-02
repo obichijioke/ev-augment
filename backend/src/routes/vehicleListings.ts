@@ -189,6 +189,106 @@ router.get(
   })
 );
 
+// =============================================================================
+// MANUFACTURERS ENDPOINTS
+// =============================================================================
+
+// @route   GET /api/vehicle-listings/manufacturers
+// @desc    Get all manufacturers for dropdown selection
+// @access  Public
+router.get(
+  "/manufacturers",
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { data: manufacturers, error } = await supabaseAdmin
+      .from("vehicle_manufacturers")
+      .select("*")
+      .eq("is_active", true)
+      .order("name");
+
+    if (error) {
+      throw createError(
+        "Failed to fetch manufacturers",
+        500,
+        "FETCH_MANUFACTURERS_FAILED"
+      );
+    }
+
+    res.json({
+      success: true,
+      data: manufacturers || [],
+    });
+  })
+);
+
+// @route   GET /api/vehicle-listings/manufacturers/:manufacturerId/models
+// @desc    Get models for a specific manufacturer
+// @access  Public
+router.get(
+  "/manufacturers/:manufacturerId/models",
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { manufacturerId } = req.params;
+
+    if (!isValidUUID(manufacturerId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid manufacturer ID format",
+      });
+    }
+
+    const { data: models, error } = await supabaseAdmin
+      .from("vehicle_models")
+      .select("*")
+      .eq("manufacturer_id", manufacturerId)
+      .eq("is_active", true)
+      .order("name");
+
+    if (error) {
+      throw createError("Failed to fetch models", 500, "FETCH_MODELS_FAILED");
+    }
+
+    res.json({
+      success: true,
+      data: models || [],
+    });
+  })
+);
+
+// =============================================================================
+// FEATURES ENDPOINTS
+// =============================================================================
+
+// @route   GET /api/vehicle-listings/features
+// @desc    Get all available features for selection
+// @access  Public
+router.get(
+  "/features",
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { data: features, error } = await supabaseAdmin
+      .from("features")
+      .select(
+        `
+        *,
+        category:feature_categories(*)
+      `
+      )
+      .order("name");
+
+    if (error) {
+      console.error("Features fetch error:", error);
+      throw createError(
+        `Failed to fetch features: ${error.message}`,
+        500,
+        "FETCH_FEATURES_FAILED"
+      );
+    }
+
+    res.json({
+      success: true,
+      data: features || [],
+    });
+  })
+);
+
 // @route   GET /api/vehicle-listings/:id
 // @desc    Get detailed vehicle listing by ID
 // @access  Public
