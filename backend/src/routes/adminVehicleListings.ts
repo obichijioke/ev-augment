@@ -281,7 +281,6 @@ router.post(
         feature_id: featureId,
         is_standard: true, // Default to standard, can be customized later
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       }));
 
       const { error: featError } = await supabaseAdmin
@@ -384,8 +383,8 @@ router.put(
       });
     }
 
-    // Update features if provided
-    if (features) {
+    // Update features if provided (including empty arrays to clear features)
+    if (features !== undefined) {
       // Delete existing features
       await supabaseAdmin
         .from("vehicle_features")
@@ -399,7 +398,6 @@ router.put(
           feature_id: featureId,
           is_standard: true,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
         }));
 
         await supabaseAdmin.from("vehicle_features").insert(featureInserts);

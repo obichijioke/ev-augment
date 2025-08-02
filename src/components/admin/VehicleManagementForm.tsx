@@ -44,14 +44,30 @@ const VehicleManagementForm: React.FC<VehicleManagementFormProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  const [formData, setFormData] = useState<FormData>({
+  // Create initial form data
+  const getInitialFormData = (): FormData => ({
     name: "",
     model_id: "",
     year: new Date().getFullYear(),
+    trim: "",
+    variant: "",
+    description: "",
+    msrp_base: 0,
+    msrp_max: 0,
     availability_status: "available",
+    primary_image_url: "",
+    image_urls: [],
     is_featured: false,
     is_active: true,
+    performanceSpecs: {},
+    batterySpecs: {},
+    dimensionSpecs: {},
+    safetySpecs: {},
+    environmentalSpecs: {},
+    features: [],
   });
+
+  const [formData, setFormData] = useState<FormData>(getInitialFormData());
 
   const [manufacturers, setManufacturers] = useState<VehicleManufacturer[]>([]);
   const [models, setModels] = useState<VehicleModel[]>([]);
@@ -92,29 +108,49 @@ const VehicleManagementForm: React.FC<VehicleManagementFormProps> = ({
           setAvailableFeatures(featuresRes.data);
         }
 
-        // If editing existing vehicle, populate form
-        if (vehicle) {
+        // Reset form data first
+        if (!vehicle) {
+          // If no vehicle (add mode), reset to initial state
+          setFormData(getInitialFormData());
+          setSelectedManufacturer("");
+          setModels([]);
+        } else {
+          // If editing existing vehicle, populate form
+          // Extract feature IDs from vehicle features
+          const vehicleFeatureIds: string[] = [];
+          if (vehicle.features) {
+            Object.values(vehicle.features).forEach((categoryFeatures) => {
+              categoryFeatures.forEach((vehicleFeature) => {
+                if (vehicleFeature.feature?.id) {
+                  vehicleFeatureIds.push(vehicleFeature.feature.id);
+                }
+              });
+            });
+          }
+
           setFormData({
-            name: vehicle.name,
-            model_id: vehicle.model_id,
-            year: vehicle.year,
+            name: vehicle.name || "",
+            model_id: vehicle.model_id || "",
+            year: vehicle.year || new Date().getFullYear(),
             trim: vehicle.trim || "",
             variant: vehicle.variant || "",
             description: vehicle.description || "",
-            msrp_base: vehicle.msrp_base,
-            msrp_max: vehicle.msrp_max,
-            availability_status: vehicle.availability_status as any,
+            msrp_base: vehicle.msrp_base || 0,
+            msrp_max: vehicle.msrp_max || 0,
+            availability_status:
+              (vehicle.availability_status as any) || "available",
             primary_image_url: vehicle.primary_image_url || "",
             image_urls: vehicle.image_urls || [],
-            is_featured: vehicle.is_featured,
-            is_active: vehicle.is_active,
-            // Initialize specs objects
+            is_featured: vehicle.is_featured || false,
+            is_active:
+              vehicle.is_active !== undefined ? vehicle.is_active : true,
+            // Initialize specs objects with proper fallbacks
             performanceSpecs: vehicle.performanceSpecs?.[0] || {},
             batterySpecs: vehicle.batterySpecs?.[0] || {},
             dimensionSpecs: vehicle.dimensionSpecs?.[0] || {},
             safetySpecs: vehicle.safetySpecs?.[0] || {},
             environmentalSpecs: vehicle.environmentalSpecs?.[0] || {},
-            features: [], // Will be populated from vehicle.features
+            features: vehicleFeatureIds, // Populate with actual feature IDs
           });
 
           // Set selected manufacturer and load models
@@ -282,7 +318,7 @@ const VehicleManagementForm: React.FC<VehicleManagementFormProps> = ({
       // Clean up the form data - remove empty specs objects
       const cleanedData = { ...formData };
 
-      // Remove empty specs
+      // Remove empty specs (but keep features even if empty)
       Object.keys(cleanedData).forEach((key) => {
         if (key.endsWith("Specs") && cleanedData[key as keyof FormData]) {
           const specs = cleanedData[key as keyof FormData] as any;
@@ -294,6 +330,11 @@ const VehicleManagementForm: React.FC<VehicleManagementFormProps> = ({
           }
         }
       });
+
+      // Ensure features array is always included (even if empty)
+      if (!cleanedData.features) {
+        cleanedData.features = [];
+      }
 
       // Remove empty image URLs
       if (cleanedData.image_urls) {
@@ -1356,9 +1397,11 @@ const VehicleManagementForm: React.FC<VehicleManagementFormProps> = ({
                   <input
                     type="checkbox"
                     checked={
-                      formData.safetySpecs?.[
-                        key as keyof typeof formData.safetySpecs
-                      ] || false
+                      Boolean(
+                        formData.safetySpecs?.[
+                          key as keyof typeof formData.safetySpecs
+                        ]
+                      ) || false
                     }
                     onChange={(e) =>
                       handleSpecChange("safetySpecs", key, e.target.checked)
