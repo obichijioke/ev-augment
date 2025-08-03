@@ -1,6 +1,6 @@
 // Authentication service for API communication
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4005/api";
 
 export interface LoginRequest {
   email: string;

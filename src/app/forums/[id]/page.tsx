@@ -1,12 +1,20 @@
-'use client';
+"use client";
 
-import { useState, use } from 'react';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-import ThreadHeader from '@/components/forums/ThreadHeader';
-import Post from '@/components/forums/Post';
-import ReplyList from '@/components/forums/ReplyList';
-import ReplyForm from '@/components/ReplyForm';
+import { useState, useEffect, use } from "react";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import ThreadHeader from "@/components/forums/ThreadHeader";
+import Post from "@/components/forums/Post";
+import ReplyList from "@/components/forums/ReplyList";
+import ReplyForm from "@/components/ReplyForm";
+import {
+  getForumPost,
+  createForumReply,
+  editForumReply,
+  deleteForumReply,
+} from "@/services/forumApi";
+import { useUser } from "@/store/authStore";
+import { ForumPost } from "@/types/forum";
 
 interface ThreadDetailPageProps {
   params: Promise<{
@@ -16,15 +24,96 @@ interface ThreadDetailPageProps {
 
 const ThreadDetailPage = ({ params }: ThreadDetailPageProps) => {
   const resolvedParams = use(params);
-  
+  const user = useUser();
+
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [thread, setThread] = useState<ForumPost | null>(null);
+  const [replies, setReplies] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
 
-  // Mock thread data - in real app, fetch based on resolvedParams.id
-  const thread = {
-    id: parseInt(resolvedParams.id),
-    title: 'Tesla FSD Beta vs Autopilot: Real World Comparison',
-    content: `I've been testing both Tesla's FSD Beta and standard Autopilot for the past 6 months, and I wanted to share my detailed comparison for anyone considering the upgrade.
+  // Load thread data from API
+  useEffect(() => {
+    const loadThread = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await getForumPost(resolvedParams.id);
+        const postData = response.data.post;
+        const repliesData = response.data.replies || [];
+
+        // Transform API data to match component expectations
+        const transformedThread = {
+          ...postData,
+          author: {
+            name:
+              postData.users?.username ||
+              postData.users?.full_name ||
+              "Unknown User",
+            avatar:
+              postData.users?.avatar_url ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                postData.users?.username || "U"
+              )}&background=random`,
+            joinDate: postData.users?.created_at
+              ? new Date(postData.users.created_at).toLocaleDateString()
+              : "Unknown",
+            posts: 0, // This would come from user stats
+            reputation: 0, // This would come from user stats
+          },
+          category: postData.forum_categories?.name || "General",
+          createdAt: postData.created_at,
+          views: postData.view_count || 0,
+          likes: postData.upvotes || 0,
+          isPinned: postData.is_pinned || false,
+          isLocked: false,
+          tags: postData.tags || [],
+        };
+
+        // Transform replies data recursively to handle nested structure
+        const transformReply = (reply: any): any => ({
+          id: reply.id,
+          content: reply.content,
+          author_id: reply.author_id, // Preserve for permission checking
+          users: reply.users, // Preserve for permission checking
+          author: {
+            name:
+              reply.users?.username || reply.users?.full_name || "Unknown User",
+            avatar:
+              reply.users?.avatar_url ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                reply.users?.username || "U"
+              )}&background=random`,
+            joinDate: reply.users?.created_at
+              ? new Date(reply.users.created_at).toLocaleDateString()
+              : "Unknown",
+            posts: 0,
+            reputation: 0,
+          },
+          createdAt: reply.created_at,
+          likes: reply.like_count || 0,
+          dislikes: 0,
+          isEdited: reply.is_edited || false,
+          children: reply.children ? reply.children.map(transformReply) : [],
+        });
+
+        const transformedReplies = repliesData.map(transformReply);
+
+        setThread(transformedThread);
+        setReplies(transformedReplies);
+      } catch (err) {
+        console.error("Failed to load thread:", err);
+        setError("Failed to load thread. Please try again.");
+
+        // Set empty data if API fails
+        setReplies([]);
+        setThread({
+          id: parseInt(resolvedParams.id),
+          title: "Tesla FSD Beta vs Autopilot: Real World Comparison",
+          content: `I've been testing both Tesla's FSD Beta and standard Autopilot for the past 6 months, and I wanted to share my detailed comparison for anyone considering the upgrade.
 
 **Key Differences I've Noticed:**
 
@@ -35,100 +124,154 @@ const ThreadDetailPage = ({ params }: ThreadDetailPageProps) => {
 **My Verdict**: If you do a lot of city driving, FSD Beta is worth the upgrade. For highway-only drivers, standard Autopilot might be sufficient.
 
 What has been your experience? I'd love to hear from other Tesla owners!`,
-    author: {
-      name: 'TechReviewer',
-      avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20tech%20reviewer&image_size=square',
-      joinDate: 'March 2023',
-      posts: 247,
-      reputation: 1850
-    },
-    category: 'Tesla',
-    createdAt: '2024-01-15T10:30:00Z',
-    views: 2847,
-    likes: 156,
-    isPinned: true,
-    isLocked: false,
-    tags: ['FSD', 'Autopilot', 'Comparison']
-  };
+          author: {
+            name: "TechReviewer",
+            avatar:
+              "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20tech%20reviewer&image_size=square",
+            joinDate: "March 2023",
+            posts: 247,
+            reputation: 1850,
+          },
+          category: "Tesla",
+          createdAt: "2024-01-15T10:30:00Z",
+          views: 2847,
+          likes: 156,
+          isPinned: true,
+          isLocked: false,
+          tags: ["FSD", "Autopilot", "Comparison"],
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const replies = [
-    {
-      id: 1,
-      content: 'Great comparison! I ve had similar experiences with FSD Beta. The city driving improvements are definitely noticeable, especially at complex intersections.',
-      author: {
-        name: 'EVExpert',
-        avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20an%20EV%20expert&image_size=square',
-        joinDate: 'January 2023',
-        posts: 892,
-        reputation: 3420
-      },
-      createdAt: '2024-01-15T11:45:00Z',
-      likes: 23,
-      dislikes: 1,
-      isEdited: false
-    },
-    {
-      id: 2,
-      content: 'I disagree about the highway performance. I find standard Autopilot to be more predictable on highways. FSD Beta sometimes makes unnecessary lane changes.',
-      author: {
-        name: 'HighwayDriver',
-        avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20highway%20driver&image_size=square',
-        joinDate: 'June 2023',
-        posts: 156,
-        reputation: 780
-      },
-      createdAt: '2024-01-15T14:20:00Z',
-      likes: 8,
-      dislikes: 12,
-      isEdited: true
-    },
-    {
-      id: 3,
-      content: 'Thanks for the detailed review! I\'m considering the upgrade and this helps a lot. How does it handle construction zones?',
-      author: {
-        name: 'NewTeslaOwner',
-        avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20new%20Tesla%20owner&image_size=square',
-        joinDate: 'December 2023',
-        posts: 23,
-        reputation: 45
-      },
-      createdAt: '2024-01-15T16:10:00Z',
-      likes: 5,
-      dislikes: 0,
-      isEdited: false
-    }
-  ];
+    loadThread();
+  }, [resolvedParams.id]);
+
+  // Replies are now loaded from API and stored in state
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
-  const handleReply = async (content: string, attachments?: File[], isInlineReply = false) => {
+  const handleReply = async (
+    content: string,
+    attachmentIds?: string[],
+    isInlineReply = false
+  ) => {
     setIsSubmitting(true);
     try {
-      // In real app, submit reply to backend
-      console.log('Submitting reply:', { content, attachments, replyingTo, isInlineReply });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Reset inline reply form only if it's an inline reply
-      if (isInlineReply) {
-        setReplyingTo(null);
+      if (!thread) {
+        throw new Error("Thread not found");
       }
-      
-      // Show success message or refresh replies
-      alert('Reply posted successfully!');
+
+      console.log("Submitting reply:", {
+        content,
+        attachmentIds,
+        replyingTo,
+        isInlineReply,
+      });
+
+      // Create reply using API
+      const replyData = {
+        content,
+        parent_id:
+          isInlineReply && replyingTo ? replyingTo.toString() : undefined,
+      };
+
+      const response = await createForumReply(thread.id, replyData);
+
+      if (response.success) {
+        console.log("Reply created successfully:", response.data);
+
+        // Reset inline reply form only if it's an inline reply
+        if (isInlineReply) {
+          setReplyingTo(null);
+        }
+
+        // Reload the thread to show the new reply
+        const updatedResponse = await getForumPost(resolvedParams.id);
+        if (updatedResponse.success) {
+          const updatedPostData = updatedResponse.data.post;
+          const updatedRepliesData = updatedResponse.data.replies || [];
+
+          const updatedThread = {
+            ...updatedPostData,
+            author: {
+              name:
+                updatedPostData.users?.username ||
+                updatedPostData.users?.full_name ||
+                "Unknown User",
+              avatar:
+                updatedPostData.users?.avatar_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  updatedPostData.users?.username || "U"
+                )}&background=random`,
+              joinDate: updatedPostData.users?.created_at
+                ? new Date(
+                    updatedPostData.users.created_at
+                  ).toLocaleDateString()
+                : "Unknown",
+              posts: 0,
+              reputation: 0,
+            },
+            category: updatedPostData.forum_categories?.name || "General",
+            createdAt: updatedPostData.created_at,
+            views: updatedPostData.view_count || 0,
+            likes: updatedPostData.upvotes || 0,
+            isPinned: updatedPostData.is_pinned || false,
+            isLocked: false,
+            tags: updatedPostData.tags || [],
+          };
+
+          // Transform updated replies data recursively
+          const transformReply = (reply: any): any => ({
+            id: reply.id,
+            content: reply.content,
+            author: {
+              name:
+                reply.users?.username ||
+                reply.users?.full_name ||
+                "Unknown User",
+              avatar:
+                reply.users?.avatar_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  reply.users?.username || "U"
+                )}&background=random`,
+              joinDate: reply.users?.created_at
+                ? new Date(reply.users.created_at).toLocaleDateString()
+                : "Unknown",
+              posts: 0,
+              reputation: 0,
+            },
+            createdAt: reply.created_at,
+            likes: reply.like_count || 0,
+            dislikes: 0,
+            isEdited: reply.is_edited || false,
+            children: reply.children ? reply.children.map(transformReply) : [],
+          });
+
+          const updatedTransformedReplies =
+            updatedRepliesData.map(transformReply);
+
+          setThread(updatedThread);
+          setReplies(updatedTransformedReplies);
+        }
+
+        alert("Reply posted successfully!");
+      } else {
+        throw new Error(response.error?.message || "Failed to create reply");
+      }
     } catch (error) {
-      console.error('Error posting reply:', error);
-      alert('Failed to post reply. Please try again.');
+      console.error("Error posting reply:", error);
+      alert("Failed to post reply. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -138,12 +281,269 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
     setReplyingTo(null);
   };
 
+  const handleEditReply = async (replyId: string, content: string) => {
+    if (!content.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await editForumReply(replyId, content);
+
+      if (response.success) {
+        console.log("Reply updated successfully:", response.data);
+
+        // Reload the thread to show the updated reply
+        const updatedResponse = await getForumPost(resolvedParams.id);
+        if (updatedResponse.success) {
+          const updatedPostData = updatedResponse.data.post;
+          const updatedRepliesData = updatedResponse.data.replies || [];
+
+          const updatedThread = {
+            ...updatedPostData,
+            author: {
+              name:
+                updatedPostData.users?.username ||
+                updatedPostData.users?.full_name ||
+                "Unknown User",
+              avatar:
+                updatedPostData.users?.avatar_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  updatedPostData.users?.username || "U"
+                )}&background=random`,
+              joinDate: updatedPostData.users?.created_at
+                ? new Date(
+                    updatedPostData.users.created_at
+                  ).toLocaleDateString()
+                : "Unknown",
+              posts: 0,
+              reputation: 0,
+            },
+            category: {
+              name: updatedPostData.forum_categories?.name || "General",
+              slug: updatedPostData.forum_categories?.slug || "general",
+            },
+          };
+
+          // Transform updated replies data recursively
+          const transformReply = (reply: any): any => ({
+            id: reply.id,
+            content: reply.content,
+            author_id: reply.author_id, // Preserve for permission checking
+            users: reply.users, // Preserve for permission checking
+            author: {
+              name:
+                reply.users?.username ||
+                reply.users?.full_name ||
+                "Unknown User",
+              avatar:
+                reply.users?.avatar_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  reply.users?.username || "U"
+                )}&background=random`,
+              joinDate: reply.users?.created_at
+                ? new Date(reply.users.created_at).toLocaleDateString()
+                : "Unknown",
+              posts: 0,
+              reputation: 0,
+            },
+            createdAt: reply.created_at,
+            likes: reply.like_count || 0,
+            dislikes: 0,
+            isEdited: reply.is_edited || false,
+            children: reply.children ? reply.children.map(transformReply) : [],
+          });
+
+          const updatedTransformedReplies =
+            updatedRepliesData.map(transformReply);
+
+          setThread(updatedThread);
+          setReplies(updatedTransformedReplies);
+        }
+      } else {
+        console.error("Failed to update reply:", response.error);
+        alert("Failed to update reply. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error updating reply:", error);
+      alert("Failed to update reply. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteReply = async (replyId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this reply? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await deleteForumReply(replyId);
+
+      if (response.success) {
+        console.log("Reply deleted successfully");
+
+        // Reload the thread to remove the deleted reply
+        const updatedResponse = await getForumPost(resolvedParams.id);
+        if (updatedResponse.success) {
+          const updatedPostData = updatedResponse.data.post;
+          const updatedRepliesData = updatedResponse.data.replies || [];
+
+          const updatedThread = {
+            ...updatedPostData,
+            author: {
+              name:
+                updatedPostData.users?.username ||
+                updatedPostData.users?.full_name ||
+                "Unknown User",
+              avatar:
+                updatedPostData.users?.avatar_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  updatedPostData.users?.username || "U"
+                )}&background=random`,
+              joinDate: updatedPostData.users?.created_at
+                ? new Date(
+                    updatedPostData.users.created_at
+                  ).toLocaleDateString()
+                : "Unknown",
+              posts: 0,
+              reputation: 0,
+            },
+            category: {
+              name: updatedPostData.forum_categories?.name || "General",
+              slug: updatedPostData.forum_categories?.slug || "general",
+            },
+          };
+
+          // Transform updated replies data recursively
+          const transformReply = (reply: any): any => ({
+            id: reply.id,
+            content: reply.content,
+            author_id: reply.author_id, // Preserve for permission checking
+            users: reply.users, // Preserve for permission checking
+            author: {
+              name:
+                reply.users?.username ||
+                reply.users?.full_name ||
+                "Unknown User",
+              avatar:
+                reply.users?.avatar_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  reply.users?.username || "U"
+                )}&background=random`,
+              joinDate: reply.users?.created_at
+                ? new Date(reply.users.created_at).toLocaleDateString()
+                : "Unknown",
+              posts: 0,
+              reputation: 0,
+            },
+            createdAt: reply.created_at,
+            likes: reply.like_count || 0,
+            dislikes: 0,
+            isEdited: reply.is_edited || false,
+            children: reply.children ? reply.children.map(transformReply) : [],
+          });
+
+          const updatedTransformedReplies =
+            updatedRepliesData.map(transformReply);
+
+          setThread(updatedThread);
+          setReplies(updatedTransformedReplies);
+        }
+      } else {
+        console.error("Failed to delete reply:", response.error);
+        alert("Failed to delete reply. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting reply:", error);
+      alert("Failed to delete reply. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+              <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                <div className="h-4 bg-gray-200 rounded w-4/6"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <div className="text-red-600 mb-4">
+              <ArrowLeft className="h-12 w-12 mx-auto" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Failed to Load Thread
+            </h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Thread not found
+  if (!thread) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Thread Not Found
+            </h3>
+            <p className="text-gray-600 mb-4">
+              The thread you're looking for doesn't exist or has been removed.
+            </p>
+            <Link
+              href="/forums"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Back to Forums
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <div className="mb-6">
-          <Link href="/forums" className="inline-flex items-center text-blue-600 hover:text-blue-800">
+          <Link
+            href="/forums"
+            className="inline-flex items-center text-blue-600 hover:text-blue-800"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Forums
           </Link>
@@ -151,7 +551,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
 
         <ThreadHeader thread={thread} formatDate={formatDate} />
 
-        <Post author={thread.author} content={thread.content} />
+        <Post post={thread} author={thread.author} content={thread.content} />
 
         <ReplyList
           replies={replies}
@@ -161,10 +561,17 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
           handleReply={handleReply}
           handleCancelReply={handleCancelReply}
           setReplyingTo={setReplyingTo}
+          onEditReply={handleEditReply}
+          onDeleteReply={handleDeleteReply}
+          currentUserId={user?.id}
+          editingReplyId={editingReplyId}
+          setEditingReplyId={setEditingReplyId}
         />
 
         <div className="mt-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Join the Discussion</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Join the Discussion
+          </h3>
           <ReplyForm
             onSubmit={handleReply}
             placeholder="Share your thoughts on this discussion..."

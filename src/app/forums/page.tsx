@@ -1,156 +1,190 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Search, Filter, Plus, MessageSquare, Users, Clock, TrendingUp, Pin } from 'lucide-react';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import {
+  Search,
+  Filter,
+  Plus,
+  MessageSquare,
+  Users,
+  Clock,
+  TrendingUp,
+  Pin,
+} from "lucide-react";
+import Link from "next/link";
+import { getForumPosts, getForumCategories } from "@/services/forumApi";
+import { ForumPost, ForumCategory } from "@/types/forum";
 
 const ForumsPage = () => {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('latest');
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("latest");
+  const [posts, setPosts] = useState<ForumPost[]>([]);
+  const [categories, setCategories] = useState<ForumCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const categories = [
-    {
-      id: 'all',
-      name: 'All Categories',
-      icon: '🏠',
-      threads: 3421,
-      posts: 45892
-    },
-    {
-      id: 'tesla',
-      name: 'Tesla',
-      icon: '⚡',
-      threads: 1247,
-      posts: 18934,
-      logo: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=Tesla%20logo%20electric%20car%20brand%20symbol&image_size=square'
-    },
-    {
-      id: 'bmw',
-      name: 'BMW',
-      icon: '🔷',
-      threads: 456,
-      posts: 7823,
-      logo: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=BMW%20logo%20electric%20car%20brand%20symbol&image_size=square'
-    },
-    {
-      id: 'nissan',
-      name: 'Nissan',
-      icon: '🔴',
-      threads: 234,
-      posts: 4567,
-      logo: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=Nissan%20logo%20electric%20car%20brand%20symbol&image_size=square'
-    },
-    {
-      id: 'audi',
-      name: 'Audi',
-      icon: '⭕',
-      threads: 189,
-      posts: 3421,
-      logo: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=Audi%20logo%20electric%20car%20brand%20symbol&image_size=square'
-    },
-    {
-      id: 'charging',
-      name: 'Charging',
-      icon: '🔌',
-      threads: 567,
-      posts: 8934
-    },
-    {
-      id: 'maintenance',
-      name: 'Maintenance',
-      icon: '🔧',
-      threads: 345,
-      posts: 5678
-    },
-    {
-      id: 'news',
-      name: 'EV News',
-      icon: '📰',
-      threads: 234,
-      posts: 4321
-    }
-  ];
+  // Load data from API
+  useEffect(() => {
+    const loadForumData = async () => {
+      setIsLoading(true);
+      setError(null);
 
-  const threads = [
-    {
-      id: 1,
-      title: 'Tesla FSD Beta vs Autopilot: Real World Comparison',
-      author: 'TechReviewer',
-      avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20tech%20reviewer&image_size=square',
-      category: 'Tesla',
-      replies: 156,
-      views: 2847,
-      lastActivity: '2 hours ago',
-      lastUser: 'EVExpert',
-      isPinned: true,
-      isHot: true,
-      tags: ['FSD', 'Autopilot', 'Comparison']
-    },
-    {
-      id: 2,
-      title: 'Best Home Charging Solutions for Apartment Dwellers',
-      author: 'ChargingGuru',
-      avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20charging%20expert&image_size=square',
-      category: 'Charging',
-      replies: 89,
-      views: 1923,
-      lastActivity: '4 hours ago',
-      lastUser: 'ApartmentEV',
-      isPinned: false,
-      isHot: true,
-      tags: ['Home Charging', 'Apartment', 'Level 2']
-    },
-    {
-      id: 3,
-      title: 'BMW i4 M50 Long Term Review - 6 Months Ownership',
-      author: 'BMWOwner2024',
-      avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20BMW%20owner&image_size=square',
-      category: 'BMW',
-      replies: 67,
-      views: 1456,
-      lastActivity: '6 hours ago',
-      lastUser: 'ElectricBMW',
-      isPinned: false,
-      isHot: false,
-      tags: ['BMW i4', 'Review', 'Long Term']
-    },
-    {
-      id: 4,
-      title: 'Nissan Ariya vs Tesla Model Y - Which Should I Choose?',
-      author: 'EVShopper',
-      avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20an%20EV%20shopper&image_size=square',
-      category: 'General',
-      replies: 134,
-      views: 2156,
-      lastActivity: '8 hours ago',
-      lastUser: 'ComparisonExpert',
-      isPinned: false,
-      isHot: false,
-      tags: ['Nissan Ariya', 'Tesla Model Y', 'Comparison']
-    },
-    {
-      id: 5,
-      title: 'Winter Driving Tips for New EV Owners',
-      author: 'WinterDriver',
-      avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20avatar%20portrait%20of%20a%20winter%20driving%20expert&image_size=square',
-      category: 'Maintenance',
-      replies: 78,
-      views: 1234,
-      lastActivity: '12 hours ago',
-      lastUser: 'ColdWeatherEV',
-      isPinned: false,
-      isHot: false,
-      tags: ['Winter', 'Tips', 'New Owners']
-    }
-  ];
+      try {
+        // Load categories
+        try {
+          const categoriesResponse = await getForumCategories();
+          const apiCategories = [
+            {
+              id: "all",
+              name: "All Categories",
+              slug: "all",
+              description: "All forum categories",
+              icon: "🏠",
+              post_count: 0,
+              thread_count: 0,
+            },
+            ...categoriesResponse.data.categories,
+          ];
+          setCategories(apiCategories);
+        } catch (categoryError) {
+          console.warn(
+            "Failed to load categories, using defaults:",
+            categoryError
+          );
+          // Fallback categories
+          setCategories([
+            {
+              id: "all",
+              name: "All Categories",
+              slug: "all",
+              description: "All forum categories",
+              icon: "🏠",
+              post_count: 0,
+              thread_count: 0,
+            },
+            {
+              id: "general",
+              name: "General Discussion",
+              slug: "general",
+              description: "General EV discussions",
+              icon: "💬",
+              post_count: 0,
+              thread_count: 0,
+            },
+          ]);
+        }
 
-  const filteredThreads = threads.filter(thread => {
-    const matchesCategory = selectedCategory === 'all' || thread.category.toLowerCase() === selectedCategory;
-    const matchesSearch = thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         thread.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        // Load posts
+        try {
+          const postsResponse = await getForumPosts(1, 20);
+          setPosts(postsResponse.data.posts);
+        } catch (postsError) {
+          console.warn("Failed to load posts:", postsError);
+          setPosts([]);
+        }
+      } catch (error) {
+        console.error("Failed to load forum data:", error);
+        setError("Failed to load forum data. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadForumData();
+  }, []);
+
+  // Filter posts by category
+  const filteredPosts =
+    selectedCategory === "all"
+      ? posts
+      : posts.filter((post) => post.category_id === selectedCategory);
+
+  // Convert posts to thread format for display
+  const threads = posts.map((post) => ({
+    id: post.id,
+    title: post.title,
+    author: post.users?.username || post.users?.full_name || "Unknown",
+    avatar:
+      post.users?.avatar_url ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        post.users?.username || post.users?.full_name || "U"
+      )}&background=random`,
+    category: post.forum_categories?.name || "General",
+    replies: post.reply_count || 0,
+    views: post.view_count || 0,
+    lastActivity: new Date(post.updated_at).toLocaleDateString(),
+    lastUser: post.users?.username || post.users?.full_name || "Unknown",
+    isPinned: post.is_pinned || false,
+    isHot: (post.upvotes || 0) > 10,
+    tags: post.tags || [],
+  }));
+
+  const filteredThreads = threads.filter((thread) => {
+    const matchesCategory =
+      selectedCategory === "all" ||
+      thread.category.toLowerCase().includes(selectedCategory.toLowerCase());
+    const matchesSearch =
+      thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      thread.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (thread.tags &&
+        thread.tags.some((tag) =>
+          tag.toLowerCase().includes(searchQuery.toLowerCase())
+        ));
     return matchesCategory && matchesSearch;
   });
+
+  if (isLoading) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              <div className="lg:col-span-1">
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-12 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </div>
+              <div className="lg:col-span-3">
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-24 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <div className="text-red-600 mb-4">
+              <MessageSquare className="h-12 w-12 mx-auto" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Failed to Load Forum
+            </h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -158,8 +192,13 @@ const ForumsPage = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Community Forums</h1>
-            <p className="text-gray-600 mt-2">Connect with fellow EV enthusiasts, share experiences, and get answers to your questions.</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Community Forums
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Connect with fellow EV enthusiasts, share experiences, and get
+              answers to your questions.
+            </p>
           </div>
           <Link href="/forums/new" className="btn-primary">
             <Plus className="h-4 w-4 mr-2" />
@@ -169,25 +208,29 @@ const ForumsPage = () => {
 
         {/* Category Navigation */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Categories</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Categories
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {categories.map((category) => (
-              category.id === 'all' ? (
+            {categories.map((category) =>
+              category.id === "all" ? (
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
                   className={`p-4 rounded-lg border-2 transition-all duration-200 ${
                     selectedCategory === category.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300 bg-white"
                   }`}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-2">{category.icon}</div>
-                    <h3 className="text-sm font-medium text-gray-900 mb-1">{category.name}</h3>
+                    <h3 className="text-sm font-medium text-gray-900 mb-1">
+                      {category.name}
+                    </h3>
                     <div className="text-xs text-gray-500">
-                      <div>{category.threads} threads</div>
-                      <div>{category.posts} posts</div>
+                      <div>{category.thread_count || 0} threads</div>
+                      <div>{category.post_count || 0} posts</div>
                     </div>
                   </div>
                 </button>
@@ -197,25 +240,31 @@ const ForumsPage = () => {
                   href={`/forums/category/${category.id}`}
                   className={`p-4 rounded-lg border-2 transition-all duration-200 block ${
                     selectedCategory === category.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300 bg-white"
                   }`}
                 >
                   <div className="text-center">
                     {category.logo ? (
-                      <img src={category.logo} alt={category.name} className="w-8 h-8 mx-auto mb-2" />
+                      <img
+                        src={category.logo}
+                        alt={category.name}
+                        className="w-8 h-8 mx-auto mb-2"
+                      />
                     ) : (
                       <div className="text-2xl mb-2">{category.icon}</div>
                     )}
-                    <h3 className="text-sm font-medium text-gray-900 mb-1">{category.name}</h3>
+                    <h3 className="text-sm font-medium text-gray-900 mb-1">
+                      {category.name}
+                    </h3>
                     <div className="text-xs text-gray-500">
-                      <div>{category.threads} threads</div>
-                      <div>{category.posts} posts</div>
+                      <div>{category.thread_count || 0} threads</div>
+                      <div>{category.post_count || 0} posts</div>
                     </div>
                   </div>
                 </Link>
               )
-            ))}
+            )}
           </div>
         </div>
 
@@ -233,8 +282,10 @@ const ForumsPage = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && searchQuery.trim()) {
-                        window.location.href = `/forums/search?q=${encodeURIComponent(searchQuery.trim())}`;
+                      if (e.key === "Enter" && searchQuery.trim()) {
+                        window.location.href = `/forums/search?q=${encodeURIComponent(
+                          searchQuery.trim()
+                        )}`;
                       }
                     }}
                     className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -242,7 +293,11 @@ const ForumsPage = () => {
                 </div>
                 <div className="flex gap-2">
                   <Link
-                    href={`/forums/search${searchQuery.trim() ? `?q=${encodeURIComponent(searchQuery.trim())}` : ''}`}
+                    href={`/forums/search${
+                      searchQuery.trim()
+                        ? `?q=${encodeURIComponent(searchQuery.trim())}`
+                        : ""
+                    }`}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Advanced Search
@@ -257,7 +312,10 @@ const ForumsPage = () => {
                     <option value="replies">Most Replies</option>
                     <option value="views">Most Views</option>
                   </select>
-                  <Link href="/forums/new" className="btn-primary flex items-center space-x-2">
+                  <Link
+                    href="/forums/new"
+                    className="btn-primary flex items-center space-x-2"
+                  >
                     <Plus className="h-4 w-4" />
                     <span>New Thread</span>
                   </Link>
@@ -269,21 +327,30 @@ const ForumsPage = () => {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-6 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  {selectedCategory === 'all' ? 'All Discussions' : `${categories.find(c => c.id === selectedCategory)?.name} Discussions`}
-                  <span className="ml-2 text-sm text-gray-500">({filteredThreads.length} threads)</span>
+                  {selectedCategory === "all"
+                    ? "All Discussions"
+                    : `${
+                        categories.find((c) => c.id === selectedCategory)?.name
+                      } Discussions`}
+                  <span className="ml-2 text-sm text-gray-500">
+                    ({filteredThreads.length} threads)
+                  </span>
                 </h2>
               </div>
-              
+
               <div className="divide-y divide-gray-200">
                 {filteredThreads.map((thread) => (
-                  <div key={thread.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
+                  <div
+                    key={thread.id}
+                    className="p-6 hover:bg-gray-50 transition-colors duration-200"
+                  >
                     <div className="flex items-start space-x-4">
                       <img
                         src={thread.avatar}
                         alt={thread.author}
                         className="w-10 h-10 rounded-full"
                       />
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-2">
                           {thread.isPinned && (
@@ -298,22 +365,36 @@ const ForumsPage = () => {
                             {thread.category}
                           </span>
                         </div>
-                        
-                        <Link href={`/forums/${thread.id}`} className="text-lg font-semibold text-gray-900 hover:text-blue-600 cursor-pointer mb-2 block">
+
+                        <Link
+                          href={`/forums/${thread.id}`}
+                          className="text-lg font-semibold text-gray-900 hover:text-blue-600 cursor-pointer mb-2 block"
+                        >
                           {thread.title}
                         </Link>
-                        
+
                         <div className="flex flex-wrap gap-2 mb-3">
                           {thread.tags.map((tag, index) => (
-                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+                            <span
+                              key={index}
+                              className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700"
+                            >
                               #{tag}
                             </span>
                           ))}
                         </div>
-                        
+
                         <div className="flex items-center justify-between text-sm text-gray-500">
                           <div className="flex items-center space-x-4">
-                            <span>by <Link href={`/users/${thread.author}`} className="font-medium text-blue-600 hover:text-blue-800">{thread.author}</Link></span>
+                            <span>
+                              by{" "}
+                              <Link
+                                href={`/users/${thread.author}`}
+                                className="font-medium text-blue-600 hover:text-blue-800"
+                              >
+                                {thread.author}
+                              </Link>
+                            </span>
                             <div className="flex items-center space-x-1">
                               <MessageSquare className="h-4 w-4" />
                               <span>{thread.replies} replies</span>
@@ -325,7 +406,15 @@ const ForumsPage = () => {
                           </div>
                           <div className="flex items-center space-x-1">
                             <Clock className="h-4 w-4" />
-                            <span>Last reply {thread.lastActivity} by <Link href={`/users/${thread.lastUser}`} className="text-blue-600 hover:text-blue-800">{thread.lastUser}</Link></span>
+                            <span>
+                              Last reply {thread.lastActivity} by{" "}
+                              <Link
+                                href={`/users/${thread.lastUser}`}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                {thread.lastUser}
+                              </Link>
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -341,7 +430,9 @@ const ForumsPage = () => {
             <div className="space-y-6">
               {/* Forum Stats */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Forum Statistics</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Forum Statistics
+                </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total Threads</span>
@@ -364,18 +455,26 @@ const ForumsPage = () => {
 
               {/* Recent Activity */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Recent Activity
+                </h3>
                 <div className="space-y-3">
                   <div className="text-sm">
-                    <p className="text-gray-900 font-medium">New reply in Tesla FSD Discussion</p>
+                    <p className="text-gray-900 font-medium">
+                      New reply in Tesla FSD Discussion
+                    </p>
                     <p className="text-gray-500">2 minutes ago</p>
                   </div>
                   <div className="text-sm">
-                    <p className="text-gray-900 font-medium">New thread: Charging Network Update</p>
+                    <p className="text-gray-900 font-medium">
+                      New thread: Charging Network Update
+                    </p>
                     <p className="text-gray-500">15 minutes ago</p>
                   </div>
                   <div className="text-sm">
-                    <p className="text-gray-900 font-medium">EVExpert joined the community</p>
+                    <p className="text-gray-900 font-medium">
+                      EVExpert joined the community
+                    </p>
                     <p className="text-gray-500">1 hour ago</p>
                   </div>
                 </div>

@@ -274,11 +274,29 @@ const forumSchemas = {
 
   createReply: Joi.object({
     content: Joi.string().min(1).max(5000).required(),
-    parent_reply_id: Joi.string().uuid(),
+    parent_id: Joi.string().uuid(),
   }),
 
   updateReply: Joi.object({
     content: Joi.string().min(1).max(5000).required(),
+  }),
+
+  // Voting schemas
+  vote: Joi.object({
+    vote_type: Joi.string().valid("upvote", "downvote").required(),
+  }),
+
+  // Reporting schemas
+  report: Joi.object({
+    reason: Joi.string().min(1).max(50).required(),
+    description: Joi.string().max(500),
+  }),
+
+  // Subscription schemas
+  subscribe: Joi.object({
+    notification_type: Joi.string()
+      .valid("all", "replies", "mentions")
+      .default("all"),
   }),
 };
 
