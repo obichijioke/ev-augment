@@ -184,6 +184,23 @@ const ProfilePage = () => {
     setAvatarPreview(null);
   };
 
+  const formatJoinedDate = (dateString: string | undefined | null): string => {
+    if (!dateString) return "Recently";
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Recently";
+
+      // Format as "Month Year" (e.g., "January 2024")
+      return date.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
+    } catch (error) {
+      return "Recently";
+    }
+  };
+
   const tabs = [
     { id: "profile", label: "Profile", icon: UserIcon },
     { id: "garage", label: "My Garage", icon: Car },
@@ -232,9 +249,7 @@ const ProfilePage = () => {
                 )}
                 <div className="flex items-center space-x-1">
                   <Calendar className="w-4 h-4" />
-                  <span>
-                    Joined {new Date(user.joinedDate).toLocaleDateString()}
-                  </span>
+                  <span>Joined {formatJoinedDate(user.joinedDate)}</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Award className="w-4 h-4" />
