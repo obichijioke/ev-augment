@@ -130,7 +130,7 @@ const NewThreadPage = () => {
             uploadedFiles.map(async (file) => {
               const updateResponse = await fetch(
                 `${
-                  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4005/api"
+                  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api"
                 }/upload/files/${file.id}`,
                 {
                   method: "PUT",
@@ -145,12 +145,30 @@ const NewThreadPage = () => {
               );
 
               if (!updateResponse.ok) {
-                console.warn(`Failed to update file ${file.id} association`);
+                const errorText = await updateResponse.text();
+                console.error(`Failed to update file ${file.id} association:`, {
+                  status: updateResponse.status,
+                  statusText: updateResponse.statusText,
+                  error: errorText,
+                  fileId: file.id,
+                  postId: createdPostId,
+                });
+              } else {
+                console.log(
+                  `✅ Successfully associated file ${file.id} with post ${createdPostId}`
+                );
               }
             })
           );
         } catch (fileUpdateError) {
-          console.warn("Failed to update file associations:", fileUpdateError);
+          console.error("Failed to update file associations:", {
+            error: fileUpdateError,
+            uploadedFiles: uploadedFiles.map((f) => ({
+              id: f.id,
+              filename: f.filename,
+            })),
+            postId: createdPostId,
+          });
           // Don't fail the entire post creation for file association errors
         }
       }

@@ -6,7 +6,7 @@ import { ForumAttachment } from "@/types/forum";
 
 // Base API configuration
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4005/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
 
 // =============================================================================
 // TYPES AND INTERFACES
