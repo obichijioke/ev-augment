@@ -77,7 +77,7 @@ const ReplyList = ({
             <div className="mt-2">
               <ReplyForm
                 onSubmit={(content, attachmentIds) =>
-                  handleReply(content, undefined, true)
+                  handleReply(content, attachmentIds, true)
                 }
                 onCancel={handleCancelReply}
                 isSubmitting={isSubmitting}

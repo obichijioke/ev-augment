@@ -179,7 +179,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
 
   const handleReply = async (
     content: string,
-    attachments?: File[],
+    attachmentIds?: string[],
     isInlineReply = false
   ) => {
     setIsSubmitting(true);
@@ -190,7 +190,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
 
       console.log("Submitting reply:", {
         content,
-        attachments,
+        attachmentIds,
         replyingTo,
         isInlineReply,
       });
@@ -200,6 +200,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
         content,
         parent_id:
           isInlineReply && replyingTo ? replyingTo.toString() : undefined,
+        attachment_ids: attachmentIds || [], // Pass attachment IDs to backend
       };
 
       const response = await createForumReply(thread.id.toString(), replyData);
@@ -598,7 +599,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
             Join the Discussion
           </h3>
                       <ReplyForm
-              onSubmit={(content, attachmentIds) => handleReply(content, undefined, false)}
+              onSubmit={(content, attachmentIds) => handleReply(content, attachmentIds, false)}
               placeholder="Share your thoughts on this discussion..."
               isSubmitting={isSubmitting}
             />

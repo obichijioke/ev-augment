@@ -275,6 +275,7 @@ const forumSchemas = {
   createReply: Joi.object({
     content: Joi.string().min(1).max(5000).required(),
     parent_id: Joi.string().uuid(),
+    attachment_ids: Joi.array().items(Joi.string().uuid()).max(10),
   }),
 
   updateReply: Joi.object({
