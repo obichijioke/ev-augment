@@ -10,6 +10,7 @@ export interface ForumUser {
   is_verified: boolean;
   role: string;
   join_date?: string;
+  created_at?: string;
 }
 
 export interface ForumCategory {
@@ -48,17 +49,33 @@ export interface ForumPost {
   last_reply_by?: string;
   created_at: string;
   updated_at: string;
-  
+
   // Joined data
   users?: ForumUser;
   forum_categories?: ForumCategory;
   forum_replies?: ForumReply[];
-  
+  attachments?: ForumAttachment[];
+
   // Vote information (when user is authenticated)
   user_vote?: "upvote" | "downvote" | null;
   upvotes?: number;
   downvotes?: number;
   score?: number;
+
+  // Additional display properties for legacy compatibility
+  author?: {
+    name: string;
+    avatar: string;
+    joinDate: string;
+    posts: number;
+    reputation: number;
+  };
+  category?: string;
+  createdAt?: string;
+  views?: number;
+  likes?: number;
+  isPinned?: boolean;
+  isLocked?: boolean;
 }
 
 export interface ForumReply {
@@ -73,13 +90,14 @@ export interface ForumReply {
   edited_at?: string;
   created_at: string;
   updated_at: string;
-  
+
   // Joined data
   users?: ForumUser;
-  
+  attachments?: ForumAttachment[];
+
   // Nested replies (for threaded discussions)
   replies?: ForumReply[];
-  
+
   // Vote information (when user is authenticated)
   user_vote?: "upvote" | "downvote" | null;
   upvotes?: number;
@@ -110,7 +128,7 @@ export interface ForumReport {
   admin_notes?: string;
   created_at: string;
   updated_at: string;
-  
+
   // Joined data
   reporter?: ForumUser;
   post?: ForumPost;
@@ -246,7 +264,13 @@ export interface ForumPostsQuery {
   category_id?: string;
   author_id?: string;
   sort?: "asc" | "desc";
-  sortBy?: "created_at" | "updated_at" | "views" | "title" | "reply_count" | "last_activity_at";
+  sortBy?:
+    | "created_at"
+    | "updated_at"
+    | "views"
+    | "title"
+    | "reply_count"
+    | "last_activity_at";
   q?: string;
   is_pinned?: boolean;
   is_locked?: boolean;
@@ -312,46 +336,34 @@ export interface ForumPermissions {
 // Utility Types
 // =============================================================================
 
-export type ForumSortOption = 
-  | "latest" 
-  | "popular" 
-  | "replies" 
-  | "votes" 
-  | "views" 
+export type ForumSortOption =
+  | "latest"
+  | "popular"
+  | "replies"
+  | "votes"
+  | "views"
   | "oldest";
 
-export type ForumTimeRange = 
-  | "today" 
-  | "week" 
-  | "month" 
-  | "year" 
-  | "all";
+export type ForumTimeRange = "today" | "week" | "month" | "year" | "all";
 
-export type ForumViewMode = 
-  | "list" 
-  | "grid" 
-  | "compact";
+export type ForumViewMode = "list" | "grid" | "compact";
 
 export type VoteType = "upvote" | "downvote";
 
-export type ReportReason = 
-  | "spam" 
-  | "harassment" 
-  | "inappropriate" 
-  | "off-topic" 
-  | "misinformation" 
+export type ReportReason =
+  | "spam"
+  | "harassment"
+  | "inappropriate"
+  | "off-topic"
+  | "misinformation"
   | "other";
 
-export type PostStatus = 
-  | "active" 
-  | "locked" 
-  | "pinned" 
-  | "featured" 
-  | "archived" 
+export type PostStatus =
+  | "active"
+  | "locked"
+  | "pinned"
+  | "featured"
+  | "archived"
   | "deleted";
 
-export type ReplyStatus = 
-  | "active" 
-  | "edited" 
-  | "deleted" 
-  | "hidden";
+export type ReplyStatus = "active" | "edited" | "deleted" | "hidden";

@@ -36,6 +36,47 @@ import {
 import { toString, toNumber } from "../utils/typeUtils";
 import Joi from "joi";
 
+// Helper function to fetch attachments for forum entities
+async function fetchAttachments(entityType: string, entityIds: string[]) {
+  if (!entityIds || entityIds.length === 0) return {};
+
+  const { data: attachments, error } = await supabaseAdmin
+    .from("file_uploads")
+    .select("*")
+    .eq("entity_type", entityType)
+    .in("entity_id", entityIds)
+    .eq("is_active", true)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.warn(`Failed to fetch ${entityType} attachments:`, error);
+    return {};
+  }
+
+  // Group attachments by entity_id
+  const attachmentMap = {};
+  attachments?.forEach((attachment) => {
+    const entityId = attachment.entity_id;
+    if (!attachmentMap[entityId]) {
+      attachmentMap[entityId] = [];
+    }
+    attachmentMap[entityId].push({
+      id: attachment.id,
+      filename: attachment.filename,
+      original_filename: attachment.original_name,
+      file_path: attachment.file_path,
+      file_size: attachment.file_size,
+      mime_type: attachment.mime_type,
+      is_image: attachment.mime_type.startsWith("image/"),
+      alt_text: attachment.alt_text,
+      uploader_id: attachment.user_id,
+      created_at: attachment.created_at,
+    });
+  });
+
+  return attachmentMap;
+}
+
 const router: Router = express.Router();
 
 // TypeScript interfaces
@@ -278,10 +319,21 @@ router.get(
       throw new Error(`Failed to fetch forum posts: ${error.message}`);
     }
 
+    // Fetch attachments for all posts
+    const postIds = posts?.map((post) => post.id) || [];
+    const postAttachments = await fetchAttachments("forum_post", postIds);
+
+    // Add attachments to posts
+    const postsWithAttachments =
+      posts?.map((post) => ({
+        ...post,
+        attachments: postAttachments[post.id] || [],
+      })) || [];
+
     res.json({
       success: true,
       data: {
-        posts,
+        posts: postsWithAttachments,
         pagination: buildPaginationMetadata(
           toNumber(page, 1),
           toNumber(limit, 20),
@@ -375,11 +427,17 @@ router.post(
       })
       .eq("id", category_id);
 
+    // Fetch attachments for the created post
+    const postAttachments = await fetchAttachments("forum_post", [post.id]);
+
     res.status(201).json({
       success: true,
       message: "Forum post created successfully",
       data: {
-        post,
+        post: {
+          ...post,
+          attachments: postAttachments[post.id] || [],
+        },
       },
     });
   })
@@ -467,17 +525,44 @@ router.get(
         count = simpleResult.count;
         repliesError = null;
 
-        // Add mock user data for display
-        replies =
-          replies?.map((reply) => ({
-            ...reply,
-            users: {
-              username: "chiboy09",
-              full_name: "Chijioke Obi",
+        // Add real user data for display by fetching from users table
+        if (replies && replies.length > 0) {
+          // Get unique author IDs
+          const authorIds = [
+            ...new Set(replies.map((reply) => reply.author_id)),
+          ];
+
+          // Fetch user data for all authors
+          const { data: usersData } = await supabaseAdmin
+            .from("users")
+            .select("id, username, full_name, avatar_url")
+            .in("id", authorIds);
+
+          // Create a map for quick lookup
+          const usersMap = new Map();
+          usersData?.forEach((user) => {
+            usersMap.set(user.id, {
+              username: user.username,
+              full_name: user.full_name,
               avatar_url:
-                "https://ui-avatars.com/api/?name=Chijioke+Obi&background=random",
+                user.avatar_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name || user.username || "Unknown")}&background=random`,
+            });
+          });
+
+          // Map replies with real user data
+          replies = replies.map((reply) => ({
+            ...reply,
+            users: usersMap.get(reply.author_id) || {
+              username: "unknown",
+              full_name: "Unknown User",
+              avatar_url:
+                "https://ui-avatars.com/api/?name=Unknown&background=random",
             },
-          })) || [];
+          }));
+        } else {
+          replies = [];
+        }
 
         console.log(
           `✅ Simple query successful! Found ${replies.length} replies`
@@ -649,17 +734,39 @@ router.get(
       .eq("author_id", post.author_id)
       .eq("is_active", true);
 
+    // Fetch attachments for the post
+    const postAttachments = await fetchAttachments("forum_post", [post.id]);
+
+    // Fetch attachments for all replies
+    const replyIds = replies?.map((reply) => reply.id) || [];
+    const replyAttachments = await fetchAttachments("forum_reply", replyIds);
+
+    // Add attachments to post
+    const postWithAttachments = {
+      ...post,
+      users: {
+        ...post.users,
+        post_count: authorPostCount || 0,
+      },
+      attachments: postAttachments[post.id] || [],
+    };
+
+    // Add attachments to replies recursively
+    const addAttachmentsToReplies = (repliesList: any[]): any[] => {
+      return repliesList.map((reply) => ({
+        ...reply,
+        attachments: replyAttachments[reply.id] || [],
+        children: reply.children ? addAttachmentsToReplies(reply.children) : [],
+      }));
+    };
+
+    const repliesWithAttachments = addAttachmentsToReplies(paginatedReplies);
+
     res.json({
       success: true,
       data: {
-        post: {
-          ...post,
-          users: {
-            ...post.users,
-            post_count: authorPostCount || 0,
-          },
-        },
-        replies: paginatedReplies,
+        post: postWithAttachments,
+        replies: repliesWithAttachments,
         pagination: {
           page: toNumber(page, 1),
           limit: toNumber(limit, 20),
@@ -907,18 +1014,28 @@ router.post(
           .single();
 
         if (!simpleResult.error) {
-          // Add mock user data for response
+          // Get the actual authenticated user's data
+          const { data: userData, error: userError } = await supabaseAdmin
+            .from("users")
+            .select("username, full_name, avatar_url")
+            .eq("id", (req as any).user.id)
+            .single();
+
+          // Add real user data for response
           reply = {
             ...simpleResult.data,
-            users: {
-              username: "chiboy09",
-              full_name: "Chijioke Obi",
+            users: userData || {
+              username: (req as any).user.username || "unknown",
+              full_name: (req as any).user.full_name || "Unknown User",
               avatar_url:
-                "https://ui-avatars.com/api/?name=Chijioke+Obi&background=random",
+                (req as any).user.avatar_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent((req as any).user.full_name || "Unknown User")}&background=random`,
             },
           };
           error = null;
-          console.log("✅ Reply created successfully with simple insert");
+          console.log(
+            "✅ Reply created successfully with simple insert and real user data"
+          );
         } else {
           error = simpleResult.error;
         }
@@ -1049,11 +1166,17 @@ router.post(
       })
       .eq("id", postId);
 
+    // Fetch attachments for the created reply
+    const replyAttachments = await fetchAttachments("forum_reply", [reply.id]);
+
     res.status(201).json({
       success: true,
       message: "Reply created successfully",
       data: {
-        reply,
+        reply: {
+          ...reply,
+          attachments: replyAttachments[reply.id] || [],
+        },
       },
     });
   })

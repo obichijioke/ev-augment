@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Reply as ReplyIcon, Edit, Trash2 } from "lucide-react";
 import VoteButtons from "./VoteButtons";
 import ReputationBadge from "./ReputationBadge";
+import AttachmentDisplay from "./AttachmentDisplay";
 import { ForumReply } from "@/types/forum";
 
 interface ReplyProps {
@@ -105,6 +106,18 @@ const Reply = ({
             </div>
           </div>
           <p className="text-gray-700 mb-2">{reply.content}</p>
+          
+          {/* Reply Attachments */}
+          {reply.attachments && reply.attachments.length > 0 && (
+            <div className="mb-3">
+              <AttachmentDisplay 
+                attachments={reply.attachments} 
+                showDownload={true}
+                className="reply-attachments"
+              />
+            </div>
+          )}
+          
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 text-sm text-gray-500">
               {/* Voting is now handled by VoteButtons component */}

@@ -76,8 +76,8 @@ const ReplyList = ({
           {replyingTo === reply.id && canReply && (
             <div className="mt-2">
               <ReplyForm
-                onSubmit={(content, attachments) =>
-                  handleReply(content, attachments, true)
+                onSubmit={(content, attachmentIds) =>
+                  handleReply(content, undefined, true)
                 }
                 onCancel={handleCancelReply}
                 isSubmitting={isSubmitting}

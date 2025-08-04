@@ -531,6 +531,7 @@ const uploadSchemas = {
     alt_text: Joi.string().max(255),
     caption: Joi.string().max(500),
     is_active: Joi.boolean(),
+    entity_id: Joi.string().uuid(),
   }),
 };
 

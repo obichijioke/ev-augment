@@ -71,6 +71,7 @@ const ThreadDetailPage = ({ params }: ThreadDetailPageProps) => {
           isPinned: postData.is_pinned || false,
           isLocked: false,
           tags: postData.tags || [],
+          attachments: postData.attachments || [], // Preserve attachment data
         };
 
         // Transform replies data recursively to handle nested structure
@@ -97,6 +98,7 @@ const ThreadDetailPage = ({ params }: ThreadDetailPageProps) => {
           likes: reply.like_count || 0,
           dislikes: 0,
           isEdited: reply.is_edited || false,
+          attachments: reply.attachments || [], // Preserve attachment data
           children: reply.children ? reply.children.map(transformReply) : [],
         });
 
@@ -111,7 +113,7 @@ const ThreadDetailPage = ({ params }: ThreadDetailPageProps) => {
         // Set empty data if API fails
         setReplies([]);
         setThread({
-          id: parseInt(resolvedParams.id),
+          id: resolvedParams.id,
           title: "Tesla FSD Beta vs Autopilot: Real World Comparison",
           content: `I've been testing both Tesla's FSD Beta and standard Autopilot for the past 6 months, and I wanted to share my detailed comparison for anyone considering the upgrade.
 
@@ -124,6 +126,20 @@ const ThreadDetailPage = ({ params }: ThreadDetailPageProps) => {
 **My Verdict**: If you do a lot of city driving, FSD Beta is worth the upgrade. For highway-only drivers, standard Autopilot might be sufficient.
 
 What has been your experience? I'd love to hear from other Tesla owners!`,
+          slug: "tesla-fsd-beta-vs-autopilot-comparison",
+          author_id: "default-user",
+          category_id: "tesla-category",
+          is_pinned: true,
+          is_locked: false,
+          is_featured: false,
+          is_active: true,
+          view_count: 2847,
+          like_count: 156,
+          reply_count: 0,
+          last_activity_at: "2024-01-15T10:30:00Z",
+          created_at: "2024-01-15T10:30:00Z",
+          updated_at: "2024-01-15T10:30:00Z",
+          attachments: [],
           author: {
             name: "TechReviewer",
             avatar:
@@ -163,7 +179,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
 
   const handleReply = async (
     content: string,
-    attachmentIds?: string[],
+    attachments?: File[],
     isInlineReply = false
   ) => {
     setIsSubmitting(true);
@@ -174,7 +190,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
 
       console.log("Submitting reply:", {
         content,
-        attachmentIds,
+        attachments,
         replyingTo,
         isInlineReply,
       });
@@ -186,7 +202,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
           isInlineReply && replyingTo ? replyingTo.toString() : undefined,
       };
 
-      const response = await createForumReply(thread.id, replyData);
+      const response = await createForumReply(thread.id.toString(), replyData);
 
       if (response.success) {
         console.log("Reply created successfully:", response.data);
@@ -229,6 +245,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
             isPinned: updatedPostData.is_pinned || false,
             isLocked: false,
             tags: updatedPostData.tags || [],
+            attachments: updatedPostData.attachments || [], // Preserve attachment data
           };
 
           // Transform updated replies data recursively
@@ -255,6 +272,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
             likes: reply.like_count || 0,
             dislikes: 0,
             isEdited: reply.is_edited || false,
+            attachments: reply.attachments || [], // Preserve attachment data
             children: reply.children ? reply.children.map(transformReply) : [],
           });
 
@@ -267,7 +285,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
 
         alert("Reply posted successfully!");
       } else {
-        throw new Error(response.error?.message || "Failed to create reply");
+        throw new Error("Failed to create reply");
       }
     } catch (error) {
       console.error("Error posting reply:", error);
@@ -317,10 +335,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
               posts: 0,
               reputation: 0,
             },
-            category: {
-              name: updatedPostData.forum_categories?.name || "General",
-              slug: updatedPostData.forum_categories?.slug || "general",
-            },
+            category: updatedPostData.forum_categories?.name || "General",
           };
 
           // Transform updated replies data recursively
@@ -349,6 +364,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
             likes: reply.like_count || 0,
             dislikes: 0,
             isEdited: reply.is_edited || false,
+            attachments: reply.attachments || [], // Preserve attachment data
             children: reply.children ? reply.children.map(transformReply) : [],
           });
 
@@ -358,10 +374,10 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
           setThread(updatedThread);
           setReplies(updatedTransformedReplies);
         }
-      } else {
-        console.error("Failed to update reply:", response.error);
-        alert("Failed to update reply. Please try again.");
-      }
+              } else {
+          console.error("Failed to update reply:", response);
+          alert("Failed to update reply. Please try again.");
+        }
     } catch (error) {
       console.error("Error updating reply:", error);
       alert("Failed to update reply. Please try again.");
@@ -412,10 +428,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
               posts: 0,
               reputation: 0,
             },
-            category: {
-              name: updatedPostData.forum_categories?.name || "General",
-              slug: updatedPostData.forum_categories?.slug || "general",
-            },
+            category: updatedPostData.forum_categories?.name || "General",
           };
 
           // Transform updated replies data recursively
@@ -444,6 +457,7 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
             likes: reply.like_count || 0,
             dislikes: 0,
             isEdited: reply.is_edited || false,
+            attachments: reply.attachments || [], // Preserve attachment data
             children: reply.children ? reply.children.map(transformReply) : [],
           });
 
@@ -549,9 +563,20 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
           </Link>
         </div>
 
-        <ThreadHeader thread={thread} formatDate={formatDate} />
+        <ThreadHeader 
+          thread={{
+            title: thread.title,
+            isPinned: thread.isPinned || false,
+            category: thread.category || "General",
+            tags: thread.tags || [],
+            createdAt: thread.createdAt || thread.created_at,
+            views: thread.views || thread.view_count || 0,
+            likes: thread.likes || thread.like_count || 0,
+          }} 
+          formatDate={formatDate} 
+        />
 
-        <Post post={thread} author={thread.author} content={thread.content} />
+        <Post post={thread} author={thread.author!} content={thread.content} />
 
         <ReplyList
           replies={replies}
@@ -572,11 +597,11 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Join the Discussion
           </h3>
-          <ReplyForm
-            onSubmit={handleReply}
-            placeholder="Share your thoughts on this discussion..."
-            isSubmitting={isSubmitting}
-          />
+                      <ReplyForm
+              onSubmit={(content, attachmentIds) => handleReply(content, undefined, false)}
+              placeholder="Share your thoughts on this discussion..."
+              isSubmitting={isSubmitting}
+            />
         </div>
       </div>
     </div>

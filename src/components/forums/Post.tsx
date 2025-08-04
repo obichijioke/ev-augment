@@ -3,6 +3,7 @@
 import Image from "next/image";
 import VoteButtons from "./VoteButtons";
 import ReputationBadge from "./ReputationBadge";
+import AttachmentDisplay from "./AttachmentDisplay";
 import { ForumPost } from "@/types/forum";
 
 interface PostProps {
@@ -103,6 +104,17 @@ const Post = ({ post, author, content, showVoting = true }: PostProps) => {
               __html: content.replace(/\n/g, "<br />"),
             }}
           />
+
+          {/* Post Attachments */}
+          {post.attachments && post.attachments.length > 0 && (
+            <div className="mt-4">
+              <AttachmentDisplay 
+                attachments={post.attachments} 
+                showDownload={true}
+                className="post-attachments"
+              />
+            </div>
+          )}
 
           {/* Post Stats */}
           <div className="flex items-center space-x-4 mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">

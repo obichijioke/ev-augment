@@ -109,6 +109,20 @@ const validateFileOwnership = async (
         .eq("id", entityId);
       ownerField = "owner_id";
       break;
+    case "forum_post":
+      ownershipQuery = supabaseAdmin
+        .from("forum_posts")
+        .select("author_id")
+        .eq("id", entityId);
+      ownerField = "author_id";
+      break;
+    case "forum_reply":
+      ownershipQuery = supabaseAdmin
+        .from("forum_replies")
+        .select("author_id")
+        .eq("id", entityId);
+      ownerField = "author_id";
+      break;
     case "user_avatar":
       return entityId === userId; // User can only upload their own avatar
     default:
@@ -460,7 +474,7 @@ router.put(
   validate(uploadSchemas.updateFile),
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
-    const { alt_text, caption } = req.body;
+    const { alt_text, caption, entity_id } = req.body;
 
     // Check if file exists and user owns it
     const { data: existingFile, error: checkError } = await supabaseAdmin
@@ -478,13 +492,18 @@ router.put(
       throw forbiddenError("You can only update your own files");
     }
 
+    // Prepare update data
+    const updateData: any = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (alt_text !== undefined) updateData.alt_text = alt_text;
+    if (caption !== undefined) updateData.caption = caption;
+    if (entity_id !== undefined) updateData.entity_id = entity_id;
+
     const { data: updatedFile, error } = await supabaseAdmin
       .from("file_uploads")
-      .update({
-        alt_text,
-        caption,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", id)
       .select("*")
       .single();

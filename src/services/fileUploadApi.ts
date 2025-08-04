@@ -4,6 +4,10 @@
 
 import { ForumAttachment } from "@/types/forum";
 
+// Base API configuration
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4005/api";
+
 // =============================================================================
 // TYPES AND INTERFACES
 // =============================================================================
@@ -53,7 +57,11 @@ export interface UploadProgress {
 }
 
 export type UploadType = "image" | "document" | "video";
-export type EntityType = "forum_post" | "forum_reply" | "user_profile" | "blog_post";
+export type EntityType =
+  | "forum_post"
+  | "forum_reply"
+  | "user_profile"
+  | "blog_post";
 
 // =============================================================================
 // VALIDATION UTILITIES
@@ -62,7 +70,13 @@ export type EntityType = "forum_post" | "forum_reply" | "user_profile" | "blog_p
 export const FILE_CONSTRAINTS = {
   maxFileSize: 10 * 1024 * 1024, // 10MB
   maxFiles: 5,
-  allowedImageTypes: ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"],
+  allowedImageTypes: [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+  ],
   allowedDocumentTypes: [
     "application/pdf",
     "application/msword",
@@ -74,12 +88,17 @@ export const FILE_CONSTRAINTS = {
   allowedVideoTypes: ["video/mp4", "video/webm", "video/ogg"],
 };
 
-export function validateFile(file: File, uploadType: UploadType): FileValidationResult {
+export function validateFile(
+  file: File,
+  uploadType: UploadType
+): FileValidationResult {
   // Check file size
   if (file.size > FILE_CONSTRAINTS.maxFileSize) {
     return {
       isValid: false,
-      error: `File size must be less than ${FILE_CONSTRAINTS.maxFileSize / (1024 * 1024)}MB`,
+      error: `File size must be less than ${
+        FILE_CONSTRAINTS.maxFileSize / (1024 * 1024)
+      }MB`,
     };
   }
 
@@ -107,7 +126,10 @@ export function validateFile(file: File, uploadType: UploadType): FileValidation
   return { isValid: true };
 }
 
-export function validateFiles(files: File[], uploadType: UploadType): FileValidationResult {
+export function validateFiles(
+  files: File[],
+  uploadType: UploadType
+): FileValidationResult {
   if (files.length > FILE_CONSTRAINTS.maxFiles) {
     return {
       isValid: false,
@@ -126,6 +148,26 @@ export function validateFiles(files: File[], uploadType: UploadType): FileValida
 }
 
 // =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+// Get authentication token from localStorage
+function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const authStorage = localStorage.getItem("auth-storage");
+    if (!authStorage) return null;
+
+    const authData = JSON.parse(authStorage);
+    return authData?.state?.session?.accessToken || null;
+  } catch (error) {
+    console.error("Error parsing auth token:", error);
+    return null;
+  }
+}
+
+// =============================================================================
 // API FUNCTIONS
 // =============================================================================
 
@@ -134,11 +176,11 @@ async function makeUploadRequest(
   formData: FormData,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<Response> {
-  const token = localStorage.getItem("token");
-  
+  const token = getAuthToken();
+
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    
+
     // Handle progress
     if (onProgress) {
       xhr.upload.addEventListener("progress", (event) => {
@@ -152,31 +194,33 @@ async function makeUploadRequest(
         }
       });
     }
-    
+
     // Handle completion
     xhr.addEventListener("load", () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(new Response(xhr.responseText, {
-          status: xhr.status,
-          statusText: xhr.statusText,
-        }));
+        resolve(
+          new Response(xhr.responseText, {
+            status: xhr.status,
+            statusText: xhr.statusText,
+          })
+        );
       } else {
         reject(new Error(`Upload failed: ${xhr.statusText}`));
       }
     });
-    
+
     // Handle errors
     xhr.addEventListener("error", () => {
       reject(new Error("Upload failed: Network error"));
     });
-    
+
     // Handle abort
     xhr.addEventListener("abort", () => {
       reject(new Error("Upload cancelled"));
     });
-    
+
     // Open and send request
-    xhr.open("POST", `/api/upload/${endpoint}`);
+    xhr.open("POST", `${API_BASE_URL}/upload/${endpoint}`);
     if (token) {
       xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     }
@@ -214,7 +258,7 @@ export async function uploadSingleFile(
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_type", uploadType);
-  
+
   if (entityType) formData.append("entity_type", entityType);
   if (entityId) formData.append("entity_id", entityId);
   if (altText) formData.append("alt_text", altText);
@@ -222,7 +266,7 @@ export async function uploadSingleFile(
 
   try {
     const response = await makeUploadRequest("single", formData, onProgress);
-    
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || "Upload failed");
@@ -230,7 +274,11 @@ export async function uploadSingleFile(
 
     return await response.json();
   } catch (error) {
-    throw new Error(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Upload failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
@@ -257,13 +305,13 @@ export async function uploadMultipleFiles(
     formData.append("files", file);
   });
   formData.append("upload_type", uploadType);
-  
+
   if (entityType) formData.append("entity_type", entityType);
   if (entityId) formData.append("entity_id", entityId);
 
   try {
     const response = await makeUploadRequest("multiple", formData, onProgress);
-    
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || "Upload failed");
@@ -271,7 +319,11 @@ export async function uploadMultipleFiles(
 
     return await response.json();
   } catch (error) {
-    throw new Error(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Upload failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
@@ -294,7 +346,7 @@ export async function uploadAvatar(
 
   try {
     const response = await makeUploadRequest("avatar", formData, onProgress);
-    
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || "Avatar upload failed");
@@ -302,18 +354,24 @@ export async function uploadAvatar(
 
     return await response.json();
   } catch (error) {
-    throw new Error(`Avatar upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Avatar upload failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
-export async function deleteFile(fileId: string): Promise<{ success: boolean; message: string }> {
-  const token = localStorage.getItem("token");
-  
+export async function deleteFile(
+  fileId: string
+): Promise<{ success: boolean; message: string }> {
+  const token = getAuthToken();
+
   try {
-    const response = await fetch(`/api/upload/${fileId}`, {
+    const response = await fetch(`${API_BASE_URL}/upload/files/${fileId}`, {
       method: "DELETE",
       headers: {
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });
@@ -325,7 +383,11 @@ export async function deleteFile(fileId: string): Promise<{ success: boolean; me
 
     return await response.json();
   } catch (error) {
-    throw new Error(`Delete failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Delete failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
@@ -335,11 +397,11 @@ export async function deleteFile(fileId: string): Promise<{ success: boolean; me
 
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 Bytes";
-  
+
   const k = 1024;
   const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
@@ -348,7 +410,8 @@ export function getFileIcon(mimeType: string): string {
   if (mimeType.startsWith("video/")) return "🎥";
   if (mimeType.includes("pdf")) return "📄";
   if (mimeType.includes("word")) return "📝";
-  if (mimeType.includes("excel") || mimeType.includes("spreadsheet")) return "📊";
+  if (mimeType.includes("excel") || mimeType.includes("spreadsheet"))
+    return "📊";
   if (mimeType.includes("text")) return "📄";
   return "📎";
 }
