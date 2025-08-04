@@ -977,8 +977,11 @@ router.post(
       }
     }
 
+    // Destructure to exclude attachment_ids from database insert (it's not a DB column)
+    const { attachment_ids, ...replyFields } = req.body;
+    
     const replyData = {
-      ...req.body,
+      ...replyFields,
       post_id: postId,
       author_id: (req as any).user.id,
       created_at: new Date().toISOString(),
@@ -1147,8 +1150,8 @@ router.post(
     }
 
     // Associate uploaded files with the reply if attachment_ids provided
-    if (req.body.attachment_ids && req.body.attachment_ids.length > 0) {
-      console.log(`🔗 Associating ${req.body.attachment_ids.length} files with reply ${reply.id}`);
+    if (attachment_ids && attachment_ids.length > 0) {
+      console.log(`🔗 Associating ${attachment_ids.length} files with reply ${reply.id}`);
       
       try {
         const { data: updatedFiles, error: fileUpdateError } = await supabaseAdmin
@@ -1158,7 +1161,7 @@ router.post(
             entity_id: reply.id,
             updated_at: new Date().toISOString(),
           })
-          .in("id", req.body.attachment_ids)
+          .in("id", attachment_ids)
           .eq("entity_id", null) // Only update files that aren't already associated
           .eq("user_id", (req as any).user.id) // Only update files uploaded by the current user
           .select("id, filename");
