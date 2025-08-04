@@ -1149,32 +1149,7 @@ router.post(
       }
     }
 
-    // Associate uploaded files with the reply if attachment_ids provided
-    if (attachment_ids && attachment_ids.length > 0) {
-      console.log(`🔗 Associating ${attachment_ids.length} files with reply ${reply.id}`);
-      
-      try {
-        const { data: updatedFiles, error: fileUpdateError } = await supabaseAdmin
-          .from("file_uploads")
-          .update({
-            entity_type: "forum_reply",
-            entity_id: reply.id,
-            updated_at: new Date().toISOString(),
-          })
-          .in("id", attachment_ids)
-          .eq("entity_id", null) // Only update files that aren't already associated
-          .eq("user_id", (req as any).user.id) // Only update files uploaded by the current user
-          .select("id, filename");
-
-        if (fileUpdateError) {
-          console.warn("Failed to associate files with reply:", fileUpdateError);
-        } else {
-          console.log(`✅ Successfully associated ${updatedFiles?.length || 0} files with reply ${reply.id}`);
-        }
-      } catch (fileAssocError) {
-        console.warn("Error during file association:", fileAssocError);
-      }
-    }
+    // Note: File association is handled in frontend using upload API (consistent with forum posts)
 
     // Update post's reply count and last activity
     // First get current reply count

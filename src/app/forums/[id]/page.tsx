@@ -22,6 +22,21 @@ interface ThreadDetailPageProps {
   }>;
 }
 
+// Get authentication token from localStorage
+function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const authStorage = localStorage.getItem("auth-storage");
+    if (!authStorage) return null;
+
+    const authData = JSON.parse(authStorage);
+    return authData?.state?.session?.accessToken || null;
+  } catch (error) {
+    return null;
+  }
+}
+
 const ThreadDetailPage = ({ params }: ThreadDetailPageProps) => {
   const resolvedParams = use(params);
   const user = useUser();
@@ -200,13 +215,49 @@ What has been your experience? I'd love to hear from other Tesla owners!`,
         content,
         parent_id:
           isInlineReply && replyingTo ? replyingTo.toString() : undefined,
-        attachment_ids: attachmentIds || [], // Pass attachment IDs to backend
+        // Note: attachment association handled separately via upload API
       };
 
       const response = await createForumReply(thread.id.toString(), replyData);
 
       if (response.success) {
         console.log("Reply created successfully:", response.data);
+
+        // Associate uploaded files with the reply (same pattern as forum posts)
+        if (attachmentIds && attachmentIds.length > 0) {
+          console.log(`🔗 Associating ${attachmentIds.length} files with reply ${response.data.reply.id}`);
+          try {
+            await Promise.all(
+              attachmentIds.map(async (fileId) => {
+                const updateResponse = await fetch(
+                  `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api"}/upload/files/${fileId}`,
+                  {
+                    method: "PUT",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${getAuthToken()}`,
+                    },
+                    body: JSON.stringify({
+                      entity_id: response.data.reply.id,
+                    }),
+                  }
+                );
+
+                if (!updateResponse.ok) {
+                  const errorText = await updateResponse.text();
+                  console.error(`Failed to associate file ${fileId} with reply:`, {
+                    status: updateResponse.status,
+                    error: errorText,
+                  });
+                } else {
+                  console.log(`✅ Successfully associated file ${fileId} with reply ${response.data.reply.id}`);
+                }
+              })
+            );
+          } catch (fileAssocError) {
+            console.warn("Failed to associate files with reply:", fileAssocError);
+          }
+        }
 
         // Reset inline reply form only if it's an inline reply
         if (isInlineReply) {

@@ -7,7 +7,7 @@ import AttachmentList from "./forums/AttachmentList";
 import ReplyPreview from "./forums/ReplyPreview";
 import FileUploadZone from "./forums/FileUploadZone";
 import AttachmentDisplay from "./forums/AttachmentDisplay";
-import { useForumReplyUpload } from "@/hooks/useFileUpload";
+import { useFileUpload } from "@/hooks/useFileUpload";
 import RichTextEditor from "./forums/RichTextEditor";
 
 interface ReplyFormProps {
@@ -51,7 +51,7 @@ const ReplyForm = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // File upload hook
+  // File upload hook - upload files without entity association initially
   const {
     files: uploadedFiles,
     isUploading,
@@ -60,7 +60,11 @@ const ReplyForm = ({
     uploadFiles,
     removeFile,
     clearError,
-  } = useForumReplyUpload(replyId);
+  } = useFileUpload({
+    uploadType: "image",
+    maxFiles: 3,
+    // No entityType or entityId - files will be associated after reply creation
+  });
 
   // Legacy file handling (kept for compatibility)
   const handleFileSelect = (files: FileList | null) => {
