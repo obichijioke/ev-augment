@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Send, X, Paperclip } from "lucide-react";
 import FormattingToolbar from "./forums/FormattingToolbar";
 import AttachmentList from "./forums/AttachmentList";
@@ -66,19 +66,30 @@ const ReplyForm = ({
     // No entityType or entityId - files will be associated after reply creation
   });
 
-  // Legacy file handling (kept for compatibility)
+  // Debug: Monitor uploadedFiles changes
+  useEffect(() => {
+    console.log("🔍 uploadedFiles state changed:", uploadedFiles);
+  }, [uploadedFiles]);
+
+  // File selection handler
   const handleFileSelect = (files: FileList | null) => {
     if (!files || !enableFileUpload) return;
 
     const fileArray = Array.from(files);
+    console.log("🔍 Files selected via input:", fileArray);
     uploadFiles(fileArray);
   };
 
   const handleSubmit = () => {
     if (!content.trim()) return;
 
+    // Debug: Check uploaded files state
+    console.log("🔍 ReplyForm Debug - uploadedFiles:", uploadedFiles);
+    console.log("🔍 ReplyForm Debug - uploadedFiles length:", uploadedFiles.length);
+
     // Get attachment IDs from uploaded files
     const attachmentIds = uploadedFiles.map((file) => file.id);
+    console.log("🔍 ReplyForm Debug - attachmentIds:", attachmentIds);
 
     onSubmit(content, attachmentIds.length > 0 ? attachmentIds : undefined);
     setContent("");
@@ -91,9 +102,23 @@ const ReplyForm = ({
     }
   };
 
-  const handleFilesUploaded = (files: any[]) => {
-    // Files are automatically managed by the useForumReplyUpload hook
-    console.log("Files uploaded:", files);
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!enableFileUpload || isSubmitting || isUploading) return;
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const fileArray = Array.from(files);
+      console.log("🔍 Files dropped:", fileArray);
+      uploadFiles(fileArray);
+    }
   };
 
   return (
@@ -203,14 +228,39 @@ const ReplyForm = ({
 
           {/* File Upload Zone */}
           {showFileUpload && (
-            <FileUploadZone
-              onFilesUploaded={handleFilesUploaded}
-              uploadType="image"
-              entityType="forum_reply"
-              entityId={replyId}
-              maxFiles={3}
-              disabled={isSubmitting || isUploading}
-            />
+            <div 
+              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center transition-colors hover:border-gray-400"
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            >
+              <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-sm text-gray-600 mb-4">
+                Drag & drop files here, or{" "}
+                <button
+                  type="button"
+                  onClick={handleFileUpload}
+                  className="text-blue-600 hover:text-blue-800 font-medium"
+                  disabled={isSubmitting || isUploading}
+                >
+                  browse files
+                </button>
+              </p>
+              <p className="text-xs text-gray-500">
+                Maximum 3 files, up to 10MB each
+              </p>
+              
+              {isUploading && (
+                <div className="mt-4">
+                  <div className="text-sm text-blue-600">Uploading... {uploadProgress}%</div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Toggle Upload Zone */}
