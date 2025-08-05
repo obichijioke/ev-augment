@@ -27,9 +27,16 @@
 --[x] NAME:Integrate forum categories DESCRIPTION:Connect the forum categories display to fetch data from the backend API
 --[x] NAME:Implement thread listing and display DESCRIPTION:Connect thread listing, filtering, and individual thread display to the backend
 --[x] NAME:Implement thread creation and editing DESCRIPTION:Connect the thread creation and editing forms to the backend API
---[ ] NAME:Implement reply system DESCRIPTION:Connect the reply creation, editing, and nested display to the backend with 2-level nesting
+--[/] NAME:Implement reply system DESCRIPTION:Connect the reply creation, editing, and nested display to the backend with 2-level nesting
 --[ ] NAME:Implement image upload functionality DESCRIPTION:Connect image upload components to the backend storage system
 --[ ] NAME:Add authentication integration DESCRIPTION:Ensure all forum actions properly use the authentication system
 --[ ] NAME:Implement moderation features DESCRIPTION:Add moderation UI for admins and moderators to manage content
 --[ ] NAME:Add error handling and loading states DESCRIPTION:Implement proper error handling, loading states, and user feedback
 --[ ] NAME:Test and polish the forum DESCRIPTION:Test all functionality, fix bugs, and polish the user experience
+-[ ] NAME: DESCRIPTION:
+-[ ] NAME:Reply Edit/Delete Functionality DESCRIPTION:Implement the ability for users to edit and delete their own replies, with admin moderation capabilities and edit history tracking
+-[ ] NAME:Reply Reactions/Voting System DESCRIPTION:Add like/dislike or upvote/downvote functionality for replies with reaction counts and user tracking
+-[ ] NAME:Reply Notifications DESCRIPTION:Create notification system to alert users when someone replies to their posts, with email/in-app notifications and user preferences
+-[ ] NAME:Reply Pagination & Performance DESCRIPTION:Implement pagination for threads with many replies, add lazy loading and 'load more' functionality for better performance
+-[ ] NAME:Advanced Reply Features DESCRIPTION:Add quote functionality, @username mentions, reply search, and different sorting options (newest, oldest, most liked)
+-[ ] NAME:Moderation Tools DESCRIPTION:Build reply reporting system, admin moderation dashboard, and bulk moderation actions for community management
