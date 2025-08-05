@@ -11,7 +11,11 @@ import ErrorBoundary, {
   ForumError,
 } from "@/components/forum/ErrorBoundary";
 import { ForumThread, CreateReplyForm } from "@/types/forum";
-import { useForumThread, useForumReplies } from "@/hooks/useForumApi";
+import {
+  useForumThread,
+  useForumReplies,
+  useForumImages,
+} from "@/hooks/useForumApi";
 
 const ThreadDetailPage: React.FC = () => {
   const params = useParams();
@@ -26,6 +30,12 @@ const ThreadDetailPage: React.FC = () => {
     refetch,
   } = useForumThread(threadId);
 
+  // Reply API hook
+  const { createReply } = useForumReplies();
+
+  // Image upload hook
+  const { uploadImage } = useForumImages();
+
   const handleRetry = () => {
     refetch();
   };
@@ -39,16 +49,29 @@ const ThreadDetailPage: React.FC = () => {
   const canEdit = true; // TODO: Check if user is author or has permissions
 
   const handleReply = async (data: CreateReplyForm) => {
-    // Simulate API call to create reply
-    console.log("Creating reply:", data);
+    try {
+      // First create the reply
+      const newReply = await createReply({
+        thread_id: threadId,
+        parent_id: data.parentId,
+        content: data.content,
+        images: [], // We'll upload images separately
+      });
 
-    // In a real app, this would make an API call
-    // For now, we'll just simulate success
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Upload images if any
+      if (data.images && data.images.length > 0) {
+        for (const image of data.images) {
+          await uploadImage(image, undefined, newReply.id);
+        }
+      }
 
-    // Refresh the page to show the new reply
-    // In a real app, you'd update the state instead
-    window.location.reload();
+      // Refresh the thread to show the new reply
+      await refetch();
+    } catch (error) {
+      console.error("Failed to create reply:", error);
+      // Error handling is done by the hook
+      throw error;
+    }
   };
 
   if (isLoading) {
@@ -87,14 +110,16 @@ const ThreadDetailPage: React.FC = () => {
 
         {/* Original Post */}
         <div className="mb-8">
-          <PostContent
-            content={thread.content}
-            images={thread.images}
-            author={thread.author}
-            createdAt={thread.created_at}
-            updatedAt={thread.updated_at}
-            isOriginalPost={true}
-          />
+          {thread.author && (
+            <PostContent
+              content={thread.content}
+              images={thread.images}
+              author={thread.author}
+              createdAt={thread.created_at}
+              updatedAt={thread.updated_at}
+              isOriginalPost={true}
+            />
+          )}
         </div>
 
         {/* Replies Section */}

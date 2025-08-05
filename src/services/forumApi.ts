@@ -170,10 +170,6 @@ export const threadsApi = {
     if (threadData.images) {
       threadData.images = threadData.images.map((img: any) => {
         const constructedUrl = `https://rszqdjbjswwfparbzfyi.supabase.co/storage/v1/object/public/forum-images/${img.storage_path}`;
-        console.log("Constructing image URL:", {
-          storage_path: img.storage_path,
-          constructed_url: constructedUrl,
-        });
 
         const transformedImg = {
           id: img.id,
@@ -185,6 +181,43 @@ export const threadsApi = {
         };
         return transformedImg;
       });
+    }
+
+    // Transform replies to include proper author object structure
+    if (threadData.replies) {
+      const transformReplies = (replies: any[]): any[] => {
+        return replies.map((reply: any) => ({
+          ...reply,
+          author: {
+            id: reply.author_id,
+            username: reply.author_username,
+            displayName: reply.author_name || reply.author_username,
+            avatar: reply.author_avatar,
+            isVerified: false, // Default to false for now
+          },
+          images: reply.images
+            ? reply.images.map((img: any) => {
+                const constructedUrl = `https://rszqdjbjswwfparbzfyi.supabase.co/storage/v1/object/public/forum-images/${img.storage_path}`;
+                return {
+                  id: img.id,
+                  url: img.public_url || constructedUrl,
+                  filename: img.filename || img.original_filename,
+                  size: img.file_size,
+                  mimeType: img.mime_type,
+                  alt: img.alt_text,
+                };
+              })
+            : [],
+          createdAt: reply.created_at,
+          updatedAt: reply.updated_at,
+          isEdited: reply.updated_at !== reply.created_at,
+          editedAt:
+            reply.updated_at !== reply.created_at ? reply.updated_at : null,
+          replies: reply.replies ? transformReplies(reply.replies) : [],
+        }));
+      };
+
+      threadData.replies = transformReplies(threadData.replies);
     }
 
     return threadData;

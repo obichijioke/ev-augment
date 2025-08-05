@@ -201,7 +201,7 @@ router.get("/threads/:id", async (req, res, next) => {
 
     // Get thread replies
     const { data: replies, error: repliesError } = await supabaseAdmin
-      .from("forum_reply_tree")
+      .from("forum_replies")
       .select("*")
       .eq("thread_id", id)
       .order("created_at", { ascending: true });
@@ -214,10 +214,29 @@ router.get("/threads/:id", async (req, res, next) => {
     const { data: images, error: imagesError } = await supabaseAdmin
       .from("forum_images")
       .select("*")
-      .eq("thread_id", id);
+      .eq("thread_id", id)
+      .is("reply_id", null);
 
     if (imagesError) {
       return next(createError("Failed to fetch images", 500));
+    }
+
+    // Get reply images
+    const replyIds = replies?.map((r) => r.id) || [];
+    let replyImages: any[] = [];
+
+    if (replyIds.length > 0) {
+      const { data: replyImagesData, error: replyImagesError } =
+        await supabaseAdmin
+          .from("forum_images")
+          .select("*")
+          .in("reply_id", replyIds);
+
+      if (replyImagesError) {
+        return next(createError("Failed to fetch reply images", 500));
+      }
+
+      replyImages = replyImagesData || [];
     }
 
     // Increment view count
@@ -226,8 +245,26 @@ router.get("/threads/:id", async (req, res, next) => {
       .update({ view_count: thread.view_count + 1 })
       .eq("id", id);
 
-    // Organize replies into nested structure
-    const organizedReplies = organizeReplies(replies);
+    // Get author information for replies
+    const authorIds = [
+      ...new Set(replies?.map((r) => r.author_id).filter(Boolean)),
+    ];
+    let authors: any[] = [];
+
+    if (authorIds.length > 0) {
+      const { data: authorsData } = await supabaseAdmin
+        .from("users")
+        .select("id, username, full_name, avatar_url")
+        .in("id", authorIds);
+      authors = authorsData || [];
+    }
+
+    // Organize replies into nested structure with author data and images
+    const organizedReplies = organizeRepliesWithAuthors(
+      replies || [],
+      authors,
+      replyImages
+    );
 
     // Transform the data to match frontend expectations
     const transformedThread = {
@@ -313,14 +350,46 @@ router.post(
   }
 );
 
-// Helper function to organize replies into nested structure
-function organizeReplies(replies: any[]): any[] {
+// Helper function to organize replies into nested structure with author data
+function organizeRepliesWithAuthors(
+  replies: any[],
+  authors: any[],
+  replyImages: any[] = []
+): any[] {
   const replyMap = new Map();
   const rootReplies: any[] = [];
 
-  // First pass: create map of all replies
+  // Create author lookup map
+  const authorMap = new Map();
+  authors.forEach((author) => {
+    authorMap.set(author.id, author);
+  });
+
+  // Create reply images lookup map
+  const replyImagesMap = new Map();
+  replyImages.forEach((image) => {
+    if (!replyImagesMap.has(image.reply_id)) {
+      replyImagesMap.set(image.reply_id, []);
+    }
+    replyImagesMap.get(image.reply_id).push(image);
+  });
+
+  // First pass: create map of all replies with transformed author data and images
   replies.forEach((reply) => {
-    replyMap.set(reply.id, { ...reply, replies: [] });
+    const author = authorMap.get(reply.author_id);
+    const images = replyImagesMap.get(reply.id) || [];
+
+    const transformedReply = {
+      ...reply,
+      author_id: reply.author_id,
+      author_username: author?.username || "Unknown User",
+      author_name: author?.full_name || null,
+      author_avatar: author?.avatar_url || null,
+      author_role: "user", // Default role
+      images: images,
+      replies: [],
+    };
+    replyMap.set(reply.id, transformedReply);
   });
 
   // Second pass: organize into tree structure
