@@ -158,61 +158,6 @@ export interface WantedAd {
   updated_at: Date;
 }
 
-export interface ForumCategory {
-  id: string;
-  name: string;
-  description?: string;
-  slug: string;
-  color: string;
-  icon?: string;
-  is_active: boolean;
-  sort_order: number;
-  post_count: number;
-  last_post_id?: string;
-  last_post_at?: Date;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface ForumPost {
-  id: string;
-  author_id: string;
-  category_id: string;
-  title: string;
-  content: string;
-  slug: string;
-  is_pinned: boolean;
-  is_locked: boolean;
-  is_featured: boolean;
-  view_count: number;
-  like_count: number;
-  comment_count: number;
-  last_activity_at: Date;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface ForumComment {
-  id: string;
-  post_id: string;
-  author_id: string;
-  parent_id?: string;
-  content: string;
-  like_count: number;
-  is_edited: boolean;
-  edited_at?: Date;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface ForumLike {
-  id: string;
-  user_id: string;
-  post_id?: string;
-  comment_id?: string;
-  created_at: Date;
-}
-
 export interface ChargingStation {
   id: string;
   name: string;

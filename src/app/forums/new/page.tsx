@@ -1,598 +1,359 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  ArrowLeft,
-  Bold,
-  Italic,
-  Link as LinkIcon,
-  List,
-  Quote,
-  Code,
-  Image,
-  Eye,
-  Edit,
-} from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Save, X, Image, AlertCircle } from "lucide-react";
+import ForumLayout from "@/components/forum/ForumLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { createForumPost, getForumCategories } from "@/services/forumApi";
-import { ForumCategory } from "@/types/forum";
-import { useForumPostUpload } from "@/hooks/useFileUpload";
-import FileUploadZone from "@/components/forums/FileUploadZone";
-import AttachmentDisplay from "@/components/forums/AttachmentDisplay";
+import ErrorBoundary, {
+  ForumLoading,
+  ForumError,
+} from "@/components/forum/ErrorBoundary";
+import { useForumError } from "@/hooks/useForumError";
+import { ForumCategory, CreateThreadForm } from "@/types/forum";
+import {
+  useForumCategories,
+  useForumThreads,
+  useForumImages,
+} from "@/hooks/useForumApi";
 
-// Get authentication token from localStorage
-function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const authStorage = localStorage.getItem("auth-storage");
-    if (!authStorage) return null;
-
-    const authData = JSON.parse(authStorage);
-    return authData?.state?.session?.accessToken || null;
-  } catch (error) {
-    console.error("Error parsing auth token:", error);
-    return null;
-  }
-}
-
-const NewThreadPage = () => {
+const NewThreadPage: React.FC = () => {
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [category, setCategory] = useState("");
-  const [tags, setTags] = useState("");
-  const [isPreview, setIsPreview] = useState(false);
+  const searchParams = useSearchParams();
+  const preselectedCategoryId = searchParams.get("category");
+
+  const [formData, setFormData] = useState<CreateThreadForm>({
+    title: "",
+    content: "",
+    categoryId: preselectedCategoryId || "",
+  });
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [categories, setCategories] = useState<ForumCategory[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showImageUpload, setShowImageUpload] = useState(false);
 
-  // File upload hook - we'll upload without entity_id initially
+  // Get categories from API
   const {
-    files: uploadedFiles,
-    isUploading,
-    uploadProgress,
-    error: uploadError,
-    uploadFiles,
-    removeFile,
-    clearError,
-  } = useForumPostUpload(undefined); // No entity_id initially
+    categories,
+    loading: categoriesLoading,
+    error: categoriesError,
+  } = useForumCategories();
 
-  // Load categories on component mount
+  // Get thread creation function
+  const { createThread } = useForumThreads();
+
+  // Get image upload function
+  const { uploadImage } = useForumImages();
+
+  const { error, handleError, clearError } = useForumError();
+
+  // Handle API errors
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        setIsLoadingCategories(true);
-        const response = await getForumCategories();
-        setCategories(response.data.categories);
-      } catch (err) {
-        console.error("Failed to load categories:", err);
-        setError("Failed to load categories. Please refresh the page.");
-        // Fallback categories
-        setCategories([
-          {
-            id: "general",
-            name: "General Discussion",
-            slug: "general",
-            description: "General EV discussions",
-            color: "#6B7280",
-            is_active: true,
-            sort_order: 1,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            post_count: 0,
-          },
-        ]);
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
+    if (categoriesError) {
+      handleError(new Error(categoriesError));
+    } else {
+      clearError();
+    }
+  }, [categoriesError, handleError, clearError]);
 
-    loadCategories();
-  }, []);
-
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim() || !category) {
+
+    if (!formData.title.trim()) {
+      handleError("Thread title is required");
       return;
     }
 
-    setIsSubmitting(true);
-    setError(null);
+    if (!formData.content.trim()) {
+      handleError("Thread content is required");
+      return;
+    }
+
+    if (!formData.categoryId) {
+      handleError("Please select a category");
+      return;
+    }
 
     try {
-      // Parse tags from comma-separated string
-      const tagArray = tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter((tag) => tag.length > 0);
+      setIsSubmitting(true);
+      clearError();
 
-      // Create the post
-      const postData = {
-        title: title.trim(),
-        content: content.trim(),
-        category_id: category,
-        tags: tagArray.length > 0 ? tagArray : undefined,
-      };
+      // Create the thread first
+      const newThread = await createThread({
+        category_id: formData.categoryId,
+        title: formData.title,
+        content: formData.content,
+      });
 
-      const response = await createForumPost(postData);
-      const createdPostId = response.data.post.id;
-
-      // Update uploaded files to associate them with the real post ID
-      if (uploadedFiles.length > 0) {
+      // Upload images after thread creation if any
+      const uploadedImageIds: string[] = [];
+      for (const image of images) {
         try {
-          // Update each file's entity_id from tempPostId to the real post ID
-          await Promise.all(
-            uploadedFiles.map(async (file) => {
-              const updateResponse = await fetch(
-                `${
-                  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api"
-                }/upload/files/${file.id}`,
-                {
-                  method: "PUT",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${getAuthToken()}`,
-                  },
-                  body: JSON.stringify({
-                    entity_id: createdPostId,
-                  }),
-                }
-              );
-
-              if (!updateResponse.ok) {
-                const errorText = await updateResponse.text();
-                console.error(`Failed to update file ${file.id} association:`, {
-                  status: updateResponse.status,
-                  statusText: updateResponse.statusText,
-                  error: errorText,
-                  fileId: file.id,
-                  postId: createdPostId,
-                });
-              } else {
-                console.log(
-                  `✅ Successfully associated file ${file.id} with post ${createdPostId}`
-                );
-              }
-            })
-          );
-        } catch (fileUpdateError) {
-          console.error("Failed to update file associations:", {
-            error: fileUpdateError,
-            uploadedFiles: uploadedFiles.map((f) => ({
-              id: f.id,
-              filename: f.filename,
-            })),
-            postId: createdPostId,
-          });
-          // Don't fail the entire post creation for file association errors
+          const uploadedImage = await uploadImage(image, newThread.id);
+          uploadedImageIds.push(uploadedImage.id);
+        } catch (err) {
+          console.error("Failed to upload image:", err);
+          // Continue with other images, don't fail the whole submission
         }
       }
 
-      // Redirect to the created thread
-      router.push(`/forums/${createdPostId}`);
-    } catch (err: any) {
-      console.error("Failed to create thread:", err);
-      setError(err.message || "Failed to create thread. Please try again.");
+      // Redirect to the new thread
+      router.push(`/forums/thread/${newThread.id}`);
+    } catch (err) {
+      handleError(err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const insertMarkdown = (before: string, after: string = "") => {
-    const textarea = document.querySelector("textarea") as HTMLTextAreaElement;
-    if (!textarea) return;
+  // Handle image upload
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const maxImages = 5;
+    const maxSize = 5 * 1024 * 1024; // 5MB
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end);
-    const newText =
-      content.substring(0, start) +
-      before +
-      selectedText +
-      after +
-      content.substring(end);
+    const validFiles = files.filter((file) => {
+      if (!file.type.startsWith("image/")) {
+        handleError("Only image files are allowed");
+        return false;
+      }
+      if (file.size > maxSize) {
+        handleError("Image size must be less than 5MB");
+        return false;
+      }
+      return true;
+    });
 
-    setContent(newText);
+    if (images.length + validFiles.length > maxImages) {
+      handleError(`Maximum ${maxImages} images allowed`);
+      return;
+    }
 
-    // Restore cursor position
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(
-        start + before.length,
-        start + before.length + selectedText.length
-      );
-    }, 0);
+    setImages((prev) => [...prev, ...validFiles]);
+
+    // Create previews
+    validFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreviews((prev) => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
-  const renderPreview = (text: string) => {
-    // Simple markdown-like rendering for preview
-    return text
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\*(.*?)\*/g, "<em>$1</em>")
-      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 rounded">$1</code>')
-      .replace(/\n/g, "<br />");
+  // Remove image
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
+
+  const handleCancel = () => {
+    router.back();
+  };
+
+  if (categoriesLoading) {
+    return (
+      <ForumLayout title="Create New Thread" showBackButton={true}>
+        <ForumLoading message="Loading categories..." />
+      </ForumLayout>
+    );
+  }
+
+  if (error && categories.length === 0) {
+    return (
+      <ForumLayout title="Create New Thread" showBackButton={true}>
+        <ForumError
+          message={error.message}
+          onRetry={() => window.location.reload()}
+        />
+      </ForumLayout>
+    );
+  }
 
   return (
     <ProtectedRoute>
-      <div className="bg-gray-50 min-h-screen py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8">
-            <Link
-              href="/forums"
-              className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Forums
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Create New Thread
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Share your thoughts, questions, or experiences with the EV
-              community.
-            </p>
-          </div>
+      <ErrorBoundary>
+        <ForumLayout
+          title="Create New Thread"
+          subtitle="Start a new discussion in the community"
+          showBackButton={true}
+        >
+          <div className="max-w-4xl mx-auto">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Error Display */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <span className="text-red-800">{error.message}</span>
+                  </div>
+                </div>
+              )}
 
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <div className="flex">
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Error</h3>
-                  <div className="mt-2 text-sm text-red-700">{error}</div>
+              {/* Category Selection */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Category *
+                </label>
+                <select
+                  value={formData.categoryId}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      categoryId: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="">Select a category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.icon} {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Thread Title */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Thread Title *
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                  placeholder="Enter a descriptive title for your thread"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  maxLength={200}
+                  required
+                />
+                <div className="mt-2 text-sm text-gray-500">
+                  {formData.title.length}/200 characters
                 </div>
               </div>
-            </div>
-          )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Thread Details */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Thread Details
-              </h2>
-
-              <div className="space-y-4">
-                {/* Title */}
-                <div>
-                  <label
-                    htmlFor="title"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Title *
-                  </label>
-                  <input
-                    type="text"
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter a descriptive title for your thread"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
+              {/* Thread Content */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Content *
+                </label>
+                <textarea
+                  value={formData.content}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      content: e.target.value,
+                    }))
+                  }
+                  placeholder="Write your thread content here..."
+                  rows={8}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                  maxLength={10000}
+                  required
+                />
+                <div className="mt-2 text-sm text-gray-500">
+                  {formData.content.length}/10,000 characters
                 </div>
+              </div>
 
-                {/* Category */}
-                <div>
-                  <label
-                    htmlFor="category"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Category *
-                  </label>
-                  <select
-                    id="category"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                    disabled={isLoadingCategories}
-                  >
-                    <option value="">
-                      {isLoadingCategories
-                        ? "Loading categories..."
-                        : "Select a category"}
-                    </option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* Image Upload */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Images (Optional)
+                </label>
 
-                {/* Tags */}
-                <div>
-                  <label
-                    htmlFor="tags"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Tags
+                {/* Upload Button */}
+                <div className="mb-4">
+                  <label className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <Image className="h-4 w-4 mr-2" />
+                    <span>Add Images</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
                   </label>
-                  <input
-                    type="text"
-                    id="tags"
-                    value={tags}
-                    onChange={(e) => setTags(e.target.value)}
-                    placeholder="Enter tags separated by commas (e.g., FSD, Autopilot, Review)"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Tags help others find your thread more easily
+                  <p className="text-sm text-gray-500 mt-2">
+                    Maximum 5 images, 5MB each. Supported formats: JPG, PNG,
+                    GIF, WebP
                   </p>
                 </div>
-              </div>
-            </div>
 
-            {/* Content Editor */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Content</h2>
-                <div className="flex items-center space-x-2">
+                {/* Image Previews */}
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-6">
+                <div className="text-sm text-gray-600">
+                  <p>• Be respectful and follow community guidelines</p>
+                  <p>• Use clear, descriptive titles</p>
+                  <p>• Search existing threads before posting</p>
+                </div>
+
+                <div className="flex items-center space-x-3">
                   <button
                     type="button"
-                    onClick={() => setIsPreview(false)}
-                    className={`px-3 py-1 rounded-md text-sm font-medium ${
-                      !isPreview
-                        ? "bg-blue-100 text-blue-700"
-                        : "text-gray-500 hover:text-gray-700"
-                    }`}
+                    onClick={handleCancel}
+                    disabled={isSubmitting}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
-                    <Edit className="h-4 w-4 inline mr-1" />
-                    Edit
+                    Cancel
                   </button>
+
                   <button
-                    type="button"
-                    onClick={() => setIsPreview(true)}
-                    className={`px-3 py-1 rounded-md text-sm font-medium ${
-                      isPreview
-                        ? "bg-blue-100 text-blue-700"
-                        : "text-gray-500 hover:text-gray-700"
-                    }`}
+                    type="submit"
+                    disabled={
+                      isSubmitting ||
+                      !formData.title.trim() ||
+                      !formData.content.trim() ||
+                      !formData.categoryId
+                    }
+                    className="inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Eye className="h-4 w-4 inline mr-1" />
-                    Preview
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Create Thread
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
-
-              {!isPreview ? (
-                <div>
-                  {/* Toolbar */}
-                  <div className="flex items-center space-x-2 p-2 border border-gray-300 rounded-t-lg bg-gray-50">
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdown("**", "**")}
-                      className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded"
-                      title="Bold"
-                    >
-                      <Bold className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdown("*", "*")}
-                      className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded"
-                      title="Italic"
-                    >
-                      <Italic className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdown("`", "`")}
-                      className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded"
-                      title="Code"
-                    >
-                      <Code className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdown("[", "](url)")}
-                      className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded"
-                      title="Link"
-                    >
-                      <LinkIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdown("\n- ")}
-                      className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded"
-                      title="List"
-                    >
-                      <List className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdown("\n> ")}
-                      className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded"
-                      title="Quote"
-                    >
-                      <Quote className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {/* Text Area */}
-                  <textarea
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="Write your thread content here... You can use Markdown formatting."
-                    rows={12}
-                    className="w-full px-3 py-2 border-l border-r border-b border-gray-300 rounded-b-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    required
-                  />
-                </div>
-              ) : (
-                <div className="border border-gray-300 rounded-lg p-4 min-h-[300px] bg-white">
-                  {content ? (
-                    <div
-                      className="prose max-w-none"
-                      dangerouslySetInnerHTML={{
-                        __html: renderPreview(content),
-                      }}
-                    />
-                  ) : (
-                    <p className="text-gray-500 italic">
-                      Nothing to preview yet. Start writing your content!
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div className="mt-2 text-sm text-gray-500">
-                <p>
-                  Supported formatting: **bold**, *italic*, `code`,
-                  [links](url), lists, and quotes
-                </p>
-              </div>
-            </div>
-
-            {/* Image Upload Section */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Images</h2>
-                <button
-                  type="button"
-                  onClick={() => setShowImageUpload(!showImageUpload)}
-                  className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                  <Image className="h-4 w-4 inline mr-1" />
-                  {showImageUpload ? "Hide Upload" : "Add Images"}
-                </button>
-              </div>
-
-              {/* Upload Error */}
-              {uploadError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-600">{uploadError}</p>
-                  <button
-                    onClick={clearError}
-                    className="text-xs text-red-500 hover:text-red-700 mt-1"
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              )}
-
-              {/* File Upload Zone */}
-              {showImageUpload && (
-                <div className="mb-4">
-                  <FileUploadZone
-                    onFilesUploaded={(files) => {
-                      console.log("Files uploaded:", files);
-                      // Files are automatically managed by the hook
-                    }}
-                    uploadType="image"
-                    entityType="forum_post"
-                    maxFiles={5}
-                    disabled={isSubmitting || isUploading}
-                  />
-                </div>
-              )}
-
-              {/* Uploaded Files Display */}
-              {uploadedFiles.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">
-                    Attached Images ({uploadedFiles.length})
-                  </h4>
-                  <AttachmentDisplay
-                    attachments={uploadedFiles.map((file) => ({
-                      id: file.id,
-                      filename: file.filename,
-                      original_filename: file.original_name,
-                      file_path: file.file_path,
-                      file_size: file.file_size,
-                      mime_type: file.mime_type,
-                      is_image: file.mime_type.startsWith("image/"),
-                      alt_text: file.alt_text,
-                      uploader_id: "", // Not needed for display
-                      created_at: "", // Not needed for display
-                    }))}
-                    showRemove={true}
-                    onRemove={(attachment) => removeFile(attachment.id)}
-                  />
-                </div>
-              )}
-
-              {/* Upload Progress */}
-              {isUploading && (
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
-                    <span>Uploading images...</span>
-                    <span>{uploadProgress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-2 text-sm text-gray-500">
-                <p>
-                  Upload images to include in your thread. Supported formats:
-                  JPEG, PNG, WebP, GIF. Max 10MB per image.
-                </p>
-              </div>
-            </div>
-
-            {/* Guidelines */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-blue-900 mb-2">
-                Community Guidelines
-              </h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Be respectful and constructive in your discussions</li>
-                <li>• Search existing threads before creating a new one</li>
-                <li>• Use descriptive titles and appropriate categories</li>
-                <li>
-                  • Share accurate information and cite sources when possible
-                </li>
-                <li>• Keep discussions relevant to electric vehicles</li>
-              </ul>
-            </div>
-
-            {/* Submit Buttons */}
-            <div className="flex items-center justify-between">
-              <Link
-                href="/forums"
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </Link>
-              <div className="flex items-center space-x-3">
-                <button
-                  type="button"
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  Save Draft
-                </button>
-                <button
-                  type="submit"
-                  disabled={
-                    !title.trim() ||
-                    !content.trim() ||
-                    !category ||
-                    isSubmitting ||
-                    isLoadingCategories
-                  }
-                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? "Creating Thread..." : "Create Thread"}
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
+            </form>
+          </div>
+        </ForumLayout>
+      </ErrorBoundary>
     </ProtectedRoute>
   );
 };

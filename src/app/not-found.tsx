@@ -1,35 +1,38 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { Home, Search, ArrowLeft, Zap, Car, MessageSquare, ShoppingBag } from 'lucide-react';
+import React from "react";
+import Link from "next/link";
+import {
+  Home,
+  Search,
+  ArrowLeft,
+  Zap,
+  Car,
+  MessageSquare,
+  ShoppingBag,
+} from "lucide-react";
 
 const NotFoundPage: React.FC = () => {
   const quickLinks = [
     {
-      href: '/ev-listings',
+      href: "/ev-listings",
       icon: Car,
-      title: 'Browse EVs',
-      description: 'Explore electric vehicles'
+      title: "Browse EVs",
+      description: "Explore electric vehicles",
     },
     {
-      href: '/marketplace',
+      href: "/marketplace",
       icon: ShoppingBag,
-      title: 'Marketplace',
-      description: 'Buy & sell EV accessories'
+      title: "Marketplace",
+      description: "Buy & sell EV accessories",
     },
+
     {
-      href: '/forums',
-      icon: MessageSquare,
-      title: 'Community',
-      description: 'Join the discussion'
-    },
-    {
-      href: '/charging',
+      href: "/charging",
       icon: Zap,
-      title: 'Charging Stations',
-      description: 'Find nearby charging'
-    }
+      title: "Charging Stations",
+      description: "Find nearby charging",
+    },
   ];
 
   return (
@@ -54,7 +57,7 @@ const NotFoundPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* 404 Text Overlay */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-8xl font-bold text-blue-600 opacity-20 select-none">
@@ -86,7 +89,7 @@ const NotFoundPage: React.FC = () => {
             <Home className="w-5 h-5 mr-2" />
             Go Home
           </Link>
-          
+
           <button
             onClick={() => window.history.back()}
             className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
@@ -108,10 +111,12 @@ const NotFoundPage: React.FC = () => {
                 placeholder="Search for EVs, accessories, or topics..."
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     const query = (e.target as HTMLInputElement).value;
                     if (query.trim()) {
-                      window.location.href = `/search?q=${encodeURIComponent(query)}`;
+                      window.location.href = `/search?q=${encodeURIComponent(
+                        query
+                      )}`;
                     }
                   }
                 }}
@@ -128,7 +133,7 @@ const NotFoundPage: React.FC = () => {
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">
             Or explore these popular sections:
           </h2>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {quickLinks.map((link) => {
               const IconComponent = link.icon;
@@ -145,9 +150,7 @@ const NotFoundPage: React.FC = () => {
                     <h3 className="font-semibold text-gray-900 mb-2">
                       {link.title}
                     </h3>
-                    <p className="text-sm text-gray-600">
-                      {link.description}
-                    </p>
+                    <p className="text-sm text-gray-600">{link.description}</p>
                   </div>
                 </Link>
               );
@@ -161,15 +164,16 @@ const NotFoundPage: React.FC = () => {
             Still can't find what you're looking for?
           </h3>
           <p className="text-gray-600 mb-6">
-            Our community is here to help! Get assistance from fellow EV enthusiasts.
+            Our community is here to help! Get assistance from fellow EV
+            enthusiasts.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/forums"
+              href="/help"
               className="inline-flex items-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
             >
               <MessageSquare className="w-5 h-5 mr-2" />
-              Ask the Community
+              Get Help
             </Link>
             <Link
               href="/help"

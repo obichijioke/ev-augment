@@ -1,471 +1,455 @@
-// =============================================================================
-// Forum API Service - Frontend API Integration
-// =============================================================================
+// Forum API service for backend communication
+import {
+  ForumCategory,
+  ForumThread,
+  ForumReply,
+  ForumImage,
+  CreateThreadRequest,
+  CreateReplyRequest,
+} from "@/types/forum";
 
-import { ForumPost, ForumReply, ForumCategory } from "@/types/forum";
-
-// Base API configuration
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
 
+// Helper function to get auth token
+const getAuthToken = (): string | null => {
+  if (typeof window !== "undefined") {
+    try {
+      const authStorage = localStorage.getItem("auth-storage");
+      if (authStorage) {
+        const parsed = JSON.parse(authStorage);
+        return parsed.state?.session?.accessToken || null;
+      }
+    } catch (error) {
+      console.error("Error parsing auth storage:", error);
+    }
+  }
+  return null;
+};
+
+// Helper function to create headers
+const createHeaders = (includeAuth: boolean = false): HeadersInit => {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  if (includeAuth) {
+    const token = getAuthToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  return headers;
+};
+
+// Helper function to handle API responses
+const handleResponse = async <T>(response: Response): Promise<T> => {
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: "Network error" }));
+    throw new Error(
+      errorData.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  const data = await response.json();
+  return data.data || data; // Return the data field if it exists, otherwise return the whole response
+};
+
 // =============================================================================
-// TYPE DEFINITIONS
+// CATEGORIES API
 // =============================================================================
 
-export interface ForumPostsQuery {
-  page?: number;
-  limit?: number;
-  category_id?: string;
-  author_id?: string;
-  sort?: "asc" | "desc";
-  sortBy?:
-    | "created_at"
-    | "updated_at"
-    | "views"
-    | "title"
-    | "reply_count"
-    | "last_activity_at";
-  q?: string;
-  is_pinned?: boolean;
-  is_locked?: boolean;
-  is_featured?: boolean;
-}
+export const categoriesApi = {
+  // Get all categories
+  getAll: async (): Promise<ForumCategory[]> => {
+    const response = await fetch(`${API_BASE_URL}/forum/categories`, {
+      headers: createHeaders(),
+    });
+    return handleResponse<ForumCategory[]>(response);
+  },
 
-export interface CreateForumPostRequest {
-  title: string;
-  content: string;
-  category_id: string;
-  tags?: string[];
-}
+  // Create new category (Admin only)
+  create: async (categoryData: {
+    name: string;
+    description?: string;
+    icon?: string;
+    color?: string;
+    slug: string;
+    sort_order?: number;
+  }): Promise<ForumCategory> => {
+    const response = await fetch(`${API_BASE_URL}/forum/categories`, {
+      method: "POST",
+      headers: createHeaders(true),
+      body: JSON.stringify(categoryData),
+    });
+    return handleResponse<ForumCategory>(response);
+  },
+};
 
-export interface UpdateForumPostRequest {
-  title?: string;
-  content?: string;
-  category_id?: string;
-  tags?: string[];
-}
+// =============================================================================
+// THREADS API
+// =============================================================================
 
-export interface CreateForumReplyRequest {
-  content: string;
-  parent_id?: string;
-}
-
-export interface VoteRequest {
-  vote_type: "upvote" | "downvote";
-}
-
-export interface ReportRequest {
-  reason: string;
-  description?: string;
-}
-
-export interface ForumPostsResponse {
-  success: boolean;
-  data: {
-    posts: ForumPost[];
+export const threadsApi = {
+  // Get threads with filters
+  getAll: async (params?: {
+    q?: string;
+    category_id?: string;
+    author_id?: string;
+    sort?: "newest" | "oldest" | "most_replies" | "most_views";
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: ForumThread[];
     pagination: {
       page: number;
       limit: number;
       total: number;
       pages: number;
     };
-  };
-}
+  }> => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString());
+        }
+      });
+    }
 
-export interface ForumPostResponse {
-  success: boolean;
-  data: {
-    post: ForumPost;
-    replies?: ForumReply[];
-    pagination?: {
+    const response = await fetch(
+      `${API_BASE_URL}/forum/threads?${searchParams}`,
+      {
+        headers: createHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Network error" }));
+      throw new Error(
+        errorData.message || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    const responseData = await response.json();
+    return {
+      data: responseData.data || [],
+      pagination: responseData.pagination || {
+        page: 1,
+        limit: 20,
+        total: 0,
+        pages: 0,
+      },
+    };
+  },
+
+  // Get single thread with replies
+  getById: async (id: string): Promise<ForumThread> => {
+    const response = await fetch(`${API_BASE_URL}/forum/threads/${id}`, {
+      headers: createHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Network error" }));
+      throw new Error(
+        errorData.message || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    const responseData = await response.json();
+    const threadData = responseData.data;
+
+    // Transform images to match the expected interface
+    if (threadData.images) {
+      threadData.images = threadData.images.map((img: any) => {
+        const constructedUrl = `https://rszqdjbjswwfparbzfyi.supabase.co/storage/v1/object/public/forum-images/${img.storage_path}`;
+        console.log("Constructing image URL:", {
+          storage_path: img.storage_path,
+          constructed_url: constructedUrl,
+        });
+
+        const transformedImg = {
+          id: img.id,
+          url: img.public_url || constructedUrl,
+          filename: img.filename || img.original_filename,
+          size: img.file_size,
+          mimeType: img.mime_type,
+          alt: img.alt_text,
+        };
+        return transformedImg;
+      });
+    }
+
+    return threadData;
+  },
+
+  // Create new thread
+  create: async (threadData: CreateThreadRequest): Promise<ForumThread> => {
+    const response = await fetch(`${API_BASE_URL}/forum/threads`, {
+      method: "POST",
+      headers: createHeaders(true),
+      body: JSON.stringify(threadData),
+    });
+    return handleResponse<ForumThread>(response);
+  },
+
+  // Update thread
+  update: async (
+    id: string,
+    threadData: Partial<{
+      title: string;
+      content: string;
+      is_pinned: boolean;
+      is_locked: boolean;
+    }>
+  ): Promise<ForumThread> => {
+    const response = await fetch(`${API_BASE_URL}/forum/threads/${id}`, {
+      method: "PUT",
+      headers: createHeaders(true),
+      body: JSON.stringify(threadData),
+    });
+    return handleResponse<ForumThread>(response);
+  },
+
+  // Delete thread
+  delete: async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/forum/threads/${id}`, {
+      method: "DELETE",
+      headers: createHeaders(true),
+    });
+    await handleResponse(response);
+  },
+};
+
+// =============================================================================
+// REPLIES API
+// =============================================================================
+
+export const repliesApi = {
+  // Create new reply
+  create: async (replyData: CreateReplyRequest): Promise<ForumReply> => {
+    const response = await fetch(`${API_BASE_URL}/forum/replies`, {
+      method: "POST",
+      headers: createHeaders(true),
+      body: JSON.stringify(replyData),
+    });
+    return handleResponse<ForumReply>(response);
+  },
+
+  // Update reply
+  update: async (
+    id: string,
+    replyData: { content: string }
+  ): Promise<ForumReply> => {
+    const response = await fetch(`${API_BASE_URL}/forum/replies/${id}`, {
+      method: "PUT",
+      headers: createHeaders(true),
+      body: JSON.stringify(replyData),
+    });
+    return handleResponse<ForumReply>(response);
+  },
+
+  // Delete reply
+  delete: async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/forum/replies/${id}`, {
+      method: "DELETE",
+      headers: createHeaders(true),
+    });
+    await handleResponse(response);
+  },
+};
+
+// =============================================================================
+// IMAGES API
+// =============================================================================
+
+export const imagesApi = {
+  // Upload image
+  upload: async (
+    file: File,
+    threadId?: string,
+    replyId?: string,
+    altText?: string
+  ): Promise<ForumImage> => {
+    const formData = new FormData();
+    formData.append("image", file);
+    if (threadId) formData.append("thread_id", threadId);
+    if (replyId) formData.append("reply_id", replyId);
+    if (altText) formData.append("alt_text", altText);
+
+    const token = getAuthToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/forum/images/upload`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    return handleResponse<ForumImage>(response);
+  },
+
+  // Get image details
+  getById: async (id: string): Promise<ForumImage> => {
+    const response = await fetch(`${API_BASE_URL}/forum/images/${id}`, {
+      headers: createHeaders(),
+    });
+    return handleResponse<ForumImage>(response);
+  },
+
+  // Delete image
+  delete: async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/forum/images/${id}`, {
+      method: "DELETE",
+      headers: createHeaders(true),
+    });
+    await handleResponse(response);
+  },
+
+  // Get thread images
+  getByThread: async (threadId: string): Promise<ForumImage[]> => {
+    const response = await fetch(
+      `${API_BASE_URL}/forum/images/thread/${threadId}`,
+      {
+        headers: createHeaders(),
+      }
+    );
+    return handleResponse<ForumImage[]>(response);
+  },
+
+  // Get reply images
+  getByReply: async (replyId: string): Promise<ForumImage[]> => {
+    const response = await fetch(
+      `${API_BASE_URL}/forum/images/reply/${replyId}`,
+      {
+        headers: createHeaders(),
+      }
+    );
+    return handleResponse<ForumImage[]>(response);
+  },
+};
+
+// =============================================================================
+// MODERATION API
+// =============================================================================
+
+export const moderationApi = {
+  // Get users (Admin only)
+  getUsers: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<{
+    data: any[];
+    pagination: {
       page: number;
       limit: number;
       total: number;
       pages: number;
     };
-  };
-}
-
-export interface ForumCategoriesResponse {
-  success: boolean;
-  data: {
-    categories: ForumCategory[];
-  };
-}
-
-export interface VoteResponse {
-  success: boolean;
-  message: string;
-  data: {
-    upvotes: number;
-    downvotes: number;
-    score: number;
-    userVote: "upvote" | "downvote" | null;
-  };
-}
-
-export interface ForumStatsResponse {
-  success: boolean;
-  data: {
-    totalPosts: number;
-    totalReplies: number;
-    totalCategories: number;
-    recentPosts: number;
-    totalDiscussions: number;
-  };
-}
-
-export interface ApiError {
-  success: false;
-  message: string;
-  error?: {
-    status: number;
-    code?: string;
-    details?: any;
-  };
-}
-
-// =============================================================================
-// UTILITY FUNCTIONS
-// =============================================================================
-
-// Get authentication token from localStorage
-function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const authStorage = localStorage.getItem("auth-storage");
-    if (!authStorage) return null;
-
-    const authData = JSON.parse(authStorage);
-    return authData?.state?.session?.accessToken || null;
-  } catch (error) {
-    console.error("Error parsing auth token:", error);
-    return null;
-  }
-}
-
-// Generic API request function with error handling
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-  const token = getAuthToken();
-
-  const defaultOptions: RequestInit = {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  };
-
-  try {
-    const response = await fetch(url, defaultOptions);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw {
-        success: false,
-        message: data.message || data.error?.message || "An error occurred",
-        error: {
-          status: response.status,
-          code: data.error?.code,
-          details: data,
-        },
-      } as ApiError;
+  }> => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString());
+        }
+      });
     }
 
-    return data;
-  } catch (error) {
-    if (error && typeof error === "object" && "success" in error) {
-      throw error; // Re-throw API errors
-    }
+    const response = await fetch(
+      `${API_BASE_URL}/forum/moderation/users?${searchParams}`,
+      {
+        headers: createHeaders(true),
+      }
+    );
+    return handleResponse(response);
+  },
 
-    // Handle network errors
-    throw {
-      success: false,
-      message: "Network error occurred",
-      error: {
-        status: 0,
-        details: error,
-      },
-    } as ApiError;
-  }
-}
+  // Update user role (Admin only)
+  updateUserRole: async (
+    userId: string,
+    forumRole: "user" | "moderator" | "admin"
+  ): Promise<any> => {
+    const response = await fetch(
+      `${API_BASE_URL}/forum/moderation/users/${userId}/role`,
+      {
+        method: "PUT",
+        headers: createHeaders(true),
+        body: JSON.stringify({ forum_role: forumRole }),
+      }
+    );
+    return handleResponse(response);
+  },
 
-// Build query string from parameters
-function buildQueryString(params: Record<string, any>): string {
-  const searchParams = new URLSearchParams();
+  // Moderate thread
+  moderateThread: async (
+    threadId: string,
+    action: "pin" | "unpin" | "lock" | "unlock" | "delete" | "restore",
+    reason?: string
+  ): Promise<ForumThread> => {
+    const response = await fetch(
+      `${API_BASE_URL}/forum/moderation/threads/${threadId}/action`,
+      {
+        method: "POST",
+        headers: createHeaders(true),
+        body: JSON.stringify({ action, reason }),
+      }
+    );
+    return handleResponse<ForumThread>(response);
+  },
 
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      searchParams.append(key, String(value));
-    }
-  });
+  // Moderate reply
+  moderateReply: async (
+    replyId: string,
+    action: "delete" | "restore",
+    reason?: string
+  ): Promise<ForumReply> => {
+    const response = await fetch(
+      `${API_BASE_URL}/forum/moderation/replies/${replyId}/action`,
+      {
+        method: "POST",
+        headers: createHeaders(true),
+        body: JSON.stringify({ action, reason }),
+      }
+    );
+    return handleResponse<ForumReply>(response);
+  },
 
-  const queryString = searchParams.toString();
-  return queryString ? `?${queryString}` : "";
-}
+  // Get forum statistics
+  getStats: async (): Promise<{
+    totals: {
+      threads: number;
+      replies: number;
+      users: number;
+    };
+    recent: {
+      threads: number;
+      replies: number;
+    };
+    categories: any[];
+  }> => {
+    const response = await fetch(`${API_BASE_URL}/forum/moderation/stats`, {
+      headers: createHeaders(true),
+    });
+    return handleResponse(response);
+  },
+};
 
-// =============================================================================
-// FORUM API FUNCTIONS
-// =============================================================================
-
-// Categories
-export async function getForumCategories(): Promise<ForumCategoriesResponse> {
-  return apiRequest<ForumCategoriesResponse>("/forums/categories");
-}
-
-// Posts
-export async function getForumPosts(
-  query: ForumPostsQuery = {}
-): Promise<ForumPostsResponse> {
-  const queryString = buildQueryString(query);
-  return apiRequest<ForumPostsResponse>(`/forums/posts${queryString}`);
-}
-
-export async function getForumPost(
-  id: string,
-  page: number = 1,
-  limit: number = 20
-): Promise<ForumPostResponse> {
-  const queryString = buildQueryString({ page, limit });
-  return apiRequest<ForumPostResponse>(`/forums/posts/${id}${queryString}`);
-}
-
-export async function getForumCategory(id: string): Promise<any> {
-  return apiRequest<any>(`/forums/categories/${id}`);
-}
-
-export async function getForumPostsByCategory(
-  categoryId: string,
-  query: ForumPostsQuery = {}
-): Promise<ForumPostsResponse> {
-  const queryWithCategory = { ...query, category_id: categoryId };
-  const queryString = buildQueryString(queryWithCategory);
-  return apiRequest<ForumPostsResponse>(`/forums/posts${queryString}`);
-}
-
-// Edit a forum reply
-export async function editForumReply(
-  replyId: string,
-  content: string
-): Promise<ApiResponse<any>> {
-  return apiRequest<any>(`/forums/replies/${replyId}`, {
-    method: "PUT",
-    body: JSON.stringify({ content }),
-  });
-}
-
-// Delete a forum reply
-export async function deleteForumReply(
-  replyId: string
-): Promise<ApiResponse<any>> {
-  return apiRequest<any>(`/forums/replies/${replyId}`, {
-    method: "DELETE",
-  });
-}
-
-export async function createForumPost(
-  postData: CreateForumPostRequest
-): Promise<ForumPostResponse> {
-  return apiRequest<ForumPostResponse>("/forums/posts", {
-    method: "POST",
-    body: JSON.stringify(postData),
-  });
-}
-
-export async function updateForumPost(
-  id: string,
-  postData: UpdateForumPostRequest
-): Promise<ForumPostResponse> {
-  return apiRequest<ForumPostResponse>(`/forums/posts/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(postData),
-  });
-}
-
-export async function deleteForumPost(
-  id: string
-): Promise<{ success: boolean; message: string }> {
-  return apiRequest<{ success: boolean; message: string }>(
-    `/forums/posts/${id}`,
-    {
-      method: "DELETE",
-    }
-  );
-}
-
-// Replies
-export async function createForumReply(
-  postId: string,
-  replyData: CreateForumReplyRequest
-): Promise<{ success: boolean; message: string; data: { reply: ForumReply } }> {
-  return apiRequest<{
-    success: boolean;
-    message: string;
-    data: { reply: ForumReply };
-  }>(`/forums/posts/${postId}/replies`, {
-    method: "POST",
-    body: JSON.stringify(replyData),
-  });
-}
-
-export async function updateForumReply(
-  id: string,
-  content: string
-): Promise<{ success: boolean; message: string; data: { reply: ForumReply } }> {
-  return apiRequest<{
-    success: boolean;
-    message: string;
-    data: { reply: ForumReply };
-  }>(`/forums/replies/${id}`, {
-    method: "PUT",
-    body: JSON.stringify({ content }),
-  });
-}
-
-// Voting
-export async function voteOnPost(
-  id: string,
-  voteType: "upvote" | "downvote"
-): Promise<VoteResponse> {
-  return apiRequest<VoteResponse>(`/forums/posts/${id}/vote`, {
-    method: "POST",
-    body: JSON.stringify({ vote_type: voteType }),
-  });
-}
-
-export async function voteOnReply(
-  id: string,
-  voteType: "upvote" | "downvote"
-): Promise<VoteResponse> {
-  return apiRequest<VoteResponse>(`/forums/replies/${id}/vote`, {
-    method: "POST",
-    body: JSON.stringify({ vote_type: voteType }),
-  });
-}
-
-// Reporting
-export async function reportPost(
-  id: string,
-  reportData: ReportRequest
-): Promise<{ success: boolean; message: string }> {
-  return apiRequest<{ success: boolean; message: string }>(
-    `/forums/posts/${id}/report`,
-    {
-      method: "POST",
-      body: JSON.stringify(reportData),
-    }
-  );
-}
-
-// Moderation (requires moderator permissions)
-export async function pinPost(
-  id: string,
-  isPinned: boolean
-): Promise<{ success: boolean; message: string }> {
-  return apiRequest<{ success: boolean; message: string }>(
-    `/forums/posts/${id}/pin`,
-    {
-      method: "POST",
-      body: JSON.stringify({ is_pinned: isPinned }),
-    }
-  );
-}
-
-export async function lockPost(
-  id: string,
-  isLocked: boolean
-): Promise<{ success: boolean; message: string }> {
-  return apiRequest<{ success: boolean; message: string }>(
-    `/forums/posts/${id}/lock`,
-    {
-      method: "POST",
-      body: JSON.stringify({ is_locked: isLocked }),
-    }
-  );
-}
-
-export async function featurePost(
-  id: string,
-  isFeatured: boolean
-): Promise<{ success: boolean; message: string }> {
-  return apiRequest<{ success: boolean; message: string }>(
-    `/forums/posts/${id}/feature`,
-    {
-      method: "POST",
-      body: JSON.stringify({ is_featured: isFeatured }),
-    }
-  );
-}
-
-// Statistics
-export async function getForumStats(): Promise<ForumStatsResponse> {
-  return apiRequest<ForumStatsResponse>("/forums/stats");
-}
-
-// User posts
-export async function getUserPosts(
-  userId: string,
-  page: number = 1,
-  limit: number = 20
-): Promise<ForumPostsResponse> {
-  const queryString = buildQueryString({ page, limit });
-  return apiRequest<ForumPostsResponse>(
-    `/forums/user/${userId}/posts${queryString}`
-  );
-}
-
-// Search posts
-export async function searchForumPosts(
-  query: string,
-  filters: ForumPostsQuery = {}
-): Promise<ForumPostsResponse> {
-  const searchQuery = { ...filters, q: query };
-  const queryString = buildQueryString(searchQuery);
-  return apiRequest<ForumPostsResponse>(`/forums/posts${queryString}`);
-}
-
-// Admin endpoints (require admin/moderator permissions)
-export async function getForumReports(
-  page: number = 1,
-  limit: number = 20,
-  status: string = "pending"
-): Promise<{
-  success: boolean;
-  data: {
-    reports: any[];
-    pagination: { page: number; limit: number; total: number; pages: number };
-  };
-}> {
-  const queryString = buildQueryString({ page, limit, status });
-  return apiRequest(`/admin/forum/reports${queryString}`);
-}
-
-export async function updateForumReport(
-  reportId: string,
-  status: string,
-  adminNotes?: string
-): Promise<{ success: boolean; message: string }> {
-  return apiRequest(`/admin/forum/reports/${reportId}`, {
-    method: "PUT",
-    body: JSON.stringify({ status, admin_notes: adminNotes }),
-  });
-}
-
-export async function getForumAdminStats(timeframe: string = "30d"): Promise<{
-  success: boolean;
-  data: {
-    posts: { total: number; new: number };
-    replies: { total: number; new: number };
-    reports: { pending: number; total: number };
-    timeframe: string;
-  };
-}> {
-  const queryString = buildQueryString({ timeframe });
-  return apiRequest(`/admin/forum/stats${queryString}`);
-}
+// Export all APIs as a single object for convenience
+export const forumApi = {
+  categories: categoriesApi,
+  threads: threadsApi,
+  replies: repliesApi,
+  images: imagesApi,
+  moderation: moderationApi,
+};

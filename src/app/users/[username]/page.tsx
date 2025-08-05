@@ -17,8 +17,7 @@ import {
   Eye,
 } from "lucide-react";
 import Link from "next/link";
-import UserForumActivity from "@/components/forums/UserForumActivity";
-import ForumStatsDashboard from "@/components/forums/ForumStatsDashboard";
+
 import { useFullUserProfile } from "@/hooks/useUserProfile";
 
 interface UserProfilePageProps {
@@ -182,11 +181,11 @@ const UserProfilePage = ({ params }: UserProfilePageProps) => {
         {/* Back Button */}
         <div className="mb-6">
           <Link
-            href="/forums"
+            href="/"
             className="inline-flex items-center text-blue-600 hover:text-blue-800"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Forums
+            Back to Home
           </Link>
         </div>
 
@@ -375,26 +374,7 @@ const UserProfilePage = ({ params }: UserProfilePageProps) => {
                   >
                     Threads Created
                   </button>
-                  <button
-                    onClick={() => setActiveTab("activity")}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === "activity"
-                        ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    Activity
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("forum")}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === "forum"
-                        ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    Forum Stats
-                  </button>
+
                   <button
                     onClick={() => setActiveTab("achievements")}
                     className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -439,22 +419,14 @@ const UserProfilePage = ({ params }: UserProfilePageProps) => {
 
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">
                           {post.type === "thread" ? (
-                            <Link
-                              href={`/forums/${post.id}`}
-                              className="hover:text-blue-600"
-                            >
-                              {post.title}
-                            </Link>
+                            <span className="text-gray-900">{post.title}</span>
                           ) : (
                             <div>
                               <div className="text-sm text-gray-600 mb-1">
                                 Reply to:{" "}
-                                <Link
-                                  href={`/forums/${post.id}`}
-                                  className="text-blue-600 hover:text-blue-800"
-                                >
+                                <span className="text-gray-900">
                                   {post.threadTitle}
-                                </Link>
+                                </span>
                               </div>
                               <div className="text-base">{post.title}</div>
                             </div>
@@ -505,12 +477,7 @@ const UserProfilePage = ({ params }: UserProfilePageProps) => {
                           </div>
 
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            <Link
-                              href={`/forums/${post.id}`}
-                              className="hover:text-blue-600"
-                            >
-                              {post.title}
-                            </Link>
+                            <span className="text-gray-900">{post.title}</span>
                           </h3>
 
                           <p className="text-gray-600 mb-3">{post.excerpt}</p>
@@ -534,27 +501,12 @@ const UserProfilePage = ({ params }: UserProfilePageProps) => {
                   </div>
                 )}
 
-                {activeTab === "activity" && (
-                  <UserForumActivity
-                    userId={user.username}
-                    username={user.username}
-                    isOwnProfile={false}
-                  />
-                )}
-
-                {activeTab === "forum" && (
-                  <ForumStatsDashboard
-                    userId={user.username}
-                    isOwnProfile={false}
-                  />
-                )}
-
                 {activeTab === "achievements" && (
                   <div className="space-y-4">
                     <div className="text-center py-8">
                       <Award className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        Forum Achievements
+                        User Achievements
                       </h3>
                       <p className="text-gray-600">
                         Achievement system coming soon!

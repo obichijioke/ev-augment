@@ -5,7 +5,7 @@ import {
   buildPaginationMetadata,
   isValidUUID,
 } from "../services/supabaseClient";
-import { validate, userSchemas, commonSchemas } from "../middleware/validation";
+import { validate, userSchemas } from "../middleware/validation";
 import {
   asyncHandler,
   notFoundError,

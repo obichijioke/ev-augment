@@ -1,0 +1,35 @@
+[ ] NAME:Current Task List DESCRIPTION:Root task for conversation __NEW_AGENT__
+-[/] NAME:Forum Rebuild Project DESCRIPTION:Complete removal and rebuild of the forum feature from scratch, starting with frontend design then building supporting backend
+--[x] NAME:Phase 1: Assessment & Cleanup DESCRIPTION:Remove all existing forum-related code and database tables
+---[x] NAME:Remove forum database tables from live Supabase DESCRIPTION:Drop all 11 forum-related tables from the live Supabase database
+---[x] NAME:Remove backend forum code DESCRIPTION:Delete forum routes, middleware, validation schemas, and tests
+---[x] NAME:Remove frontend forum components and pages DESCRIPTION:Delete all forum-related React components and Next.js pages
+---[x] NAME:Remove forum services, hooks, and utilities DESCRIPTION:Delete forum API services, custom hooks, Zustand store, and utility functions
+---[x] NAME:Clean up remaining forum references DESCRIPTION:Remove any remaining forum imports, references, or documentation files
+--[x] NAME:Phase 2: Frontend Design & Implementation DESCRIPTION:Design and implement new forum frontend UI/UX before touching backend
+---[x] NAME:Design new forum architecture and component structure DESCRIPTION:Plan the component hierarchy, data flow, and UI patterns for the new forum system
+---[x] NAME:Create new forum main page with category listing DESCRIPTION:Build the main forums page with category overview and navigation
+---[x] NAME:Create new thread listing page with filtering/sorting DESCRIPTION:Build thread listing page with search, filter, and sort functionality
+---[x] NAME:Create new thread detail page with post display DESCRIPTION:Build individual thread view with original post display
+---[x] NAME:Implement new reply system with 2-level nesting restriction DESCRIPTION:Build reply components with maximum 2-level nesting as per user preference
+---[x] NAME:Add comprehensive error handling to all forum components DESCRIPTION:Implement proper error states, loading states, and user feedback
+---[x] NAME:Style and polish the new forum UI DESCRIPTION:Apply consistent styling, responsive design, and accessibility features
+--[x] NAME:Phase 3: Backend Implementation DESCRIPTION:Design and implement new database schema and API endpoints
+---[x] NAME:Design new simplified forum database schema DESCRIPTION:Create a clean, simple database schema for categories, threads, and replies with proper relationships and RLS policies
+---[x] NAME:Create forum database tables in Supabase DESCRIPTION:Implement the new schema in the live Supabase database with proper indexes, constraints, and Row Level Security
+---[x] NAME:Implement forum validation schemas DESCRIPTION:Add comprehensive Joi validation schemas for forum categories, threads, and replies to the backend
+---[x] NAME:Create forum API endpoints DESCRIPTION:Build REST API endpoints for CRUD operations on categories, threads, and replies with proper authentication
+---[ ] NAME:Implement image upload for forum posts DESCRIPTION:Add image upload functionality for threads and replies using Supabase Storage with proper validation
+---[ ] NAME:Add forum permissions and moderation DESCRIPTION:Implement user roles, permissions, and basic moderation features (lock threads, delete posts)
+--[ ] NAME:Phase 4: Integration & Testing DESCRIPTION:Connect frontend to backend and test complete functionality
+-[ ] NAME:Phase 4: Frontend Integration DESCRIPTION:Connect the existing React forum components to the backend API endpoints and implement full functionality
+--[x] NAME:Set up API client and services DESCRIPTION:Create API client functions to communicate with the forum backend endpoints
+--[x] NAME:Integrate forum categories DESCRIPTION:Connect the forum categories display to fetch data from the backend API
+--[x] NAME:Implement thread listing and display DESCRIPTION:Connect thread listing, filtering, and individual thread display to the backend
+--[x] NAME:Implement thread creation and editing DESCRIPTION:Connect the thread creation and editing forms to the backend API
+--[ ] NAME:Implement reply system DESCRIPTION:Connect the reply creation, editing, and nested display to the backend with 2-level nesting
+--[ ] NAME:Implement image upload functionality DESCRIPTION:Connect image upload components to the backend storage system
+--[ ] NAME:Add authentication integration DESCRIPTION:Ensure all forum actions properly use the authentication system
+--[ ] NAME:Implement moderation features DESCRIPTION:Add moderation UI for admins and moderators to manage content
+--[ ] NAME:Add error handling and loading states DESCRIPTION:Implement proper error handling, loading states, and user feedback
+--[ ] NAME:Test and polish the forum DESCRIPTION:Test all functionality, fix bugs, and polish the user experience
