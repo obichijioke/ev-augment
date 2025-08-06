@@ -84,6 +84,15 @@ const commonSchemas = {
     sort: Joi.string().valid("asc", "desc").default("desc"),
     sortBy: Joi.string().default("created_at"),
   }),
+
+  // Search
+  search: Joi.object({
+    q: Joi.string().min(2).max(100).required(),
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(20),
+    category: Joi.string().max(100),
+    tag: Joi.string().max(50),
+  }),
 };
 
 // Vehicle validation schemas
@@ -182,6 +191,11 @@ const uploadSchemas = {
     size: Joi.number().max(10485760), // 10MB
     buffer: Joi.binary().required(),
   }),
+  updateFile: Joi.object({
+    alt_text: Joi.string().max(255).allow(""),
+    caption: Joi.string().max(500).allow(""),
+    entity_id: Joi.string().uuid().allow(null),
+  }),
 };
 
 // Forum validation schemas
@@ -275,6 +289,72 @@ const forumSchemas = {
   }),
 };
 
+// Blog validation schemas
+const blogSchemas = {
+  // Blog post schemas
+  create: Joi.object({
+    title: Joi.string().min(5).max(200).required(),
+    slug: Joi.string()
+      .min(5)
+      .max(250)
+      .pattern(/^[a-z0-9-]+$/),
+    excerpt: Joi.string().max(500),
+    content: Joi.string().min(10).max(50000).required(),
+    featured_image: Joi.string().uri(),
+    category: Joi.string().max(100),
+    tags: Joi.array().items(Joi.string().max(50)).max(10),
+    status: Joi.string()
+      .valid("draft", "published", "archived")
+      .default("draft"),
+    is_featured: Joi.boolean().default(false),
+    published_at: Joi.date().iso(),
+  }),
+
+  update: Joi.object({
+    title: Joi.string().min(5).max(200),
+    slug: Joi.string()
+      .min(5)
+      .max(250)
+      .pattern(/^[a-z0-9-]+$/),
+    excerpt: Joi.string().max(500),
+    content: Joi.string().min(10).max(50000),
+    featured_image: Joi.string().uri(),
+    category: Joi.string().max(100),
+    tags: Joi.array().items(Joi.string().max(50)).max(10),
+    status: Joi.string().valid("draft", "published", "archived"),
+    is_featured: Joi.boolean(),
+    published_at: Joi.date().iso(),
+  }),
+
+  // Blog comment schemas
+  createComment: Joi.object({
+    content: Joi.string().min(1).max(2000).required(),
+    parent_id: Joi.string().uuid(),
+  }),
+
+  updateComment: Joi.object({
+    content: Joi.string().min(1).max(2000).required(),
+  }),
+};
+
+// Like validation schemas
+const likeSchemas = {
+  create: Joi.object({
+    entity_type: Joi.string()
+      .valid(
+        "forum_post",
+        "forum_reply",
+        "blog_post",
+        "blog_comment",
+        "marketplace_listing",
+        "wanted_ad",
+        "vehicle"
+      )
+      .required(),
+    entity_id: Joi.string().uuid().required(),
+  }),
+};
+
 export {
   validate,
   userSchemas,
@@ -282,6 +362,8 @@ export {
   vehicleSchemas,
   uploadSchemas,
   forumSchemas,
+  blogSchemas,
+  likeSchemas,
 };
 
 export default validate;

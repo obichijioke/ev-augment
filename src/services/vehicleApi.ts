@@ -12,7 +12,7 @@ import {
 
 // Base API configuration
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002/api";
 
 // Custom error class for API errors
 export class ApiError extends Error {

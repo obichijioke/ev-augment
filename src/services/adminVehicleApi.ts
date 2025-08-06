@@ -1,4 +1,8 @@
-import { VehicleListing, VehicleManufacturer, VehicleModel } from '@/types/vehicle';
+import {
+  VehicleListing,
+  VehicleManufacturer,
+  VehicleModel,
+} from "@/types/vehicle";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -14,12 +18,12 @@ export interface CreateVehicleListingRequest {
   description?: string;
   msrp_base?: number;
   msrp_max?: number;
-  availability_status: 'available' | 'coming_soon' | 'discontinued';
-  
+  availability_status: "available" | "coming_soon" | "discontinued";
+
   // Images
   primary_image_url?: string;
   image_urls?: string[];
-  
+
   // Specifications
   performanceSpecs?: {
     range_epa?: number;
@@ -38,7 +42,7 @@ export interface CreateVehicleListingRequest {
     motor_count?: number;
     drivetrain?: string;
   };
-  
+
   batterySpecs?: {
     battery_capacity_kwh?: number;
     battery_usable_kwh?: number;
@@ -52,7 +56,7 @@ export interface CreateVehicleListingRequest {
     charging_time_0_100_ac?: number;
     charging_port_type?: string;
   };
-  
+
   dimensionSpecs?: {
     length_in?: number;
     width_in?: number;
@@ -71,7 +75,7 @@ export interface CreateVehicleListingRequest {
     front_legroom_in?: number;
     rear_legroom_in?: number;
   };
-  
+
   safetySpecs?: {
     nhtsa_overall_rating?: number;
     nhtsa_frontal_rating?: number;
@@ -91,7 +95,7 @@ export interface CreateVehicleListingRequest {
     has_rear_cross_traffic_alert?: boolean;
     has_driver_attention_monitoring?: boolean;
   };
-  
+
   environmentalSpecs?: {
     co2_emissions_g_km?: number;
     co2_emissions_g_mi?: number;
@@ -102,16 +106,17 @@ export interface CreateVehicleListingRequest {
     fuel_savings_vs_gas?: number;
     green_score?: number;
   };
-  
+
   // Features
   features?: string[];
-  
+
   // Status
   is_featured?: boolean;
   is_active?: boolean;
 }
 
-export interface UpdateVehicleListingRequest extends Partial<CreateVehicleListingRequest> {}
+export interface UpdateVehicleListingRequest
+  extends Partial<CreateVehicleListingRequest> {}
 
 export interface AdminVehicleListingsQuery {
   page?: number;
@@ -121,7 +126,7 @@ export interface AdminVehicleListingsQuery {
   year?: number;
   status?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 export interface AdminVehicleListingsResponse {
@@ -158,29 +163,29 @@ export interface ApiError {
 // API UTILITY FUNCTIONS
 // =============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002/api";
 
 async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = typeof window !== 'undefined' 
-    ? localStorage.getItem('auth-storage') 
-    : null;
-  
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("auth-storage") : null;
+
   let accessToken = null;
   if (token) {
     try {
       const authData = JSON.parse(token);
       accessToken = authData?.state?.session?.accessToken;
     } catch (error) {
-      console.error('Error parsing auth token:', error);
+      console.error("Error parsing auth token:", error);
     }
   }
 
   const config: RequestInit = {
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       ...options.headers,
     },
@@ -188,7 +193,7 @@ async function apiRequest<T>(
   };
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-  
+
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw {
@@ -206,13 +211,13 @@ async function apiRequest<T>(
 
 function buildQueryString(params: Record<string, any>): string {
   const searchParams = new URLSearchParams();
-  
+
   Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
+    if (value !== undefined && value !== null && value !== "") {
       searchParams.append(key, String(value));
     }
   });
-  
+
   return searchParams.toString();
 }
 
@@ -226,8 +231,8 @@ function buildQueryString(params: Record<string, any>): string {
 export async function createVehicleListing(
   data: CreateVehicleListingRequest
 ): Promise<VehicleListingResponse> {
-  return apiRequest<VehicleListingResponse>('/admin/vehicle-listings', {
-    method: 'POST',
+  return apiRequest<VehicleListingResponse>("/admin/vehicle-listings", {
+    method: "POST",
     body: JSON.stringify(data),
   });
 }
@@ -240,7 +245,7 @@ export async function updateVehicleListing(
   data: UpdateVehicleListingRequest
 ): Promise<VehicleListingResponse> {
   return apiRequest<VehicleListingResponse>(`/admin/vehicle-listings/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(data),
   });
 }
@@ -248,10 +253,15 @@ export async function updateVehicleListing(
 /**
  * Delete a vehicle listing (Admin only)
  */
-export async function deleteVehicleListing(id: string): Promise<{ success: boolean; message: string }> {
-  return apiRequest<{ success: boolean; message: string }>(`/admin/vehicle-listings/${id}`, {
-    method: 'DELETE',
-  });
+export async function deleteVehicleListing(
+  id: string
+): Promise<{ success: boolean; message: string }> {
+  return apiRequest<{ success: boolean; message: string }>(
+    `/admin/vehicle-listings/${id}`,
+    {
+      method: "DELETE",
+    }
+  );
 }
 
 /**
@@ -261,16 +271,23 @@ export async function getAdminVehicleListings(
   query: AdminVehicleListingsQuery = {}
 ): Promise<AdminVehicleListingsResponse> {
   const queryString = buildQueryString(query);
-  const endpoint = `/admin/vehicle-listings${queryString ? `?${queryString}` : ''}`;
-  
+  const endpoint = `/admin/vehicle-listings${
+    queryString ? `?${queryString}` : ""
+  }`;
+
   return apiRequest<AdminVehicleListingsResponse>(endpoint);
 }
 
 /**
  * Get all manufacturers for dropdown selection
  */
-export async function getManufacturers(): Promise<{ success: boolean; data: VehicleManufacturer[] }> {
-  return apiRequest<{ success: boolean; data: VehicleManufacturer[] }>('/vehicle-listings/manufacturers');
+export async function getManufacturers(): Promise<{
+  success: boolean;
+  data: VehicleManufacturer[];
+}> {
+  return apiRequest<{ success: boolean; data: VehicleManufacturer[] }>(
+    "/vehicle-listings/manufacturers"
+  );
 }
 
 /**
@@ -279,14 +296,16 @@ export async function getManufacturers(): Promise<{ success: boolean; data: Vehi
 export async function getModelsByManufacturer(
   manufacturerId: string
 ): Promise<{ success: boolean; data: VehicleModel[] }> {
-  return apiRequest<{ success: boolean; data: VehicleModel[] }>(`/vehicle-listings/manufacturers/${manufacturerId}/models`);
+  return apiRequest<{ success: boolean; data: VehicleModel[] }>(
+    `/vehicle-listings/manufacturers/${manufacturerId}/models`
+  );
 }
 
 /**
  * Get all available features for selection
  */
-export async function getAvailableFeatures(): Promise<{ 
-  success: boolean; 
+export async function getAvailableFeatures(): Promise<{
+  success: boolean;
   data: Array<{
     id: string;
     name: string;
@@ -297,8 +316,8 @@ export async function getAvailableFeatures(): Promise<{
     };
   }>;
 }> {
-  return apiRequest<{ 
-    success: boolean; 
+  return apiRequest<{
+    success: boolean;
     data: Array<{
       id: string;
       name: string;
@@ -308,5 +327,5 @@ export async function getAvailableFeatures(): Promise<{
         slug: string;
       };
     }>;
-  }>('/vehicle-listings/features');
+  }>("/vehicle-listings/features");
 }
