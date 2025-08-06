@@ -14,26 +14,29 @@ dotenv.config();
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { requestLogger } from "./middleware/logging";
 
-// Import routes (only the converted TypeScript routes for now)
+// Import routes (auth and forum routes enabled)
 import authRoutes from "./routes/auth";
-import userRoutes from "./routes/users";
-import vehicleRoutes from "./routes/vehicles";
-import vehicleListingRoutes from "./routes/vehicleListings";
-import evListingRoutes from "./routes/evListings";
-import marketplaceRoutes from "./routes/marketplace";
 import forumRoutes from "./routes/forum";
-import blogRoutes from "./routes/blog";
-import chargingStationRoutes from "./routes/chargingStations";
-import directoryRoutes from "./routes/directory";
-import likeRoutes from "./routes/likes";
-import messageRoutes from "./routes/messages";
-import notificationRoutes from "./routes/notifications";
-import adminRoutes from "./routes/admin";
-import adminVehicleListingRoutes from "./routes/adminVehicleListings";
-import reviewRoutes from "./routes/reviews";
-import searchRoutes from "./routes/search";
-import uploadRoutes from "./routes/upload";
-import wantedRoutes from "./routes/wanted";
+import forumImageRoutes from "./routes/forumImages";
+import forumModerationRoutes from "./routes/forumModeration";
+// import userRoutes from "./routes/users";
+// import vehicleRoutes from "./routes/vehicles";
+// import vehicleListingRoutes from "./routes/vehicleListings";
+// import evListingRoutes from "./routes/evListings";
+// import marketplaceRoutes from "./routes/marketplace";
+
+// import blogRoutes from "./routes/blog";
+// import chargingStationRoutes from "./routes/chargingStations";
+// import directoryRoutes from "./routes/directory";
+// import likeRoutes from "./routes/likes";
+// import messageRoutes from "./routes/messages";
+// import notificationRoutes from "./routes/notifications";
+// import adminRoutes from "./routes/admin";
+// import adminVehicleListingRoutes from "./routes/adminVehicleListings";
+// import reviewRoutes from "./routes/reviews";
+// import searchRoutes from "./routes/search";
+// import uploadRoutes from "./routes/upload";
+// import wantedRoutes from "./routes/wanted";
 
 // All routes are now converted to TypeScript! 🎉
 
@@ -106,8 +109,8 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("combined"));
 }
 
-// Custom request logger
-app.use(requestLogger);
+// Custom request logger (temporarily disabled)
+// app.use(requestLogger);
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
@@ -159,26 +162,29 @@ app.get("/health", (req: Request, res: Response) => {
   });
 });
 
-// API routes (only the converted TypeScript routes for now)
+// API routes (auth and forum routes enabled)
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/vehicles", vehicleRoutes);
-app.use("/api/vehicle-listings", vehicleListingRoutes);
-app.use("/api/ev-listings", evListingRoutes);
-app.use("/api/marketplace", marketplaceRoutes);
-app.use("/api/forums", forumRoutes);
-app.use("/api/blog", blogRoutes);
-app.use("/api/charging-stations", chargingStationRoutes);
-app.use("/api/directory", directoryRoutes);
-app.use("/api/likes", likeRoutes);
-app.use("/api/messages", messageRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/admin/vehicle-listings", adminVehicleListingRoutes);
-app.use("/api/reviews", reviewRoutes);
-app.use("/api/search", searchRoutes);
-app.use("/api/upload", uploadRoutes);
-app.use("/api/wanted", wantedRoutes);
+app.use("/api/forum", forumRoutes);
+app.use("/api/forum/images", forumImageRoutes);
+app.use("/api/forum/moderation", forumModerationRoutes);
+// app.use("/api/users", userRoutes);
+// app.use("/api/vehicles", vehicleRoutes);
+// app.use("/api/vehicle-listings", vehicleListingRoutes);
+// app.use("/api/ev-listings", evListingRoutes);
+// app.use("/api/marketplace", marketplaceRoutes);
+
+// app.use("/api/blog", blogRoutes);
+// app.use("/api/charging-stations", chargingStationRoutes);
+// app.use("/api/directory", directoryRoutes);
+// app.use("/api/likes", likeRoutes);
+// app.use("/api/messages", messageRoutes);
+// app.use("/api/notifications", notificationRoutes);
+// app.use("/api/admin", adminRoutes);
+// app.use("/api/admin/vehicle-listings", adminVehicleListingRoutes);
+// app.use("/api/reviews", reviewRoutes);
+// app.use("/api/search", searchRoutes);
+// app.use("/api/upload", uploadRoutes);
+// app.use("/api/wanted", wantedRoutes);
 
 // All routes are now active and converted to TypeScript! 🎉
 
@@ -195,7 +201,7 @@ app.get("/api", (req: Request, res: Response) => {
       evListings: "/api/ev-listings - EV listings",
       marketplace: "/api/marketplace - Marketplace listings",
       wanted: "/api/wanted - Wanted ads",
-      forums: "/api/forums - Forum posts and discussions",
+
       blog: "/api/blog - Blog posts and articles",
       chargingStations: "/api/charging-stations - EV charging station data",
       directory: "/api/directory - Business directory",

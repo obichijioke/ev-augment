@@ -1,916 +1,802 @@
-import express, { Request, Response, Router } from "express";
-import { supabaseAdmin } from "../services/supabaseClient";
+import express from "express";
+import { supabase, supabaseAdmin } from "../services/supabaseClient";
+import { authenticateToken } from "../middleware/auth";
 import {
   validate,
   forumSchemas,
   commonSchemas,
 } from "../middleware/validation";
-import {
-  asyncHandler,
-  notFoundError,
-  forbiddenError,
-  validationError,
-} from "../middleware/errorHandler";
-import {
-  authenticateToken,
-  optionalAuth,
-  requireOwnership,
-  requireModerator,
-} from "../middleware/auth";
-import {
-  buildPagination,
-  buildPaginationMetadata,
-  isValidUUID,
-} from "../services/supabaseClient";
 import { AuthenticatedRequest } from "../types";
 import {
-  ForumPost,
-  User,
-  ApiResponse,
-  PaginatedResponse,
-} from "../types/database";
-import { toString, toNumber } from "../utils/typeUtils";
+  asyncHandler,
+  createError,
+  validationError,
+} from "../middleware/errorHandler";
 
-const router: Router = express.Router();
+const router = express.Router();
 
-// TypeScript interfaces
-interface ForumPostsQuery {
-  page?: number;
-  limit?: number;
-  category_id?: string;
-  sort?: "asc" | "desc";
-  sortBy?: "created_at" | "updated_at" | "views" | "title" | "reply_count";
-  q?: string;
-  is_pinned?: string;
-  is_locked?: string;
-}
+// =====================================================
+// CATEGORIES ENDPOINTS
+// =====================================================
 
-interface CreatePostRequest {
-  title: string;
-  content: string;
-  category_id: string;
-  tags?: string[];
-}
-
-interface UpdatePostRequest {
-  title?: string;
-  content?: string;
-  category_id?: string;
-  tags?: string[];
-  is_pinned?: boolean;
-  is_locked?: boolean;
-}
-
-interface CreateReplyRequest {
-  content: string;
-  parent_id?: string;
-}
-
-interface UpdateReplyRequest {
-  content: string;
-}
-
-interface PinPostRequest {
-  is_pinned: boolean;
-}
-
-interface LockPostRequest {
-  is_locked: boolean;
-}
-
-interface SearchQuery {
-  q: string;
-  category_id?: string;
-  page?: number;
-  limit?: number;
-}
-
-interface UserPostsQuery {
-  page?: number;
-  limit?: number;
-}
-
-// @route   GET /api/forum/categories
-// @desc    Get all forum categories
-// @access  Public
-router.get(
-  "/categories",
-  asyncHandler(async (req: Request, res: Response) => {
-    const { data: categories, error } = await supabaseAdmin
+// GET /api/forum/categories - Get all categories
+router.get("/categories", async (req, res, next) => {
+  try {
+    const { data: categories, error } = await supabase
       .from("forum_categories")
-      .select(
-        `
-      *,
-      forum_posts(count)
-    `
-      )
+      .select("*")
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
 
     if (error) {
-      throw new Error("Failed to fetch forum categories");
+      return next(createError("Failed to fetch categories", 500));
     }
 
     res.json({
       success: true,
-      data: {
-        categories,
-      },
+      data: categories,
+      message: "Categories retrieved successfully",
     });
-  })
-);
+  } catch (error) {
+    next(createError("Internal server error", 500));
+  }
+});
 
-// @route   GET /api/forum/posts
-// @desc    Get all forum posts
-// @access  Public
-router.get(
-  "/posts",
-  optionalAuth,
-  validate(commonSchemas.pagination, "query"),
-  asyncHandler(async (req: Request, res: Response) => {
-    const { page, limit, category_id, sort, sortBy, q, is_pinned, is_locked } =
-      req.query;
-    const { from, to } = buildPagination(
-      toNumber(page, 1),
-      toNumber(limit, 20)
-    );
-
-    let query = supabaseAdmin
-      .from("forum_posts")
-      .select(
-        `
-      *,
-      users(username, full_name, avatar_url, is_verified, role),
-      forum_categories(name, slug),
-      forum_replies(count)
-    `,
-        { count: "exact" }
-      )
-      .eq("is_active", true)
-      .range(from, to);
-
-    // Apply filters
-    const categoryIdStr = toString(category_id);
-    if (categoryIdStr && isValidUUID(categoryIdStr)) {
-      query = query.eq("category_id", categoryIdStr);
-    }
-    if (is_pinned === "true") {
-      query = query.eq("is_pinned", true);
-    }
-    if (is_locked === "true") {
-      query = query.eq("is_locked", true);
-    }
-    if (q) {
-      query = query.or(`title.ilike.%${q}%,content.ilike.%${q}%`);
-    }
-
-    // Apply sorting
-    const validSortFields = [
-      "created_at",
-      "updated_at",
-      "views",
-      "title",
-      "reply_count",
-    ];
-    const sortByStr = toString(sortBy);
-    const sortField = validSortFields.includes(sortByStr)
-      ? sortByStr
-      : "updated_at";
-    const sortOrder =
-      sort === "asc" ? { ascending: true } : { ascending: false };
-
-    // Always sort pinned posts first
-    query = query.order("is_pinned", { ascending: false });
-    query = query.order(sortField, sortOrder);
-
-    const { data: posts, error, count } = await query;
-
-    if (error) {
-      throw new Error("Failed to fetch forum posts");
-    }
-
-    res.json({
-      success: true,
-      data: {
-        posts,
-        pagination: {
-          page: toNumber(page, 1),
-          limit: toNumber(limit, 20),
-          total: count,
-          pages: Math.ceil(count / toNumber(limit, 20)),
-        },
-      },
-    });
-  })
-);
-
-// @route   POST /api/forum/posts
-// @desc    Create a new forum post
-// @access  Private
+// POST /api/forum/categories - Create new category (Admin only)
 router.post(
-  "/posts",
+  "/categories",
   authenticateToken,
-  validate(forumSchemas.createPost),
-  asyncHandler(async (req: Request, res: Response) => {
-    const postData = {
-      ...req.body,
-      author_id: (req as any).user.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+  validate(forumSchemas.createCategory),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      // Check if user is admin/moderator
+      const { data: userProfile } = await supabase
+        .from("user_profiles")
+        .select("role, forum_role")
+        .eq("id", req.user!.id)
+        .single();
 
-    // Verify category exists
-    const { data: category, error: categoryError } = await supabaseAdmin
-      .from("forum_categories")
-      .select("id")
-      .eq("id", postData.category_id)
-      .eq("is_active", true)
-      .single();
+      if (
+        !userProfile ||
+        (!["admin", "moderator"].includes(userProfile.role) &&
+          !["admin", "moderator"].includes(userProfile.forum_role))
+      ) {
+        return next(createError("Insufficient permissions", 403));
+      }
 
-    if (categoryError) {
-      throw validationError("Invalid category selected");
+      const { data: category, error } = await supabase
+        .from("forum_categories")
+        .insert([req.body])
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === "23505") {
+          return next(validationError("Category name or slug already exists"));
+        }
+        return next(createError("Failed to create category", 500));
+      }
+
+      res.status(201).json({
+        success: true,
+        data: category,
+        message: "Category created successfully",
+      });
+    } catch (error) {
+      next(createError("Internal server error", 500));
     }
-
-    const { data: post, error } = await supabaseAdmin
-      .from("forum_posts")
-      .insert(postData)
-      .select(
-        `
-      *,
-      users(username, full_name, avatar_url, is_verified, role),
-      forum_categories(name, slug)
-    `
-      )
-      .single();
-
-    if (error) {
-      throw new Error("Failed to create forum post");
-    }
-
-    res.status(201).json({
-      success: true,
-      message: "Forum post created successfully",
-      data: {
-        post,
-      },
-    });
-  })
+  }
 );
 
-// @route   GET /api/forum/posts/:id
-// @desc    Get forum post by ID with replies
-// @access  Public
+// =====================================================
+// THREADS ENDPOINTS
+// =====================================================
+
+// GET /api/forum/threads - Get threads with filters
 router.get(
-  "/posts/:id",
-  optionalAuth,
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { page = 1, limit = 20 } = req.query;
-    const { from, to } = buildPagination(
-      toNumber(page, 1),
-      toNumber(limit, 20)
-    );
+  "/threads",
+  validate(forumSchemas.searchThreads, "query"),
+  async (req, res, next) => {
+    try {
+      const {
+        q,
+        category_id,
+        author_id,
+        sort = "newest",
+        page = 1,
+        limit = 20,
+      } = req.query;
 
-    if (!isValidUUID(id)) {
-      throw validationError("Invalid post ID format");
+      let query = supabaseAdmin
+        .from("forum_thread_list")
+        .select("*", { count: "exact" });
+
+      // Apply filters
+      if (category_id) {
+        query = query.eq("category_id", category_id);
+      }
+      if (author_id) {
+        query = query.eq("author_id", author_id);
+      }
+      if (q) {
+        query = query.or(`title.ilike.%${q}%,content.ilike.%${q}%`);
+      }
+
+      // Apply sorting
+      switch (sort) {
+        case "oldest":
+          query = query.order("created_at", { ascending: true });
+          break;
+        case "most_replies":
+          query = query.order("reply_count", { ascending: false });
+          break;
+        case "most_views":
+          query = query.order("view_count", { ascending: false });
+          break;
+        default: // newest
+          query = query.order("created_at", { ascending: false });
+      }
+
+      // Apply pagination
+      const offset = (Number(page) - 1) * Number(limit);
+      query = query.range(offset, offset + Number(limit) - 1);
+
+      const { data: threads, error, count } = await query;
+
+      if (error) {
+        return next(createError("Failed to fetch threads", 500));
+      }
+
+      // Transform the data to match frontend expectations
+      const transformedThreads =
+        threads?.map((thread) => ({
+          ...thread,
+          author: {
+            id: thread.author_id,
+            username: thread.author_username,
+            displayName: thread.author_name || thread.author_username,
+            avatar: thread.author_avatar,
+          },
+          category: {
+            id: thread.category_id,
+            name: thread.category_name,
+            slug: thread.category_slug,
+            icon: thread.category_icon,
+            color: thread.category_color,
+          },
+        })) || [];
+
+      res.json({
+        success: true,
+        data: transformedThreads,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total: count || 0,
+          pages: Math.ceil((count || 0) / Number(limit)),
+        },
+        message: "Threads retrieved successfully",
+      });
+    } catch (error) {
+      next(createError("Internal server error", 500));
     }
+  }
+);
 
-    // Get the post
-    const { data: post, error: postError } = await supabaseAdmin
-      .from("forum_posts")
-      .select(
-        `
-      *,
-      users(username, full_name, avatar_url, is_verified, role, join_date),
-      forum_categories(name, slug)
-    `
-      )
+// GET /api/forum/threads/:id - Get single thread with replies
+router.get("/threads/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Get thread details
+    const { data: thread, error: threadError } = await supabaseAdmin
+      .from("forum_thread_list")
+      .select("*")
       .eq("id", id)
-      .eq("is_active", true)
       .single();
 
-    if (postError) {
-      throw notFoundError("Forum post");
+    if (threadError || !thread) {
+      return next(createError("Thread not found", 404));
     }
 
-    // Increment view count (only if not the author)
-    if (!(req as any).user || (req as any).user.id !== post.author_id) {
-      await supabaseAdmin
-        .from("forum_posts")
-        .update({ views: (post.views || 0) + 1 })
-        .eq("id", id);
-
-      post.views = (post.views || 0) + 1;
-    }
-
-    // Get replies with pagination
-    const {
-      data: replies,
-      error: repliesError,
-      count,
-    } = await supabaseAdmin
+    // Get thread replies
+    const { data: replies, error: repliesError } = await supabaseAdmin
       .from("forum_replies")
-      .select(
-        `
-      *,
-      users(username, full_name, avatar_url, is_verified, role, join_date)
-    `,
-        { count: "exact" }
-      )
-      .eq("post_id", id)
-      .eq("is_active", true)
-      .order("created_at", { ascending: true })
-      .range(from, to);
+      .select("*")
+      .eq("thread_id", id)
+      .order("created_at", { ascending: true });
 
     if (repliesError) {
-      throw new Error("Failed to fetch replies");
+      return next(createError("Failed to fetch replies", 500));
     }
 
-    // Get author's post count
-    const { count: authorPostCount } = await supabaseAdmin
-      .from("forum_posts")
-      .select("*", { count: "exact", head: true })
-      .eq("author_id", post.author_id)
-      .eq("is_active", true);
+    // Get thread images
+    const { data: images, error: imagesError } = await supabaseAdmin
+      .from("forum_images")
+      .select("*")
+      .eq("thread_id", id)
+      .is("reply_id", null);
 
-    res.json({
-      success: true,
-      data: {
-        post: {
-          ...post,
-          users: {
-            ...post.users,
-            post_count: authorPostCount || 0,
-          },
-        },
-        replies,
-        pagination: {
-          page: toNumber(page, 1),
-          limit: toNumber(limit, 20),
-          total: count,
-          pages: Math.ceil(count / toNumber(limit, 20)),
-        },
-      },
-    });
-  })
-);
-
-// @route   PUT /api/forum/posts/:id
-// @desc    Update forum post
-// @access  Private (Author or Moderator)
-router.put(
-  "/posts/:id",
-  authenticateToken,
-  validate(forumSchemas.updatePost),
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    if (!isValidUUID(id)) {
-      throw validationError("Invalid post ID format");
+    if (imagesError) {
+      return next(createError("Failed to fetch images", 500));
     }
 
-    // Check if post exists and get author
-    const { data: existingPost, error: checkError } = await supabaseAdmin
-      .from("forum_posts")
-      .select("author_id, is_locked")
-      .eq("id", id)
-      .single();
+    // Get reply images
+    const replyIds = replies?.map((r) => r.id) || [];
+    let replyImages: any[] = [];
 
-    if (checkError) {
-      throw notFoundError("Forum post");
+    if (replyIds.length > 0) {
+      const { data: replyImagesData, error: replyImagesError } =
+        await supabaseAdmin
+          .from("forum_images")
+          .select("*")
+          .in("reply_id", replyIds);
+
+      if (replyImagesError) {
+        return next(createError("Failed to fetch reply images", 500));
+      }
+
+      replyImages = replyImagesData || [];
     }
 
-    // Check permissions (author or moderator)
-    const isAuthor = existingPost.author_id === (req as any).user.id;
-    const isModerator =
-      (req as any).user.role === "moderator" ||
-      (req as any).user.role === "admin";
-
-    if (!isAuthor && !isModerator) {
-      throw forbiddenError("You can only edit your own posts");
-    }
-
-    // Check if post is locked (only moderators can edit locked posts)
-    if (existingPost.is_locked && !isModerator) {
-      throw forbiddenError("This post is locked and cannot be edited");
-    }
-
-    const updateData = {
-      ...req.body,
-      updated_at: new Date().toISOString(),
-    };
-
-    // Only moderators can change certain fields
-    if (!isModerator) {
-      delete updateData.is_pinned;
-      delete updateData.is_locked;
-      delete updateData.category_id;
-    }
-
-    const { data: post, error } = await supabaseAdmin
-      .from("forum_posts")
-      .update(updateData)
-      .eq("id", id)
-      .select(
-        `
-      *,
-      users(username, full_name, avatar_url, is_verified, role),
-      forum_categories(name, slug)
-    `
-      )
-      .single();
-
-    if (error) {
-      throw new Error("Failed to update forum post");
-    }
-
-    res.json({
-      success: true,
-      message: "Forum post updated successfully",
-      data: {
-        post,
-      },
-    });
-  })
-);
-
-// @route   DELETE /api/forum/posts/:id
-// @desc    Delete forum post
-// @access  Private (Author or Moderator)
-router.delete(
-  "/posts/:id",
-  authenticateToken,
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    if (!isValidUUID(id)) {
-      throw validationError("Invalid post ID format");
-    }
-
-    // Check if post exists and get author
-    const { data: existingPost, error: checkError } = await supabaseAdmin
-      .from("forum_posts")
-      .select("author_id")
-      .eq("id", id)
-      .single();
-
-    if (checkError) {
-      throw notFoundError("Forum post");
-    }
-
-    // Check permissions (author or moderator)
-    const isAuthor = existingPost.author_id === (req as any).user.id;
-    const isModerator =
-      (req as any).user.role === "moderator" ||
-      (req as any).user.role === "admin";
-
-    if (!isAuthor && !isModerator) {
-      throw forbiddenError("You can only delete your own posts");
-    }
-
-    // Soft delete by setting is_active to false
-    const { error } = await supabaseAdmin
-      .from("forum_posts")
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+    // Increment view count
+    await supabaseAdmin
+      .from("forum_threads")
+      .update({ view_count: thread.view_count + 1 })
       .eq("id", id);
 
-    if (error) {
-      throw new Error("Failed to delete forum post");
+    // Get author information for replies
+    const authorIds = [
+      ...new Set(replies?.map((r) => r.author_id).filter(Boolean)),
+    ];
+    let authors: any[] = [];
+
+    if (authorIds.length > 0) {
+      const { data: authorsData } = await supabaseAdmin
+        .from("users")
+        .select("id, username, full_name, avatar_url")
+        .in("id", authorIds);
+      authors = authorsData || [];
     }
+
+    // Organize replies into nested structure with author data and images
+    const organizedReplies = organizeRepliesWithAuthors(
+      replies || [],
+      authors,
+      replyImages
+    );
+
+    // Transform the data to match frontend expectations
+    const transformedThread = {
+      ...thread,
+      author: {
+        id: thread.author_id,
+        username: thread.author_username,
+        displayName: thread.author_name || thread.author_username,
+        avatar: thread.author_avatar,
+      },
+      category: {
+        id: thread.category_id,
+        name: thread.category_name,
+        slug: thread.category_slug,
+        icon: thread.category_icon,
+        color: thread.category_color,
+      },
+      images: images || [],
+      replies: organizedReplies,
+    };
 
     res.json({
       success: true,
-      message: "Forum post deleted successfully",
+      data: transformedThread,
+      message: "Thread retrieved successfully",
     });
-  })
+  } catch (error) {
+    next(createError("Internal server error", 500));
+  }
+});
+
+// POST /api/forum/threads - Create new thread
+router.post(
+  "/threads",
+  authenticateToken,
+  validate(forumSchemas.createThread),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { category_id, title, content, images } = req.body;
+
+      // Generate slug from title
+      const slug = title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+      const threadData = {
+        category_id,
+        author_id: req.user!.id,
+        title,
+        content,
+        slug,
+      };
+
+      const { data: thread, error } = await supabaseAdmin
+        .from("forum_threads")
+        .insert([threadData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Database error creating thread:", error);
+        if (error.code === "23505") {
+          return next(
+            validationError(
+              "Thread with this title already exists in this category"
+            )
+          );
+        }
+        return next(
+          createError(`Failed to create thread: ${error.message}`, 500)
+        );
+      }
+
+      res.status(201).json({
+        success: true,
+        data: thread,
+        message: "Thread created successfully",
+      });
+    } catch (error) {
+      next(createError("Internal server error", 500));
+    }
+  }
 );
 
-// @route   POST /api/forum/posts/:id/replies
-// @desc    Create a reply to a forum post
-// @access  Private
+// Helper function to organize replies into nested structure with author data
+function organizeRepliesWithAuthors(
+  replies: any[],
+  authors: any[],
+  replyImages: any[] = []
+): any[] {
+  const replyMap = new Map();
+  const rootReplies: any[] = [];
+
+  // Create author lookup map
+  const authorMap = new Map();
+  authors.forEach((author) => {
+    authorMap.set(author.id, author);
+  });
+
+  // Create reply images lookup map
+  const replyImagesMap = new Map();
+  replyImages.forEach((image) => {
+    if (!replyImagesMap.has(image.reply_id)) {
+      replyImagesMap.set(image.reply_id, []);
+    }
+    replyImagesMap.get(image.reply_id).push(image);
+  });
+
+  // First pass: create map of all replies with transformed author data and images
+  replies.forEach((reply) => {
+    const author = authorMap.get(reply.author_id);
+    const images = replyImagesMap.get(reply.id) || [];
+
+    const transformedReply = {
+      ...reply,
+      author_id: reply.author_id,
+      author_username: author?.username || "Unknown User",
+      author_name: author?.full_name || null,
+      author_avatar: author?.avatar_url || null,
+      author_role: "user", // Default role
+      images: images,
+      replies: [],
+    };
+    replyMap.set(reply.id, transformedReply);
+  });
+
+  // Second pass: organize into tree structure
+  replies.forEach((reply) => {
+    if (reply.parent_id) {
+      const parent = replyMap.get(reply.parent_id);
+      if (parent) {
+        parent.replies.push(replyMap.get(reply.id));
+      }
+    } else {
+      rootReplies.push(replyMap.get(reply.id));
+    }
+  });
+
+  return rootReplies;
+}
+
+// PUT /api/forum/threads/:id - Update thread (Author or Admin)
+router.put(
+  "/threads/:id",
+  authenticateToken,
+  validate(forumSchemas.updateThread),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { id } = req.params;
+
+      // Check if thread exists and get author
+      const { data: thread, error: fetchError } = await supabaseAdmin
+        .from("forum_threads")
+        .select("author_id")
+        .eq("id", id)
+        .single();
+
+      if (fetchError || !thread) {
+        return next(createError("Thread not found", 404));
+      }
+
+      // Check permissions
+      const { data: userProfile } = await supabaseAdmin
+        .from("user_profiles")
+        .select("role, forum_role")
+        .eq("id", req.user!.id)
+        .single();
+
+      const isAuthor = thread.author_id === req.user!.id;
+      const isAdmin =
+        userProfile &&
+        (["admin", "moderator"].includes(userProfile.role) ||
+          ["admin", "moderator"].includes(userProfile.forum_role));
+
+      if (!isAuthor && !isAdmin) {
+        return next(createError("Insufficient permissions", 403));
+      }
+
+      const { data: updatedThread, error } = await supabaseAdmin
+        .from("forum_threads")
+        .update(req.body)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        return next(createError("Failed to update thread", 500));
+      }
+
+      res.json({
+        success: true,
+        data: updatedThread,
+        message: "Thread updated successfully",
+      });
+    } catch (error) {
+      next(createError("Internal server error", 500));
+    }
+  }
+);
+
+// DELETE /api/forum/threads/:id - Delete thread (Author or Admin)
+router.delete(
+  "/threads/:id",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { id } = req.params;
+
+      // Check if thread exists and get author
+      const { data: thread, error: fetchError } = await supabaseAdmin
+        .from("forum_threads")
+        .select("author_id")
+        .eq("id", id)
+        .single();
+
+      if (fetchError || !thread) {
+        return next(createError("Thread not found", 404));
+      }
+
+      // Check permissions
+      const { data: userProfile } = await supabaseAdmin
+        .from("user_profiles")
+        .select("role, forum_role")
+        .eq("id", req.user!.id)
+        .single();
+
+      const isAuthor = thread.author_id === req.user!.id;
+      const isAdmin =
+        userProfile &&
+        (["admin", "moderator"].includes(userProfile.role) ||
+          ["admin", "moderator"].includes(userProfile.forum_role));
+
+      if (!isAuthor && !isAdmin) {
+        return next(createError("Insufficient permissions", 403));
+      }
+
+      // Soft delete by setting is_deleted = true
+      const { error } = await supabaseAdmin
+        .from("forum_threads")
+        .update({ is_deleted: true })
+        .eq("id", id);
+
+      if (error) {
+        return next(createError("Failed to delete thread", 500));
+      }
+
+      res.json({
+        success: true,
+        message: "Thread deleted successfully",
+      });
+    } catch (error) {
+      next(createError("Internal server error", 500));
+    }
+  }
+);
+
+// =====================================================
+// REPLIES ENDPOINTS
+// =====================================================
+
+// POST /api/forum/replies - Create new reply
 router.post(
-  "/posts/:id/replies",
+  "/replies",
   authenticateToken,
   validate(forumSchemas.createReply),
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id: postId } = req.params;
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { thread_id, parent_id, content, images } = req.body;
 
-    if (!isValidUUID(postId)) {
-      throw validationError("Invalid post ID format");
+      // Check if thread exists and is not locked
+      const { data: thread, error: threadError } = await supabaseAdmin
+        .from("forum_threads")
+        .select("is_locked")
+        .eq("id", thread_id)
+        .single();
+
+      if (threadError || !thread) {
+        return next(createError("Thread not found", 404));
+      }
+
+      if (thread.is_locked) {
+        return next(createError("Cannot reply to locked thread", 403));
+      }
+
+      // Determine nesting level
+      let nesting_level = 0;
+      if (parent_id) {
+        const { data: parentReply } = await supabaseAdmin
+          .from("forum_replies")
+          .select("nesting_level")
+          .eq("id", parent_id)
+          .single();
+
+        if (parentReply) {
+          nesting_level = parentReply.nesting_level + 1;
+          // Enforce maximum nesting level of 1 (2 levels total: 0 and 1)
+          if (nesting_level > 1) {
+            return next(validationError("Maximum nesting level exceeded"));
+          }
+        }
+      }
+
+      const replyData = {
+        thread_id,
+        parent_id,
+        author_id: req.user!.id,
+        content,
+        nesting_level,
+      };
+
+      const { data: reply, error } = await supabaseAdmin
+        .from("forum_replies")
+        .insert([replyData])
+        .select()
+        .single();
+
+      if (error) {
+        return next(createError("Failed to create reply", 500));
+      }
+
+      res.status(201).json({
+        success: true,
+        data: reply,
+        message: "Reply created successfully",
+      });
+    } catch (error) {
+      next(createError("Internal server error", 500));
     }
-
-    // Check if post exists and is not locked
-    const { data: post, error: postError } = await supabaseAdmin
-      .from("forum_posts")
-      .select("id, is_locked, is_active")
-      .eq("id", postId)
-      .single();
-
-    if (postError) {
-      throw notFoundError("Forum post");
-    }
-
-    if (!post.is_active) {
-      throw forbiddenError("Cannot reply to an inactive post");
-    }
-
-    if (post.is_locked) {
-      throw forbiddenError(
-        "This post is locked and cannot receive new replies"
-      );
-    }
-
-    const replyData = {
-      ...req.body,
-      post_id: postId,
-      author_id: (req as any).user.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    const { data: reply, error } = await supabaseAdmin
-      .from("forum_replies")
-      .insert(replyData)
-      .select(
-        `
-      *,
-      users(username, full_name, avatar_url, is_verified, role)
-    `
-      )
-      .single();
-
-    if (error) {
-      throw new Error("Failed to create reply");
-    }
-
-    // Update post's reply count and last activity
-    // First get current reply count
-    const { data: currentPost } = await supabaseAdmin
-      .from("forum_posts")
-      .select("reply_count")
-      .eq("id", postId)
-      .single();
-
-    const newReplyCount = (currentPost?.reply_count || 0) + 1;
-
-    await supabaseAdmin
-      .from("forum_posts")
-      .update({
-        reply_count: newReplyCount,
-        last_reply_at: new Date().toISOString(),
-        last_reply_by: (req as any).user.id,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", postId);
-
-    res.status(201).json({
-      success: true,
-      message: "Reply created successfully",
-      data: {
-        reply,
-      },
-    });
-  })
+  }
 );
 
-// @route   PUT /api/forum/replies/:id
-// @desc    Update forum reply
-// @access  Private (Author or Moderator)
+// PUT /api/forum/replies/:id - Update reply (Author or Admin)
 router.put(
   "/replies/:id",
   authenticateToken,
   validate(forumSchemas.updateReply),
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { id } = req.params;
 
-    if (!isValidUUID(id)) {
-      throw validationError("Invalid reply ID format");
+      // Check if reply exists and get author
+      const { data: reply, error: fetchError } = await supabase
+        .from("forum_replies")
+        .select("author_id")
+        .eq("id", id)
+        .single();
+
+      if (fetchError || !reply) {
+        return next(createError("Reply not found", 404));
+      }
+
+      // Check permissions
+      const { data: userProfile } = await supabase
+        .from("user_profiles")
+        .select("role, forum_role")
+        .eq("id", req.user!.id)
+        .single();
+
+      const isAuthor = reply.author_id === req.user!.id;
+      const isAdmin =
+        userProfile &&
+        (["admin", "moderator"].includes(userProfile.role) ||
+          ["admin", "moderator"].includes(userProfile.forum_role));
+
+      if (!isAuthor && !isAdmin) {
+        return next(createError("Insufficient permissions", 403));
+      }
+
+      const { data: updatedReply, error } = await supabase
+        .from("forum_replies")
+        .update(req.body)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        return next(createError("Failed to update reply", 500));
+      }
+
+      res.json({
+        success: true,
+        data: updatedReply,
+        message: "Reply updated successfully",
+      });
+    } catch (error) {
+      next(createError("Internal server error", 500));
     }
-
-    // Check if reply exists and get author
-    const { data: existingReply, error: checkError } = await supabaseAdmin
-      .from("forum_replies")
-      .select("author_id, post_id")
-      .eq("id", id)
-      .single();
-
-    if (checkError) {
-      throw notFoundError("Forum reply");
-    }
-
-    // Check permissions (author or moderator)
-    const isAuthor = existingReply.author_id === (req as any).user.id;
-    const isModerator =
-      (req as any).user.role === "moderator" ||
-      (req as any).user.role === "admin";
-
-    if (!isAuthor && !isModerator) {
-      throw forbiddenError("You can only edit your own replies");
-    }
-
-    // Check if parent post is locked (only moderators can edit replies in locked posts)
-    const { data: post } = await supabaseAdmin
-      .from("forum_posts")
-      .select("is_locked")
-      .eq("id", existingReply.post_id)
-      .single();
-
-    if (post && post.is_locked && !isModerator) {
-      throw forbiddenError("Cannot edit replies in a locked post");
-    }
-
-    const updateData = {
-      ...req.body,
-      updated_at: new Date().toISOString(),
-    };
-
-    const { data: reply, error } = await supabaseAdmin
-      .from("forum_replies")
-      .update(updateData)
-      .eq("id", id)
-      .select(
-        `
-      *,
-      users(username, full_name, avatar_url, is_verified, role)
-    `
-      )
-      .single();
-
-    if (error) {
-      throw new Error("Failed to update reply");
-    }
-
-    res.json({
-      success: true,
-      message: "Reply updated successfully",
-      data: {
-        reply,
-      },
-    });
-  })
+  }
 );
 
-// @route   DELETE /api/forum/replies/:id
-// @desc    Delete forum reply
-// @access  Private (Author or Moderator)
+// DELETE /api/forum/replies/:id - Delete reply (Author or Admin)
 router.delete(
   "/replies/:id",
   authenticateToken,
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { id } = req.params;
 
-    if (!isValidUUID(id)) {
-      throw validationError("Invalid reply ID format");
+      // Check if reply exists and get author
+      const { data: reply, error: fetchError } = await supabase
+        .from("forum_replies")
+        .select("author_id")
+        .eq("id", id)
+        .single();
+
+      if (fetchError || !reply) {
+        return next(createError("Reply not found", 404));
+      }
+
+      // Check permissions
+      const { data: userProfile } = await supabase
+        .from("user_profiles")
+        .select("role, forum_role")
+        .eq("id", req.user!.id)
+        .single();
+
+      const isAuthor = reply.author_id === req.user!.id;
+      const isAdmin =
+        userProfile &&
+        (["admin", "moderator"].includes(userProfile.role) ||
+          ["admin", "moderator"].includes(userProfile.forum_role));
+
+      if (!isAuthor && !isAdmin) {
+        return next(createError("Insufficient permissions", 403));
+      }
+
+      // Soft delete by setting is_deleted = true
+      const { error } = await supabase
+        .from("forum_replies")
+        .update({ is_deleted: true })
+        .eq("id", id);
+
+      if (error) {
+        return next(createError("Failed to delete reply", 500));
+      }
+
+      res.json({
+        success: true,
+        message: "Reply deleted successfully",
+      });
+    } catch (error) {
+      next(createError("Internal server error", 500));
     }
-
-    // Check if reply exists and get author
-    const { data: existingReply, error: checkError } = await supabaseAdmin
-      .from("forum_replies")
-      .select("author_id, post_id")
-      .eq("id", id)
-      .single();
-
-    if (checkError) {
-      throw notFoundError("Forum reply");
-    }
-
-    // Check permissions (author or moderator)
-    const isAuthor = existingReply.author_id === (req as any).user.id;
-    const isModerator =
-      (req as any).user.role === "moderator" ||
-      (req as any).user.role === "admin";
-
-    if (!isAuthor && !isModerator) {
-      throw forbiddenError("You can only delete your own replies");
-    }
-
-    // Soft delete by setting is_active to false
-    const { error } = await supabaseAdmin
-      .from("forum_replies")
-      .update({ is_active: false, updated_at: new Date().toISOString() })
-      .eq("id", id);
-
-    if (error) {
-      throw new Error("Failed to delete reply");
-    }
-
-    // Update post's reply count
-    // First get current reply count
-    const { data: currentPost } = await supabaseAdmin
-      .from("forum_posts")
-      .select("reply_count")
-      .eq("id", existingReply.post_id)
-      .single();
-
-    const newReplyCount = Math.max((currentPost?.reply_count || 0) - 1, 0);
-
-    await supabaseAdmin
-      .from("forum_posts")
-      .update({
-        reply_count: newReplyCount,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", existingReply.post_id);
-
-    res.json({
-      success: true,
-      message: "Reply deleted successfully",
-    });
-  })
+  }
 );
 
-// @route   POST /api/forum/posts/:id/pin
-// @desc    Pin/unpin a forum post
-// @access  Private (Moderator only)
+// =====================================================
+// MODERATION ENDPOINTS
+// =====================================================
+
+// POST /api/forum/threads/:id/moderate - Moderate thread (Admin/Moderator only)
 router.post(
-  "/posts/:id/pin",
+  "/threads/:id/moderate",
   authenticateToken,
-  requireModerator,
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { is_pinned } = req.body;
+  validate(forumSchemas.moderateThread),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { id } = req.params;
+      const { action, reason } = req.body;
 
-    if (!isValidUUID(id)) {
-      throw validationError("Invalid post ID format");
+      // Check if user is admin/moderator
+      const { data: userProfile } = await supabase
+        .from("user_profiles")
+        .select("role, forum_role")
+        .eq("id", req.user!.id)
+        .single();
+
+      if (
+        !userProfile ||
+        (!["admin", "moderator"].includes(userProfile.role) &&
+          !["admin", "moderator"].includes(userProfile.forum_role))
+      ) {
+        return next(createError("Insufficient permissions", 403));
+      }
+
+      // Check if thread exists
+      const { data: thread, error: fetchError } = await supabase
+        .from("forum_threads")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (fetchError || !thread) {
+        return next(createError("Thread not found", 404));
+      }
+
+      let updateData: any = {};
+
+      switch (action) {
+        case "pin":
+          updateData.is_pinned = true;
+          break;
+        case "unpin":
+          updateData.is_pinned = false;
+          break;
+        case "lock":
+          updateData.is_locked = true;
+          break;
+        case "unlock":
+          updateData.is_locked = false;
+          break;
+        case "delete":
+          updateData.is_deleted = true;
+          break;
+        case "restore":
+          updateData.is_deleted = false;
+          break;
+        default:
+          return next(validationError("Invalid moderation action"));
+      }
+
+      const { data: updatedThread, error } = await supabase
+        .from("forum_threads")
+        .update(updateData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        return next(createError("Failed to moderate thread", 500));
+      }
+
+      res.json({
+        success: true,
+        data: updatedThread,
+        message: `Thread ${action}ed successfully`,
+      });
+    } catch (error) {
+      next(createError("Internal server error", 500));
     }
-
-    const { data: post, error } = await supabaseAdmin
-      .from("forum_posts")
-      .update({
-        is_pinned: Boolean(is_pinned),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .select("id, title, is_pinned")
-      .single();
-
-    if (error) {
-      throw notFoundError("Forum post");
-    }
-
-    res.json({
-      success: true,
-      message: `Post ${post.is_pinned ? "pinned" : "unpinned"} successfully`,
-      data: {
-        post,
-      },
-    });
-  })
-);
-
-// @route   POST /api/forum/posts/:id/lock
-// @desc    Lock/unlock a forum post
-// @access  Private (Moderator only)
-router.post(
-  "/posts/:id/lock",
-  authenticateToken,
-  requireModerator,
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { is_locked } = req.body;
-
-    if (!isValidUUID(id)) {
-      throw validationError("Invalid post ID format");
-    }
-
-    const { data: post, error } = await supabaseAdmin
-      .from("forum_posts")
-      .update({
-        is_locked: Boolean(is_locked),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .select("id, title, is_locked")
-      .single();
-
-    if (error) {
-      throw notFoundError("Forum post");
-    }
-
-    res.json({
-      success: true,
-      message: `Post ${post.is_locked ? "locked" : "unlocked"} successfully`,
-      data: {
-        post,
-      },
-    });
-  })
-);
-
-// @route   GET /api/forum/search
-// @desc    Search forum posts and replies
-// @access  Public
-router.get(
-  "/search",
-  validate(commonSchemas.search, "query"),
-  asyncHandler(async (req: Request, res: Response) => {
-    const { q, category_id, page = 1, limit = 20 } = req.query;
-    const { from, to } = buildPagination(
-      toNumber(page, 1),
-      toNumber(limit, 20)
-    );
-
-    const qStr = toString(q);
-    if (!qStr || qStr.trim().length < 2) {
-      throw validationError("Search query must be at least 2 characters long");
-    }
-
-    let query = supabaseAdmin
-      .from("forum_posts")
-      .select(
-        `
-      *,
-      users(username, full_name, avatar_url, is_verified, role),
-      forum_categories(name, slug)
-    `,
-        { count: "exact" }
-      )
-      .eq("is_active", true)
-      .or(`title.ilike.%${qStr}%,content.ilike.%${qStr}%`)
-      .order("updated_at", { ascending: false })
-      .range(from, to);
-
-    const categoryIdStr = toString(category_id);
-    if (categoryIdStr && isValidUUID(categoryIdStr)) {
-      query = query.eq("category_id", categoryIdStr);
-    }
-
-    const { data: posts, error, count } = await query;
-
-    if (error) {
-      throw new Error("Failed to search forum posts");
-    }
-
-    res.json({
-      success: true,
-      data: {
-        posts,
-        pagination: {
-          page: toNumber(page, 1),
-          limit: toNumber(limit, 20),
-          total: count,
-          pages: Math.ceil(count / toNumber(limit, 20)),
-        },
-        query: q,
-      },
-    });
-  })
-);
-
-// @route   GET /api/forum/user/:userId/posts
-// @desc    Get user's forum posts
-// @access  Public
-router.get(
-  "/user/:userId/posts",
-  validate(commonSchemas.pagination, "query"),
-  asyncHandler(async (req: Request, res: Response) => {
-    const { userId } = req.params;
-    const { page, limit } = req.query;
-    const { from, to } = buildPagination(
-      toNumber(page, 1),
-      toNumber(limit, 20)
-    );
-
-    if (!isValidUUID(userId)) {
-      throw validationError("Invalid user ID format");
-    }
-
-    const {
-      data: posts,
-      error,
-      count,
-    } = await supabaseAdmin
-      .from("forum_posts")
-      .select(
-        `
-      *,
-      users(username, full_name, avatar_url, is_verified, role),
-      forum_categories(name, slug)
-    `,
-        { count: "exact" }
-      )
-      .eq("author_id", userId)
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-
-    if (error) {
-      throw new Error("Failed to fetch user posts");
-    }
-
-    res.json({
-      success: true,
-      data: {
-        posts,
-        pagination: {
-          page: toNumber(page, 1),
-          limit: toNumber(limit, 20),
-          total: count,
-          pages: Math.ceil(count / toNumber(limit, 20)),
-        },
-      },
-    });
-  })
+  }
 );
 
 export default router;

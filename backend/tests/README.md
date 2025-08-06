@@ -10,7 +10,7 @@ The test suite includes comprehensive tests for:
 - **User Management** (`users.test.js`) - Profile management, preferences, avatar handling, statistics
 - **Vehicle Management** (`vehicles.test.js`) - CRUD operations, image handling, filtering, validation
 - **Charging System** (`charging.test.js`) - Stations, sessions, analytics, reviews
-- **Forum System** (`forum.test.js`) - Posts, comments, categories, moderation, likes
+
 - **Marketplace** (`marketplace.test.js`) - Listings, categories, search, image management
 - **Notifications** (`notifications.test.js`) - Delivery, preferences, admin notifications
 - **Admin Functions** (`admin.test.js`) - User management, content moderation, system monitoring
@@ -191,7 +191,7 @@ tests/
 #### Standard Test Structure
 
 ```javascript
-describe('Feature Name', () => {
+describe("Feature Name", () => {
   let supabase;
   let testUser;
 
@@ -204,26 +204,26 @@ describe('Feature Name', () => {
     testUser = await createTestUser(supabase, userData);
   });
 
-  describe('API Endpoint', () => {
-    test('should handle success case', async () => {
+  describe("API Endpoint", () => {
+    test("should handle success case", async () => {
       const response = await request(app)
-        .post('/api/endpoint')
+        .post("/api/endpoint")
         .set(createTestAuthHeader(testUser))
         .send(validData)
         .expect(200);
 
       validateApiResponse(response.body);
-      expect(response.body.data).toHaveProperty('expectedField');
+      expect(response.body.data).toHaveProperty("expectedField");
     });
 
-    test('should handle error case', async () => {
+    test("should handle error case", async () => {
       const response = await request(app)
-        .post('/api/endpoint')
+        .post("/api/endpoint")
         .send(invalidData)
         .expect(400);
 
       validateErrorResponse(response.body);
-      expect(response.body.message).toContain('error description');
+      expect(response.body.message).toContain("error description");
     });
   });
 });
@@ -254,6 +254,7 @@ Tests use a separate Supabase test database:
 ### Common Issues
 
 1. **Database Connection Errors**
+
    ```bash
    # Check environment variables
    echo $SUPABASE_URL
@@ -261,6 +262,7 @@ Tests use a separate Supabase test database:
    ```
 
 2. **Test Timeouts**
+
    ```bash
    # Run with increased timeout
    npx jest --testTimeout=60000
@@ -288,11 +290,11 @@ Enable detailed logging in tests:
 
 ```javascript
 // In test files
-const DEBUG = process.env.DEBUG_TESTS === 'true';
+const DEBUG = process.env.DEBUG_TESTS === "true";
 
 if (DEBUG) {
-  console.log('Test data:', testData);
-  console.log('Response:', response.body);
+  console.log("Test data:", testData);
+  console.log("Response:", response.body);
 }
 ```
 
@@ -320,15 +322,15 @@ if (DEBUG) {
 ```javascript
 // Use consistent test data
 const validTestData = {
-  email: 'test@example.com',
-  username: 'testuser',
-  password: 'TestPassword123!'
+  email: "test@example.com",
+  username: "testuser",
+  password: "TestPassword123!",
 };
 
 // Use factories for complex data
 const testUser = await createTestUser(supabase, {
-  role: 'user',
-  isActive: true
+  role: "user",
+  isActive: true,
 });
 ```
 
@@ -346,28 +348,28 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run tests
-      run: npm run test:coverage
-      env:
-        SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
-        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY }}
-        JWT_SECRET: ${{ secrets.JWT_TEST_SECRET }}
-    
-    - name: Upload coverage
-      uses: codecov/codecov-action@v3
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:coverage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY }}
+          JWT_SECRET: ${{ secrets.JWT_TEST_SECRET }}
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
 ```
 
 ## 📈 Performance Testing

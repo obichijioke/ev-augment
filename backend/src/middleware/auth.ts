@@ -169,6 +169,17 @@ const requireModerator = async (
 
     if (error) {
       console.error("Error fetching user profile:", error);
+
+      // If user_profiles table doesn't exist, deny access
+      if (error.code === "42P01" || error.code === "42703") {
+        console.log("user_profiles table missing, denying moderator access");
+        res.status(403).json({
+          error: "Access denied",
+          message: "Moderator permissions not configured",
+        });
+        return;
+      }
+
       res.status(500).json({
         error: "Authorization check failed",
         message: "Unable to verify user permissions",

@@ -1,4 +1,4 @@
-import { User } from './database';
+import { User } from "./database";
 
 // Auth related types
 export interface LoginRequest {
@@ -56,7 +56,7 @@ export interface CreateMarketplaceListingRequest {
   category: string;
   subcategory?: string;
   price?: number;
-  condition?: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
+  condition?: "new" | "like_new" | "good" | "fair" | "poor";
   brand?: string;
   model?: string;
   year?: number;
@@ -67,8 +67,9 @@ export interface CreateMarketplaceListingRequest {
   is_negotiable?: boolean;
 }
 
-export interface UpdateMarketplaceListingRequest extends Partial<CreateMarketplaceListingRequest> {
-  status?: 'active' | 'sold' | 'pending' | 'inactive';
+export interface UpdateMarketplaceListingRequest
+  extends Partial<CreateMarketplaceListingRequest> {
+  status?: "active" | "sold" | "pending" | "inactive";
 }
 
 // Forum related types
@@ -76,21 +77,6 @@ export interface CreateForumPostRequest {
   title: string;
   content: string;
   category_id: string;
-}
-
-export interface UpdateForumPostRequest {
-  title?: string;
-  content?: string;
-  category_id?: string;
-}
-
-export interface CreateForumCommentRequest {
-  content: string;
-  parent_id?: string;
-}
-
-export interface UpdateForumCommentRequest {
-  content: string;
 }
 
 // Blog related types
@@ -101,7 +87,7 @@ export interface CreateBlogPostRequest {
   category?: string;
   tags?: string[];
   featured_image?: string;
-  status?: 'draft' | 'published';
+  status?: "draft" | "published";
 }
 
 export interface UpdateBlogPostRequest extends Partial<CreateBlogPostRequest> {}
@@ -121,7 +107,7 @@ export interface UpdateChargingSessionRequest {
   cost?: number;
   payment_method?: string;
   notes?: string;
-  status?: 'active' | 'completed' | 'interrupted' | 'failed';
+  status?: "active" | "completed" | "interrupted" | "failed";
 }
 
 export interface CreateChargingReviewRequest {
@@ -170,7 +156,8 @@ export interface CreateDirectoryBusinessRequest {
   certifications?: string[];
 }
 
-export interface UpdateDirectoryBusinessRequest extends Partial<CreateDirectoryBusinessRequest> {}
+export interface UpdateDirectoryBusinessRequest
+  extends Partial<CreateDirectoryBusinessRequest> {}
 
 // Notification related types
 export interface CreateNotificationRequest {
@@ -179,7 +166,7 @@ export interface CreateNotificationRequest {
   title: string;
   message: string;
   data?: Record<string, any>;
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  priority?: "low" | "normal" | "high" | "urgent";
   expires_at?: string;
 }
 
@@ -187,7 +174,7 @@ export interface UpdateNotificationPreferencesRequest {
   email_notifications?: boolean;
   push_notifications?: boolean;
   sms_notifications?: boolean;
-  email_frequency?: 'immediate' | 'daily' | 'weekly' | 'never';
+  email_frequency?: "immediate" | "daily" | "weekly" | "never";
   notification_types?: Record<string, any>;
   quiet_hours_start?: string;
   quiet_hours_end?: string;
@@ -222,7 +209,7 @@ export interface SearchFilters {
 
 export interface SortOptions {
   field: string;
-  order: 'asc' | 'desc';
+  order: "asc" | "desc";
 }
 
 // File upload types
@@ -289,7 +276,7 @@ export interface JWTPayload {
 export interface QueryOptions {
   select?: string[];
   where?: Record<string, any>;
-  orderBy?: Record<string, 'asc' | 'desc'>;
+  orderBy?: Record<string, "asc" | "desc">;
   limit?: number;
   offset?: number;
   include?: string[];
@@ -325,7 +312,7 @@ export interface CreateReportRequest {
 }
 
 export interface UpdateReportRequest {
-  status?: 'pending' | 'reviewing' | 'resolved' | 'dismissed';
+  status?: "pending" | "reviewing" | "resolved" | "dismissed";
   moderator_notes?: string;
 }
 
@@ -340,7 +327,7 @@ export interface AdminStats {
 }
 
 export interface ModeratorAction {
-  action: 'approve' | 'reject' | 'ban' | 'warn' | 'delete';
+  action: "approve" | "reject" | "ban" | "warn" | "delete";
   reason?: string;
   duration?: number; // in days for bans
 }

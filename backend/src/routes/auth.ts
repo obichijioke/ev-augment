@@ -508,7 +508,7 @@ router.get(
   })
 );
 
-// @route   PUT /api/auth/user-profile  
+// @route   PUT /api/auth/user-profile
 // @desc    Update basic user information (users table)
 // @access  Private
 router.put(
@@ -516,16 +516,16 @@ router.put(
   authenticateToken,
   validate(userSchemas.updateProfile),
   asyncHandler(async (req: AuthenticatedRequest, res) => {
-    const { 
-      username, 
-      full_name, 
-      bio, 
-      location, 
-      website, 
-      phone, 
-      is_business, 
-      business_name, 
-      business_type 
+    const {
+      username,
+      full_name,
+      bio,
+      location,
+      website,
+      phone,
+      is_business,
+      business_name,
+      business_type,
     } = req.body;
 
     const updateData: Partial<User> = {

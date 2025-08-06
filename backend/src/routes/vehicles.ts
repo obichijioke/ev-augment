@@ -7,8 +7,8 @@ import {
 } from "../services/supabaseClient";
 import {
   validate,
-  vehicleSchemas,
   commonSchemas,
+  vehicleSchemas,
 } from "../middleware/validation";
 import {
   asyncHandler,

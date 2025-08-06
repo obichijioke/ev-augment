@@ -1,7 +1,7 @@
 // Database type definitions based on schema.sql
 
-import { Request } from 'express';
-import { User as SupabaseUser } from '@supabase/supabase-js';
+import { Request } from "express";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 
 export interface User {
   id: string;
@@ -29,7 +29,7 @@ export interface UserProfile {
   id: string;
   username: string;
   email: string;
-  role: 'user' | 'moderator' | 'admin';
+  role: "user" | "moderator" | "admin";
   is_active: boolean;
   email_verified: boolean;
   email_verified_at?: Date;
@@ -100,7 +100,7 @@ export interface MarketplaceListing {
   category: string;
   subcategory?: string;
   price?: number;
-  condition?: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
+  condition?: "new" | "like_new" | "good" | "fair" | "poor";
   brand?: string;
   model?: string;
   year?: number;
@@ -111,7 +111,7 @@ export interface MarketplaceListing {
   features?: string[];
   is_negotiable: boolean;
   is_active: boolean;
-  status: 'active' | 'sold' | 'pending' | 'inactive';
+  status: "active" | "sold" | "pending" | "inactive";
   views: number;
   created_at: Date;
   updated_at: Date;
@@ -158,61 +158,6 @@ export interface WantedAd {
   updated_at: Date;
 }
 
-export interface ForumCategory {
-  id: string;
-  name: string;
-  description?: string;
-  slug: string;
-  color: string;
-  icon?: string;
-  is_active: boolean;
-  sort_order: number;
-  post_count: number;
-  last_post_id?: string;
-  last_post_at?: Date;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface ForumPost {
-  id: string;
-  author_id: string;
-  category_id: string;
-  title: string;
-  content: string;
-  slug: string;
-  is_pinned: boolean;
-  is_locked: boolean;
-  is_featured: boolean;
-  view_count: number;
-  like_count: number;
-  comment_count: number;
-  last_activity_at: Date;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface ForumComment {
-  id: string;
-  post_id: string;
-  author_id: string;
-  parent_id?: string;
-  content: string;
-  like_count: number;
-  is_edited: boolean;
-  edited_at?: Date;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface ForumLike {
-  id: string;
-  user_id: string;
-  post_id?: string;
-  comment_id?: string;
-  created_at: Date;
-}
-
 export interface ChargingStation {
   id: string;
   name: string;
@@ -251,7 +196,7 @@ export interface ChargingSession {
   cost?: number;
   payment_method?: string;
   notes?: string;
-  status: 'active' | 'completed' | 'interrupted' | 'failed';
+  status: "active" | "completed" | "interrupted" | "failed";
   created_at: Date;
   updated_at: Date;
 }
@@ -321,7 +266,7 @@ export interface Notification {
   title: string;
   message: string;
   data: Record<string, any>;
-  priority: 'low' | 'normal' | 'high' | 'urgent';
+  priority: "low" | "normal" | "high" | "urgent";
   is_read: boolean;
   read_at?: Date;
   expires_at?: Date;
@@ -334,7 +279,7 @@ export interface NotificationPreferences {
   email_notifications: boolean;
   push_notifications: boolean;
   sms_notifications: boolean;
-  email_frequency: 'immediate' | 'daily' | 'weekly' | 'never';
+  email_frequency: "immediate" | "daily" | "weekly" | "never";
   notification_types: Record<string, any>;
   quiet_hours_start?: string;
   quiet_hours_end?: string;
@@ -353,7 +298,7 @@ export interface BlogPost {
   featured_image?: string;
   category?: string;
   tags?: string[];
-  status: 'draft' | 'published' | 'archived';
+  status: "draft" | "published" | "archived";
   is_featured: boolean;
   view_count: number;
   like_count: number;
@@ -406,7 +351,7 @@ export interface Report {
   content_id: string;
   reason: string;
   description?: string;
-  status: 'pending' | 'reviewing' | 'resolved' | 'dismissed';
+  status: "pending" | "reviewing" | "resolved" | "dismissed";
   moderator_id?: string;
   moderator_notes?: string;
   resolved_at?: Date;
@@ -439,11 +384,13 @@ export interface AuthenticatedRequest<
   P = any,
   ResBody = any,
   ReqBody = any,
-  ReqQuery = any
+  ReqQuery = any,
 > extends Request<P, ResBody, ReqBody, ReqQuery> {
   user?: SupabaseUser;
   userId?: string;
   token?: string;
+  userRole?: string;
+  userPermissions?: string[];
   ownershipCheck?: {
     resourceId: string;
     userId: string;
@@ -455,7 +402,7 @@ export interface PaginationQuery {
   page?: string;
   limit?: string;
   sort?: string;
-  order?: 'asc' | 'desc';
+  order?: "asc" | "desc";
 }
 
 export interface SearchQuery extends PaginationQuery {

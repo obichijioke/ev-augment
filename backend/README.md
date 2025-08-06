@@ -5,12 +5,13 @@ A comprehensive backend API for the EV Community Platform built with Express.js 
 ## 🚀 Features
 
 ### Core Functionality
+
 - **User Authentication & Authorization** - JWT-based auth with role-based access control
 - **User Management** - Profile management, privacy settings, and user interactions
 - **Vehicle Management** - Add, edit, and showcase electric vehicles
 - **Marketplace** - Buy/sell EV-related items with advanced filtering
 - **Wanted Ads** - Post and respond to wanted advertisements
-- **Forum System** - Community discussions with categories and moderation
+
 - **Blog Platform** - Articles and news about EVs with commenting system
 - **Charging Stations** - Comprehensive EV charging station database
 - **Business Directory** - Directory of EV-related businesses and services
@@ -21,6 +22,7 @@ A comprehensive backend API for the EV Community Platform built with Express.js 
 - **Admin Panel** - Content moderation and user management
 
 ### Technical Features
+
 - **RESTful API** - Clean, consistent API design
 - **Rate Limiting** - Protection against abuse and spam
 - **Input Validation** - Comprehensive request validation with Joi
@@ -41,39 +43,42 @@ A comprehensive backend API for the EV Community Platform built with Express.js 
 ## 🛠️ Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd ev-nextjs/backend
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment Configuration**
-   
+
    Create a `.env` file in the backend root directory:
+
    ```env
    # Server Configuration
    NODE_ENV=development
    PORT=5000
-   
+
    # Supabase Configuration
    SUPABASE_URL=your_supabase_project_url
    SUPABASE_ANON_KEY=your_supabase_anon_key
    SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-   
+
    # JWT Configuration
    JWT_SECRET=your_super_secret_jwt_key_here
    JWT_EXPIRES_IN=7d
    JWT_REFRESH_SECRET=your_refresh_token_secret
    JWT_REFRESH_EXPIRES_IN=30d
-   
+
    # CORS Configuration
    FRONTEND_URL=http://localhost:3000
    ADMIN_URL=http://localhost:3001
-   
+
    # Email Configuration (Nodemailer)
    SMTP_HOST=your_smtp_host
    SMTP_PORT=587
@@ -81,61 +86,65 @@ A comprehensive backend API for the EV Community Platform built with Express.js 
    SMTP_USER=your_email@domain.com
    SMTP_PASS=your_email_password
    EMAIL_FROM=noreply@yourdomain.com
-   
+
    # File Upload Configuration
    MAX_FILE_SIZE=10485760
    ALLOWED_FILE_TYPES=image/jpeg,image/png,image/webp,application/pdf
-   
+
    # Rate Limiting
    RATE_LIMIT_WINDOW_MS=900000
    RATE_LIMIT_MAX_REQUESTS=100
    AUTH_RATE_LIMIT_MAX=5
-   
+
    # Push Notifications (Optional)
    PUSH_NOTIFICATION_KEY=your_push_service_key
-   
+
    # Analytics (Optional)
    ANALYTICS_API_KEY=your_analytics_key
    ```
 
 4. **Database Setup**
-   
+
    The application uses Supabase as the database. Follow these steps:
-   
+
    a. **Create a Supabase project** at https://supabase.com
-   
+
    b. **Set up the database schema**:
-      - Navigate to the SQL Editor in your Supabase dashboard
-      - Copy and execute the SQL from `database/schema.sql`
-      - This will create all necessary tables, indexes, triggers, and RLS policies
-   
+   - Navigate to the SQL Editor in your Supabase dashboard
+   - Copy and execute the SQL from `database/schema.sql`
+   - This will create all necessary tables, indexes, triggers, and RLS policies
+
    c. **Configure Storage**:
-      - Create storage buckets for file uploads:
-        - `avatars` - User profile pictures
-        - `vehicle-images` - Vehicle photos
-        - `marketplace-images` - Marketplace listing photos
-        - `documents` - Document uploads
-      - Set appropriate bucket policies for public/private access
-   
+   - Create storage buckets for file uploads:
+     - `avatars` - User profile pictures
+     - `vehicle-images` - Vehicle photos
+     - `marketplace-images` - Marketplace listing photos
+     - `documents` - Document uploads
+   - Set appropriate bucket policies for public/private access
+
    d. **Verify Setup**:
-      - Ensure all tables are created successfully
-      - Check that RLS policies are enabled
-      - Test database connectivity with your API keys
+   - Ensure all tables are created successfully
+   - Check that RLS policies are enabled
+   - Test database connectivity with your API keys
 
 ## 🚀 Running the Application
 
 ### Development Mode
+
 ```bash
 npm run dev
 ```
+
 The server will start on `http://localhost:5000` with hot reloading.
 
 ### Production Mode
+
 ```bash
 npm start
 ```
 
 ### Other Scripts
+
 ```bash
 # Run tests
 npm test
@@ -159,12 +168,14 @@ npm run format
 ## 📚 API Documentation
 
 Once the server is running, you can access:
+
 - **API Overview**: `http://localhost:5000/api`
 - **Health Check**: `http://localhost:5000/health`
 
 ### API Endpoints
 
 #### Authentication (`/api/auth`)
+
 - `POST /register` - User registration
 - `POST /login` - User login
 - `POST /logout` - User logout
@@ -177,6 +188,7 @@ Once the server is running, you can access:
 - `PUT /change-password` - Change password
 
 #### Users (`/api/users`)
+
 - `GET /` - Get users list
 - `GET /profile` - Get current user profile
 - `PUT /profile` - Update profile
@@ -188,6 +200,7 @@ Once the server is running, you can access:
 - `DELETE /account` - Delete user account
 
 #### Vehicles (`/api/vehicles`)
+
 - `GET /` - Get all vehicles (public)
 - `POST /` - Create new vehicle (auth required)
 - `GET /:id` - Get vehicle by ID
@@ -198,6 +211,7 @@ Once the server is running, you can access:
 - `GET /models` - Get vehicle models
 
 #### Marketplace (`/api/marketplace`)
+
 - `GET /` - Get all listings
 - `POST /` - Create new listing (auth required)
 - `GET /:id` - Get listing by ID
@@ -207,19 +221,8 @@ Once the server is running, you can access:
 - `GET /categories` - Get marketplace categories
 - `GET /user/:username` - Get user's listings
 
-#### Forum (`/api/forum`)
-- `GET /categories` - Get forum categories
-- `GET /posts` - Get all posts
-- `POST /posts` - Create new post (auth required)
-- `GET /posts/:id` - Get post by ID
-- `PUT /posts/:id` - Update post (author/moderator)
-- `DELETE /posts/:id` - Delete post (author/moderator)
-- `POST /posts/:id/replies` - Create reply
-- `GET /posts/:id/replies` - Get post replies
-- `PUT /posts/:id/pin` - Pin/unpin post (moderator)
-- `PUT /posts/:id/lock` - Lock/unlock post (moderator)
-
 #### Messages (`/api/messages`)
+
 - `GET /conversations` - Get user conversations
 - `GET /conversations/:id` - Get conversation messages
 - `POST /` - Send new message
@@ -229,6 +232,7 @@ Once the server is running, you can access:
 - `GET /unread-count` - Get unread message count
 
 #### Notifications (`/api/notifications`)
+
 - `GET /` - Get user notifications
 - `GET /unread-count` - Get unread count
 - `GET /:id` - Get notification by ID
@@ -239,6 +243,7 @@ Once the server is running, you can access:
 - `PUT /preferences` - Update preferences
 
 #### File Upload (`/api/upload`)
+
 - `POST /single` - Upload single file
 - `POST /multiple` - Upload multiple files
 - `GET /files` - Get user's files
@@ -249,6 +254,7 @@ Once the server is running, you can access:
 - `DELETE /avatar` - Remove user avatar
 
 #### Admin (`/api/admin`)
+
 - `GET /dashboard` - Get admin dashboard stats
 - `GET /users` - Get all users (admin view)
 - `GET /users/:id` - Get user details
@@ -269,9 +275,7 @@ The application uses the following main tables:
 - **vehicles** - User vehicle information
 - **marketplace_listings** - Marketplace items
 - **wanted_ads** - Wanted advertisements
-- **forum_categories** - Forum categories
-- **forum_posts** - Forum posts
-- **forum_replies** - Forum post replies
+
 - **blog_posts** - Blog articles
 - **blog_comments** - Blog post comments
 - **charging_stations** - EV charging station data

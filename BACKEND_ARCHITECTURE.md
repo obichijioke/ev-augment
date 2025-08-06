@@ -430,24 +430,6 @@ DELETE /api/wanted/:id
 GET    /api/wanted/search
 ```
 
-### Forum Routes
-
-```javascript
-// Forums
-GET    /api/forums/categories
-GET    /api/forums/categories/:slug
-GET    /api/forums/posts
-POST   /api/forums/posts
-GET    /api/forums/posts/:id
-PUT    /api/forums/posts/:id
-DELETE /api/forums/posts/:id
-POST   /api/forums/posts/:id/replies
-GET    /api/forums/posts/:id/replies
-PUT    /api/forums/replies/:id
-DELETE /api/forums/replies/:id
-GET    /api/forums/search
-```
-
 ### Blog Routes
 
 ```javascript
@@ -537,7 +519,7 @@ backend/
 │   │   ├── userController.js
 │   │   ├── vehicleController.js
 │   │   ├── marketplaceController.js
-│   │   ├── forumController.js
+
 │   │   ├── blogController.js
 │   │   └── ...
 │   ├── middleware/
@@ -608,28 +590,31 @@ RATE_LIMIT_MAX_REQUESTS=100
 ### 3. Authentication Middleware
 
 ```javascript
-const jwt = require('jsonwebtoken');
-const { createClient } = require('@supabase/supabase-js');
+const jwt = require("jsonwebtoken");
+const { createClient } = require("@supabase/supabase-js");
 
 const authenticateToken = async (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
+    return res.status(401).json({ error: "Access token required" });
   }
 
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+
     if (error || !user) {
-      return res.status(403).json({ error: 'Invalid token' });
+      return res.status(403).json({ error: "Invalid token" });
     }
 
     req.user = user;
     next();
   } catch (error) {
-    return res.status(403).json({ error: 'Invalid token' });
+    return res.status(403).json({ error: "Invalid token" });
   }
 };
 ```
@@ -637,15 +622,20 @@ const authenticateToken = async (req, res, next) => {
 ### 4. Validation Schemas
 
 ```javascript
-const Joi = require('joi');
+const Joi = require("joi");
 
 const vehicleSchema = Joi.object({
   make: Joi.string().required().max(50),
   model: Joi.string().required().max(50),
-  year: Joi.number().integer().min(1990).max(new Date().getFullYear() + 2),
+  year: Joi.number()
+    .integer()
+    .min(1990)
+    .max(new Date().getFullYear() + 2),
   trim: Joi.string().max(50),
   color: Joi.string().max(30),
-  vin: Joi.string().length(17).pattern(/^[A-HJ-NPR-Z0-9]+$/),
+  vin: Joi.string()
+    .length(17)
+    .pattern(/^[A-HJ-NPR-Z0-9]+$/),
   nickname: Joi.string().max(50),
   purchase_date: Joi.date(),
   purchase_price: Joi.number().positive(),
@@ -655,7 +645,7 @@ const vehicleSchema = Joi.object({
   charging_speed: Joi.string().max(20),
   modifications: Joi.array().items(Joi.string()),
   notes: Joi.string(),
-  is_public: Joi.boolean()
+  is_public: Joi.boolean(),
 });
 ```
 
@@ -665,22 +655,26 @@ const vehicleSchema = Joi.object({
 const errorHandler = (err, req, res, next) => {
   console.error(err.stack);
 
-  if (err.name === 'ValidationError') {
+  if (err.name === "ValidationError") {
     return res.status(400).json({
-      error: 'Validation Error',
-      details: err.details
+      error: "Validation Error",
+      details: err.details,
     });
   }
 
-  if (err.code === '23505') { // PostgreSQL unique violation
+  if (err.code === "23505") {
+    // PostgreSQL unique violation
     return res.status(409).json({
-      error: 'Resource already exists'
+      error: "Resource already exists",
     });
   }
 
   res.status(500).json({
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    error: "Internal Server Error",
+    message:
+      process.env.NODE_ENV === "development"
+        ? err.message
+        : "Something went wrong",
   });
 };
 ```
@@ -688,7 +682,7 @@ const errorHandler = (err, req, res, next) => {
 ### 6. Rate Limiting
 
 ```javascript
-const rateLimit = require('express-rate-limit');
+const rateLimit = require("express-rate-limit");
 
 const createRateLimit = (windowMs, max, message) => {
   return rateLimit({
@@ -696,12 +690,20 @@ const createRateLimit = (windowMs, max, message) => {
     max,
     message: { error: message },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
   });
 };
 
-const generalLimiter = createRateLimit(15 * 60 * 1000, 100, 'Too many requests');
-const authLimiter = createRateLimit(15 * 60 * 1000, 5, 'Too many auth attempts');
+const generalLimiter = createRateLimit(
+  15 * 60 * 1000,
+  100,
+  "Too many requests"
+);
+const authLimiter = createRateLimit(
+  15 * 60 * 1000,
+  5,
+  "Too many auth attempts"
+);
 ```
 
 ## Security Considerations
