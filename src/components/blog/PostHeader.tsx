@@ -44,11 +44,17 @@ const PostHeader: React.FC<PostHeaderProps> = ({ post }) => {
           href={`/profile/${post.author.username}`}
           className="flex items-center space-x-2 hover:opacity-80"
         >
-          <img
-            src={post.author.avatar}
-            alt={post.author.name}
-            className="h-10 w-10 rounded-full"
-          />
+          {post.author.avatar ? (
+            <img
+              src={post.author.avatar}
+              alt={post.author.name}
+              className="h-10 w-10 rounded-full"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+              <User className="h-5 w-5 text-gray-600" />
+            </div>
+          )}
           <div>
             <p className="font-semibold text-gray-900">{post.author.name}</p>
             <p className="text-sm text-gray-600">@{post.author.username}</p>

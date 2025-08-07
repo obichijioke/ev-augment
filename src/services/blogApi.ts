@@ -80,9 +80,13 @@ const transformBlogPost = (backendPost: any): BlogPost => {
         backendPost.author?.full_name ||
         "Unknown Author",
       avatar:
-        backendPost.users?.avatar_url ||
-        backendPost.author?.avatar_url ||
-        "/default-avatar.png",
+        backendPost.users?.avatar_url &&
+        backendPost.users.avatar_url.trim() !== ""
+          ? backendPost.users.avatar_url
+          : backendPost.author?.avatar_url &&
+            backendPost.author.avatar_url.trim() !== ""
+          ? backendPost.author.avatar_url
+          : "/default-avatar.png",
       username:
         backendPost.users?.username ||
         backendPost.author?.username ||
@@ -94,7 +98,10 @@ const transformBlogPost = (backendPost: any): BlogPost => {
     readTime: calculateReadTime(backendPost.content),
     category: backendPost.category || "Uncategorized",
     tags: backendPost.tags || [],
-    featuredImage: backendPost.featured_image || "/default-blog-image.jpg",
+    featuredImage:
+      backendPost.featured_image && backendPost.featured_image.trim() !== ""
+        ? backendPost.featured_image
+        : "/default-blog-image.jpg",
     views: backendPost.view_count || backendPost.views || 0,
     likes: backendPost.like_count || 0,
     bookmarks: 0, // Not implemented in backend yet
@@ -114,9 +121,13 @@ const transformComment = (backendComment: any): Comment => {
         backendComment.author?.full_name ||
         "Unknown Author",
       avatar:
-        backendComment.users?.avatar_url ||
-        backendComment.author?.avatar_url ||
-        "/default-avatar.png",
+        backendComment.users?.avatar_url &&
+        backendComment.users.avatar_url.trim() !== ""
+          ? backendComment.users.avatar_url
+          : backendComment.author?.avatar_url &&
+            backendComment.author.avatar_url.trim() !== ""
+          ? backendComment.author.avatar_url
+          : "/default-avatar.png",
       username:
         backendComment.users?.username ||
         backendComment.author?.username ||

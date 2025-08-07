@@ -29,6 +29,11 @@ export interface User {
   reputation?: number;
   evOwner?: boolean;
   evModels?: string[];
+  // Role and permissions
+  role?: string;
+  permissions?: string[];
+  is_banned?: boolean;
+  ban_expires_at?: string | null;
   preferences?: {
     emailNotifications: boolean;
     pushNotifications: boolean;
@@ -117,6 +122,11 @@ const transformApiUser = (apiUser: any): User => {
     reputation: 0, // Default values for optional fields
     evOwner: false,
     evModels: [],
+    // Role and permissions from API
+    role: apiUser.role,
+    permissions: apiUser.permissions || [],
+    is_banned: apiUser.is_banned || false,
+    ban_expires_at: apiUser.ban_expires_at || null,
     preferences: {
       emailNotifications: true,
       pushNotifications: true,

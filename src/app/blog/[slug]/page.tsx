@@ -1,144 +1,159 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { BlogPost } from "../../../types/blog";
-import { useBlogPost } from "../../../hooks/useBlogPost";
-import { useBlogComments } from "../../../hooks/useBlogComments";
-import { useBlogLikes } from "../../../hooks/useBlogLikes";
-import { useBlogError } from "../../../hooks/useBlogError";
-import { useAuthStore } from "../../../store/authStore";
-import PostHeader from "../../../components/blog/PostHeader";
-import PostBody from "../../../components/blog/PostBody";
-import PostActions from "../../../components/blog/PostActions";
-import CommentSection from "../../../components/blog/CommentSection";
-import RelatedPosts from "../../../components/blog/RelatedPosts";
-import {
-  BlogLoading,
-  BlogPostLoading,
-  BlogError,
-  BlogPostNotFound,
-} from "../../../components/blog/BlogErrorBoundary";
+import BlogPostClient from "@/app/blog/[slug]/BlogPostClient";
 
-import React from "react";
+// =============================================================================
+// SERVER-SIDE DATA FETCHING
+// =============================================================================
 
-const BlogPostPage = ({ params }: { params: { slug: string } }) => {
-  const resolvedParams = React.use(params);
-  const [isBookmarked, setIsBookmarked] = useState(false);
+async function getBlogPost(slug: string): Promise<BlogPost | null> {
+  try {
+    const apiUrl = process.env.API_URL || "http://localhost:4002/api";
+    const response = await fetch(`${apiUrl}/blog/posts/${slug}`, {
+      next: { revalidate: 300 }, // Revalidate every 5 minutes
+    });
 
-  // Auth
-  const { user, isAuthenticated } = useAuthStore();
-
-  // Blog post hooks
-  const {
-    post,
-    relatedPosts,
-    isLoading,
-    error: postError,
-  } = useBlogPost({
-    slug: resolvedParams.slug,
-    autoLoad: true,
-  });
-
-  // Comments hooks
-  const {
-    comments,
-    createComment,
-    isCreating: isCreatingComment,
-    error: commentsError,
-  } = useBlogComments({
-    postId: post?.id,
-    autoLoad: !!post?.id,
-  });
-
-  // Likes hooks
-  const {
-    isLiked,
-    likeCount,
-    isLoading: isLikeLoading,
-    error: likeError,
-    toggleLike,
-  } = useBlogLikes({
-    postId: post?.id,
-    autoLoad: !!post?.id,
-  });
-
-  // Error handling
-  const { formatErrorMessage } = useBlogError();
-
-  const handleLike = async () => {
-    try {
-      await toggleLike();
-    } catch (error) {
-      console.error("Failed to toggle like:", error);
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      throw new Error(`Failed to fetch blog post: ${response.status}`);
     }
-  };
 
-  const handleBookmark = () => setIsBookmarked(!isBookmarked);
+    const data = await response.json();
+    const rawPost = data.data?.post || data.post;
 
-  const handleCommentSubmit = async (comment: string) => {
-    if (!post?.id) return;
+    if (!rawPost) return null;
 
-    try {
-      await createComment(post.id, { content: comment });
-    } catch (error) {
-      console.error("Failed to create comment:", error);
-    }
-  };
+    // Map API response (snake_case) to frontend interface (camelCase)
+    const mappedPost: BlogPost = {
+      id: rawPost.id,
+      title: rawPost.title,
+      slug: rawPost.slug,
+      excerpt: rawPost.excerpt,
+      content: rawPost.content,
+      author: {
+        name:
+          rawPost.users?.full_name || rawPost.author?.full_name || "Anonymous",
+        avatar: rawPost.users?.avatar_url || rawPost.author?.avatar_url || "",
+        username:
+          rawPost.users?.username || rawPost.author?.username || "anonymous",
+        bio: rawPost.users?.bio || rawPost.author?.bio || "",
+      },
+      publishedAt: rawPost.published_at,
+      updatedAt: rawPost.updated_at,
+      readTime: Math.ceil((rawPost.content?.length || 0) / 200), // Estimate reading time
+      category: rawPost.category,
+      tags: rawPost.tags || [],
+      featuredImage: rawPost.featured_image || "",
+      views: rawPost.view_count || rawPost.views || 0,
+      likes: rawPost.like_count || 0,
+      bookmarks: 0, // Not provided by API, default to 0
+      comments: [], // Comments will be loaded separately by client-side hooks
+      status: rawPost.status as "draft" | "published" | "archived",
+    };
 
-  // Loading state
-  if (isLoading) {
-    return <BlogPostLoading />;
+    return mappedPost;
+  } catch (error) {
+    console.error("Error fetching blog post:", error);
+    return null;
   }
+}
 
-  // Error state
-  if (postError) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <BlogError
-          message={formatErrorMessage(postError)}
-          onRetry={() => window.location.reload()}
-        />
-      </div>
-    );
-  }
+// =============================================================================
+// METADATA GENERATION
+// =============================================================================
 
-  // Not found state
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getBlogPost(slug);
+
   if (!post) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <BlogPostNotFound />
-      </div>
-    );
+    return {
+      title: "Post Not Found | EV Community",
+      description: "The blog post you're looking for could not be found.",
+    };
   }
 
-  return (
-    <div className="bg-white">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <PostHeader post={post} />
-        <PostBody post={post} />
-        <div className="mt-8 border-t border-b border-gray-200 py-6">
-          <PostActions
-            isLiked={isLiked}
-            isBookmarked={isBookmarked}
-            onLike={handleLike}
-            onBookmark={handleBookmark}
-            likeCount={likeCount}
-            isLikeLoading={isLikeLoading}
-            post={post}
-            currentUser={user}
-          />
-        </div>
-        <CommentSection
-          comments={comments}
-          onCommentSubmit={handleCommentSubmit}
-          isLoading={isCreatingComment}
-          error={commentsError ? formatErrorMessage(commentsError) : null}
-        />
-        <RelatedPosts posts={relatedPosts} />
-      </div>
-    </div>
-  );
-};
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const postUrl = `${siteUrl}/blog/${post.slug}`;
+  const imageUrl =
+    post.featuredImage || `${siteUrl}/images/default-blog-image.jpg`;
 
-export default BlogPostPage;
+  return {
+    title: `${post.title} | EV Community`,
+    description: post.excerpt || post.content?.substring(0, 160) + "...",
+    authors: [
+      { name: post.author?.name || post.author?.username || "Anonymous" },
+    ],
+    keywords: [
+      "electric vehicles",
+      "EV news",
+      "electric car reviews",
+      "EV community",
+      "sustainable transportation",
+      "electric mobility",
+      "EV charging",
+      "green technology",
+      ...(post.tags || []),
+    ],
+    openGraph: {
+      title: `${post.title} | EV Community`,
+      description: post.excerpt || post.content?.substring(0, 160) + "...",
+      url: postUrl,
+      siteName: "EV Community",
+      locale: "en_US",
+      type: "article",
+      publishedTime: post.publishedAt,
+      modifiedTime: post.updatedAt,
+      authors: [post.author?.name || post.author?.username || "Anonymous"],
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      site: "@EVCommunity",
+      creator: "@EVCommunity",
+      title: `${post.title} | EV Community`,
+      description: post.excerpt || post.content?.substring(0, 160) + "...",
+      images: [imageUrl],
+    },
+    other: {
+      "article:author":
+        post.author?.name || post.author?.username || "Anonymous",
+      "article:published_time": post.publishedAt,
+      "article:modified_time": post.updatedAt || post.publishedAt,
+      "article:tag": post.tags?.join(", ") || "",
+    },
+  };
+}
+
+// =============================================================================
+// PAGE COMPONENT
+// =============================================================================
+
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const post = await getBlogPost(slug);
+
+  if (!post) {
+    notFound();
+  }
+
+  return <BlogPostClient post={post} />;
+}

@@ -23,6 +23,7 @@ import { useBlog } from "@/hooks/useBlog";
 import { useBlogError } from "@/hooks/useBlogError";
 import { useBlogImageUpload } from "@/hooks/useFileUpload";
 import { BlogLoading, BlogError } from "@/components/blog/BlogErrorBoundary";
+import AccessControl from "@/components/auth/AccessControl";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -280,281 +281,287 @@ const CreateBlogPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/blog"
-                className="inline-flex items-center text-blue-600 hover:text-blue-700"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Blog
-              </Link>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Create New Article
-              </h1>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setIsPreview(!isPreview)}
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Eye className="h-4 w-4" />
-                <span>{isPreview ? "Edit" : "Preview"}</span>
-              </button>
-              <button
-                onClick={() => handleSubmit(true)}
-                disabled={isCreating}
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                <Save className="h-4 w-4" />
-                <span>{isCreating ? "Saving..." : "Save Draft"}</span>
-              </button>
-              <button
-                onClick={() => handleSubmit(false)}
-                disabled={
-                  isCreating ||
-                  !formData.title.trim() ||
-                  !formData.content.trim()
-                }
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-              >
-                <Send className="h-4 w-4" />
-                <span>{isCreating ? "Publishing..." : "Publish"}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Error Display */}
-      {postError && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center">
-              <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
-              <div>
-                <h3 className="text-sm font-medium text-red-800">
-                  Error Creating Post
-                </h3>
-                <p className="text-sm text-red-700 mt-1">{postError}</p>
+    <AccessControl requireAuth={true} requireBlogCreate={true}>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Link
+                  href="/blog"
+                  className="inline-flex items-center text-blue-600 hover:text-blue-700"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Blog
+                </Link>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Create New Article
+                </h1>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setIsPreview(!isPreview)}
+                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Eye className="h-4 w-4" />
+                  <span>{isPreview ? "Edit" : "Preview"}</span>
+                </button>
+                <button
+                  onClick={() => handleSubmit(true)}
+                  disabled={isCreating}
+                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>{isCreating ? "Saving..." : "Save Draft"}</span>
+                </button>
+                <button
+                  onClick={() => handleSubmit(false)}
+                  disabled={
+                    isCreating ||
+                    !formData.title.trim() ||
+                    !formData.content.trim()
+                  }
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  <Send className="h-4 w-4" />
+                  <span>{isCreating ? "Publishing..." : "Publish"}</span>
+                </button>
               </div>
             </div>
           </div>
         </div>
-      )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            {!isPreview ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                {/* Title */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Title *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => handleInputChange("title", e.target.value)}
-                    placeholder="Enter your article title..."
-                    className="w-full text-2xl font-bold border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
-                  />
+        {/* Error Display */}
+        {postError && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
+                <div>
+                  <h3 className="text-sm font-medium text-red-800">
+                    Error Creating Post
+                  </h3>
+                  <p className="text-sm text-red-700 mt-1">{postError}</p>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-                {/* Excerpt */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Excerpt
-                  </label>
-                  <textarea
-                    value={formData.excerpt}
-                    onChange={(e) =>
-                      handleInputChange("excerpt", e.target.value)
-                    }
-                    placeholder="Brief description of your article..."
-                    rows={3}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                {/* Featured Image */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Featured Image
-                  </label>
-                  <div className="flex items-center space-x-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-3">
+              {!isPreview ? (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  {/* Title */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Title *
+                    </label>
                     <input
                       type="text"
-                      value={formData.featuredImage}
+                      value={formData.title}
                       onChange={(e) =>
-                        handleInputChange("featuredImage", e.target.value)
+                        handleInputChange("title", e.target.value)
                       }
-                      placeholder="Image URL or upload below..."
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={imageUploading}
-                      className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-                    >
-                      <Upload className="h-4 w-4" />
-                      <span>{imageUploading ? "Uploading..." : "Upload"}</span>
-                    </button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
+                      placeholder="Enter your article title..."
+                      className="w-full text-2xl font-bold border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
                     />
                   </div>
 
-                  {/* Upload Error */}
-                  {uploadError && (
-                    <div className="mt-2 text-sm text-red-600">
-                      Upload failed: {uploadError}
-                    </div>
-                  )}
+                  {/* Excerpt */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Excerpt
+                    </label>
+                    <textarea
+                      value={formData.excerpt}
+                      onChange={(e) =>
+                        handleInputChange("excerpt", e.target.value)
+                      }
+                      placeholder="Brief description of your article..."
+                      rows={3}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
 
-                  {/* Image Preview */}
-                  {formData.featuredImage && (
-                    <div className="mt-4">
-                      <img
-                        src={formData.featuredImage}
-                        alt="Featured image preview"
-                        className="w-full h-48 object-cover rounded-lg"
-                        onError={(e) => {
-                          console.error(
-                            "Image failed to load:",
-                            formData.featuredImage
-                          );
-                          e.currentTarget.style.display = "none";
-                        }}
+                  {/* Featured Image */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Featured Image
+                    </label>
+                    <div className="flex items-center space-x-4">
+                      <input
+                        type="text"
+                        value={formData.featuredImage}
+                        onChange={(e) =>
+                          handleInputChange("featuredImage", e.target.value)
+                        }
+                        placeholder="Image URL or upload below..."
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={imageUploading}
+                        className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      >
+                        <Upload className="h-4 w-4" />
+                        <span>
+                          {imageUploading ? "Uploading..." : "Upload"}
+                        </span>
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
                       />
                     </div>
-                  )}
-                </div>
 
-                {/* Content Editor */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Content *
-                    </label>
-                    <span className="text-xs text-gray-500">
-                      Markdown supported • Use Preview to see formatted content
-                    </span>
+                    {/* Upload Error */}
+                    {uploadError && (
+                      <div className="mt-2 text-sm text-red-600">
+                        Upload failed: {uploadError}
+                      </div>
+                    )}
+
+                    {/* Image Preview */}
+                    {formData.featuredImage && (
+                      <div className="mt-4">
+                        <img
+                          src={formData.featuredImage}
+                          alt="Featured image preview"
+                          className="w-full h-48 object-cover rounded-lg"
+                          onError={(e) => {
+                            console.error(
+                              "Image failed to load:",
+                              formData.featuredImage
+                            );
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  {/* Toolbar */}
-                  <div className="border border-gray-300 rounded-t-lg bg-gray-50 px-3 py-2 flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => insertTextAtCursor("**Bold text**")}
-                      className="p-1 hover:bg-gray-200 rounded"
-                      title="Bold"
-                    >
-                      <Bold className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertTextAtCursor("*Italic text*")}
-                      className="p-1 hover:bg-gray-200 rounded"
-                      title="Italic"
-                    >
-                      <Italic className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertTextAtCursor("\n## Heading\n")}
-                      className="p-1 hover:bg-gray-200 rounded text-xs font-bold"
-                      title="Heading"
-                    >
-                      H2
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        insertTextAtCursor("\n- List item\n- List item\n")
-                      }
-                      className="p-1 hover:bg-gray-200 rounded"
-                      title="List"
-                    >
-                      <List className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertTextAtCursor("[Link text](URL)")}
-                      className="p-1 hover:bg-gray-200 rounded"
-                      title="Link"
-                    >
-                      <LinkIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertTextAtCursor("\n> Quote text\n")}
-                      className="p-1 hover:bg-gray-200 rounded"
-                      title="Quote"
-                    >
-                      <Quote className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        insertTextAtCursor("![Alt text](Image URL)")
-                      }
-                      className="p-1 hover:bg-gray-200 rounded"
-                      title="Image"
-                    >
-                      <ImageIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        insertTextAtCursor(
-                          "\n```javascript\n// Your code here\n```\n"
-                        )
-                      }
-                      className="p-1 hover:bg-gray-200 rounded text-xs font-mono"
-                      title="Code Block"
-                    >
-                      {"</>"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertTextAtCursor("`inline code`")}
-                      className="p-1 hover:bg-gray-200 rounded text-xs font-mono"
-                      title="Inline Code"
-                    >
-                      {"`code`"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        insertTextAtCursor(
-                          "\n| Header 1 | Header 2 |\n|----------|----------|\n| Cell 1   | Cell 2   |\n"
-                        )
-                      }
-                      className="p-1 hover:bg-gray-200 rounded text-xs"
-                      title="Table"
-                    >
-                      ⊞
-                    </button>
-                  </div>
+                  {/* Content Editor */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Content *
+                      </label>
+                      <span className="text-xs text-gray-500">
+                        Markdown supported • Use Preview to see formatted
+                        content
+                      </span>
+                    </div>
 
-                  <textarea
-                    ref={contentTextareaRef}
-                    value={formData.content}
-                    onChange={(e) =>
-                      handleInputChange("content", e.target.value)
-                    }
-                    placeholder="Write your article content here using Markdown...
+                    {/* Toolbar */}
+                    <div className="border border-gray-300 rounded-t-lg bg-gray-50 px-3 py-2 flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => insertTextAtCursor("**Bold text**")}
+                        className="p-1 hover:bg-gray-200 rounded"
+                        title="Bold"
+                      >
+                        <Bold className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTextAtCursor("*Italic text*")}
+                        className="p-1 hover:bg-gray-200 rounded"
+                        title="Italic"
+                      >
+                        <Italic className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTextAtCursor("\n## Heading\n")}
+                        className="p-1 hover:bg-gray-200 rounded text-xs font-bold"
+                        title="Heading"
+                      >
+                        H2
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          insertTextAtCursor("\n- List item\n- List item\n")
+                        }
+                        className="p-1 hover:bg-gray-200 rounded"
+                        title="List"
+                      >
+                        <List className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTextAtCursor("[Link text](URL)")}
+                        className="p-1 hover:bg-gray-200 rounded"
+                        title="Link"
+                      >
+                        <LinkIcon className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTextAtCursor("\n> Quote text\n")}
+                        className="p-1 hover:bg-gray-200 rounded"
+                        title="Quote"
+                      >
+                        <Quote className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          insertTextAtCursor("![Alt text](Image URL)")
+                        }
+                        className="p-1 hover:bg-gray-200 rounded"
+                        title="Image"
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          insertTextAtCursor(
+                            "\n```javascript\n// Your code here\n```\n"
+                          )
+                        }
+                        className="p-1 hover:bg-gray-200 rounded text-xs font-mono"
+                        title="Code Block"
+                      >
+                        {"</>"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTextAtCursor("`inline code`")}
+                        className="p-1 hover:bg-gray-200 rounded text-xs font-mono"
+                        title="Inline Code"
+                      >
+                        {"`code`"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          insertTextAtCursor(
+                            "\n| Header 1 | Header 2 |\n|----------|----------|\n| Cell 1   | Cell 2   |\n"
+                          )
+                        }
+                        className="p-1 hover:bg-gray-200 rounded text-xs"
+                        title="Table"
+                      >
+                        ⊞
+                      </button>
+                    </div>
+
+                    <textarea
+                      ref={contentTextareaRef}
+                      value={formData.content}
+                      onChange={(e) =>
+                        handleInputChange("content", e.target.value)
+                      }
+                      placeholder="Write your article content here using Markdown...
 
 Examples:
 # Heading 1
@@ -572,140 +579,141 @@ console.log('Hello World');
 ```
 
 `inline code` for small snippets"
-                    rows={20}
-                    className="w-full border-l border-r border-b border-gray-300 rounded-b-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Supports Markdown formatting. Estimated read time:{" "}
-                    {estimateReadTime(formData.content)} min
-                  </p>
-                </div>
-              </div>
-            ) : (
-              /* Preview Mode */
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                {formData.featuredImage && (
-                  <div className="aspect-video">
-                    <img
-                      src={formData.featuredImage}
-                      alt={formData.title}
-                      className="w-full h-full object-cover"
+                      rows={20}
+                      className="w-full border-l border-r border-b border-gray-300 rounded-b-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                     />
-                  </div>
-                )}
-                <div className="p-8">
-                  <div className="mb-4">
-                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                      {formData.category || "Uncategorized"}
-                    </span>
-                  </div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                    {formData.title || "Article Title"}
-                  </h1>
-                  {formData.excerpt && (
-                    <p className="text-lg text-gray-600 mb-6">
-                      {formData.excerpt}
+                    <p className="text-xs text-gray-500 mt-1">
+                      Supports Markdown formatting. Estimated read time:{" "}
+                      {estimateReadTime(formData.content)} min
                     </p>
-                  )}
-                  <div className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-strong:text-gray-900 prose-code:text-pink-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeHighlight, rehypeRaw]}
-                    >
-                      {formData.content ||
-                        "*No content yet. Start writing to see the preview.*"}
-                    </ReactMarkdown>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Article Settings
-              </h3>
-
-              {/* Category */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) =>
-                    handleInputChange("category", e.target.value)
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Select category</option>
-                  {availableCategories.map((category) => (
-                    <option key={category.name} value={category.name}>
-                      {category.name} ({category.post_count})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Tags */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tags
-                </label>
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={handleTagAdd}
-                  placeholder="Add tags (press Enter or comma)"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                {formData.tags.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {formData.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm flex items-center space-x-1"
-                      >
-                        <span>#{tag}</span>
-                        <button
-                          onClick={() => handleTagRemove(tag)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          ×
-                        </button>
+              ) : (
+                /* Preview Mode */
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                  {formData.featuredImage && (
+                    <div className="aspect-video">
+                      <img
+                        src={formData.featuredImage}
+                        alt={formData.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="p-8">
+                    <div className="mb-4">
+                      <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {formData.category || "Uncategorized"}
                       </span>
-                    ))}
+                    </div>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                      {formData.title || "Article Title"}
+                    </h1>
+                    {formData.excerpt && (
+                      <p className="text-lg text-gray-600 mb-6">
+                        {formData.excerpt}
+                      </p>
+                    )}
+                    <div className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-strong:text-gray-900 prose-code:text-pink-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                      >
+                        {formData.content ||
+                          "*No content yet. Start writing to see the preview.*"}
+                      </ReactMarkdown>
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
 
-              {/* Stats */}
-              <div className="border-t border-gray-200 pt-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">
-                  Article Stats
-                </h4>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex justify-between">
-                    <span>Word count:</span>
-                    <span>
-                      {
-                        formData.content
-                          .trim()
-                          .split(/\s+/)
-                          .filter((word) => word.length > 0).length
-                      }
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Character count:</span>
-                    <span>{formData.content.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Read time:</span>
-                    <span>{estimateReadTime(formData.content)} min</span>
+            {/* Sidebar */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Article Settings
+                </h3>
+
+                {/* Category */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) =>
+                      handleInputChange("category", e.target.value)
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Select category</option>
+                    {availableCategories.map((category) => (
+                      <option key={category.name} value={category.name}>
+                        {category.name} ({category.post_count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Tags */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tags
+                  </label>
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagAdd}
+                    placeholder="Add tags (press Enter or comma)"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  {formData.tags.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {formData.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm flex items-center space-x-1"
+                        >
+                          <span>#{tag}</span>
+                          <button
+                            onClick={() => handleTagRemove(tag)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Stats */}
+                <div className="border-t border-gray-200 pt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Article Stats
+                  </h4>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex justify-between">
+                      <span>Word count:</span>
+                      <span>
+                        {
+                          formData.content
+                            .trim()
+                            .split(/\s+/)
+                            .filter((word) => word.length > 0).length
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Character count:</span>
+                      <span>{formData.content.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Read time:</span>
+                      <span>{estimateReadTime(formData.content)} min</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -713,7 +721,7 @@ console.log('Hello World');
           </div>
         </div>
       </div>
-    </div>
+    </AccessControl>
   );
 };
 

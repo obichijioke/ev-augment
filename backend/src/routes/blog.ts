@@ -316,9 +316,31 @@ router.put(
 
     // Check permissions (author or moderator)
     const isAuthor = existingPost.author_id === (req.user as any).id;
-    const userRole =
-      req.user.user_metadata?.role || req.user.app_metadata?.role;
+
+    // Get user role from user_profiles table
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from("user_profiles")
+      .select("role")
+      .eq("id", (req.user as any).id)
+      .single();
+
+    if (profileError) {
+      console.error("Error fetching user profile:", profileError);
+      throw forbiddenError("Unable to verify user permissions");
+    }
+
+    const userRole = userProfile?.role || "user";
     const isModerator = ["admin", "moderator"].includes(userRole);
+
+    // Debug logging
+    console.log("Blog edit permission check:", {
+      userId: (req.user as any).id,
+      postAuthorId: existingPost.author_id,
+      isAuthor,
+      userRole,
+      isModerator,
+      canEdit: isAuthor || isModerator,
+    });
 
     if (!isAuthor && !isModerator) {
       throw forbiddenError("You can only edit your own posts");
@@ -401,8 +423,20 @@ router.delete(
 
     // Check permissions (author or moderator)
     const isAuthor = existingPost.author_id === (req.user as any).id;
-    const userRole =
-      req.user.user_metadata?.role || req.user.app_metadata?.role;
+
+    // Get user role from user_profiles table
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from("user_profiles")
+      .select("role")
+      .eq("id", (req.user as any).id)
+      .single();
+
+    if (profileError) {
+      console.error("Error fetching user profile:", profileError);
+      throw forbiddenError("Unable to verify user permissions");
+    }
+
+    const userRole = userProfile?.role || "user";
     const isModerator = ["admin", "moderator"].includes(userRole);
 
     if (!isAuthor && !isModerator) {
@@ -583,10 +617,10 @@ router.post(
       throw validationError("Invalid post ID format");
     }
 
-    // Check if post exists and allows comments
+    // Check if post exists
     const { data: post, error: postError } = await supabaseAdmin
       .from("blog_posts")
-      .select("id, status, allow_comments")
+      .select("id, status")
       .eq("id", postId)
       .single();
 
@@ -598,9 +632,8 @@ router.post(
       throw forbiddenError("Cannot comment on unpublished posts");
     }
 
-    if (!post.allow_comments) {
-      throw forbiddenError("Comments are disabled for this post");
-    }
+    // For now, allow comments on all published posts
+    // TODO: Add allow_comments column to blog_posts table if needed
 
     const commentData = {
       ...req.body,
@@ -738,8 +771,20 @@ router.delete(
 
     // Check permissions (author or moderator)
     const isAuthor = existingComment.author_id === (req.user as any).id;
-    const userRole =
-      req.user.user_metadata?.role || req.user.app_metadata?.role;
+
+    // Get user role from user_profiles table
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from("user_profiles")
+      .select("role")
+      .eq("id", (req.user as any).id)
+      .single();
+
+    if (profileError) {
+      console.error("Error fetching user profile:", profileError);
+      throw forbiddenError("Unable to verify user permissions");
+    }
+
+    const userRole = userProfile?.role || "user";
     const isModerator = ["admin", "moderator"].includes(userRole);
 
     if (!isAuthor && !isModerator) {

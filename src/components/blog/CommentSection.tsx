@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageCircle, ThumbsUp } from "lucide-react";
+import { MessageCircle, ThumbsUp, User } from "lucide-react";
 import { Comment } from "../../types/blog";
 import { useAuthStore } from "../../store/authStore";
 
@@ -43,11 +43,19 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       {isAuthenticated ? (
         <form onSubmit={handleSubmit} className="mb-8">
           <div className="flex items-start space-x-4">
-            <img
-              src={user?.avatar}
-              alt={user?.name}
-              className="h-10 w-10 rounded-full"
-            />
+            {user?.avatar &&
+            typeof user.avatar === "string" &&
+            user.avatar.trim() !== "" ? (
+              <img
+                src={user.avatar}
+                alt={user?.name}
+                className="h-10 w-10 rounded-full"
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                <User className="h-5 w-5 text-gray-600" />
+              </div>
+            )}
             <div className="flex-1">
               <textarea
                 value={newComment}
@@ -82,11 +90,19 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       <div className="space-y-8">
         {comments.map((comment) => (
           <div key={comment.id} className="flex items-start space-x-4">
-            <img
-              src={comment.author.avatar}
-              alt={comment.author.name}
-              className="h-10 w-10 rounded-full"
-            />
+            {comment.author.avatar &&
+            typeof comment.author.avatar === "string" &&
+            comment.author.avatar.trim() !== "" ? (
+              <img
+                src={comment.author.avatar}
+                alt={comment.author.name}
+                className="h-10 w-10 rounded-full"
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                <User className="h-5 w-5 text-gray-600" />
+              </div>
+            )}
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <div>

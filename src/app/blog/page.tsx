@@ -369,11 +369,22 @@ const BlogPage = () => {
                   viewMode === "list" ? "w-1/3 flex-shrink-0" : "aspect-video"
                 }`}
               >
-                <img
-                  src={post.featuredImage}
-                  alt={post.title}
-                  className="w-full h-full object-cover"
-                />
+                {post.featuredImage &&
+                typeof post.featuredImage === "string" &&
+                post.featuredImage.trim() !== "" ? (
+                  <img
+                    src={post.featuredImage}
+                    alt={post.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <div className="text-gray-400 text-center">
+                      <div className="text-4xl mb-2">📄</div>
+                      <div className="text-sm">No Image</div>
+                    </div>
+                  </div>
+                )}
                 <div className="absolute top-4 left-4">
                   <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
                     {post.category}

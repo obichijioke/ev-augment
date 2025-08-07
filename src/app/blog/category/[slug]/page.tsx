@@ -1,8 +1,20 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Calendar, Clock, User, Eye, Heart, MessageCircle, Grid, List, Search, Filter } from 'lucide-react';
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  User,
+  Eye,
+  Heart,
+  MessageCircle,
+  Grid,
+  List,
+  Search,
+  Filter,
+} from "lucide-react";
 
 interface BlogPost {
   id: string;
@@ -32,111 +44,130 @@ interface CategoryPageProps {
 const CategoryPage = ({ params }: CategoryPageProps) => {
   const resolvedParams = React.use(params);
   const categorySlug = resolvedParams.slug;
-  
+
   // Convert slug to display name
   const categoryName = categorySlug
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'latest' | 'popular' | 'oldest'>('latest');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<"latest" | "popular" | "oldest">(
+    "latest"
+  );
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // Mock data - in a real app, fetch based on category
   const mockPosts: BlogPost[] = [
     {
-      id: '1',
-      title: 'The Future of Electric Vehicle Technology in 2024',
-      excerpt: 'Exploring the latest advancements in EV technology, from solid-state batteries to autonomous driving capabilities.',
-      content: 'Full article content here...',
+      id: "1",
+      title: "The Future of Electric Vehicle Technology in 2024",
+      excerpt:
+        "Exploring the latest advancements in EV technology, from solid-state batteries to autonomous driving capabilities.",
+      content: "Full article content here...",
       author: {
-        name: 'Sarah Johnson',
-        avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20woman%20avatar%20headshot&image_size=square',
-        username: 'sarah_j'
+        name: "Sarah Johnson",
+        avatar:
+          "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20woman%20avatar%20headshot&image_size=square",
+        username: "sarah_j",
       },
       category: categoryName,
-      tags: ['technology', 'future', 'innovation'],
-      featuredImage: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=futuristic%20electric%20vehicle%20technology%20concept&image_size=landscape_16_9',
-      publishedAt: '2024-01-15T10:00:00Z',
+      tags: ["technology", "future", "innovation"],
+      featuredImage:
+        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=futuristic%20electric%20vehicle%20technology%20concept&image_size=landscape_16_9",
+      publishedAt: "2024-01-15T10:00:00Z",
       readTime: 8,
       views: 1250,
       likes: 89,
       comments: 23,
-      isDraft: false
+      isDraft: false,
     },
     {
-      id: '2',
-      title: 'Tesla Model S Plaid: A Comprehensive Review',
-      excerpt: 'After 6 months of ownership, here\'s my detailed review of the Tesla Model S Plaid and what you need to know.',
-      content: 'Full article content here...',
+      id: "2",
+      title: "Tesla Model S Plaid: A Comprehensive Review",
+      excerpt:
+        "After 6 months of ownership, here's my detailed review of the Tesla Model S Plaid and what you need to know.",
+      content: "Full article content here...",
       author: {
-        name: 'Mike Chen',
-        avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20man%20avatar%20headshot&image_size=square',
-        username: 'mike_c'
+        name: "Mike Chen",
+        avatar:
+          "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20man%20avatar%20headshot&image_size=square",
+        username: "mike_c",
       },
       category: categoryName,
-      tags: ['tesla', 'review', 'model-s'],
-      featuredImage: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=tesla%20model%20s%20plaid%20luxury%20electric%20car&image_size=landscape_16_9',
-      publishedAt: '2024-01-12T14:30:00Z',
+      tags: ["tesla", "review", "model-s"],
+      featuredImage:
+        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=tesla%20model%20s%20plaid%20luxury%20electric%20car&image_size=landscape_16_9",
+      publishedAt: "2024-01-12T14:30:00Z",
       readTime: 12,
       views: 2100,
       likes: 156,
       comments: 45,
-      isDraft: false
+      isDraft: false,
     },
     {
-      id: '3',
-      title: 'Building Your Home EV Charging Station: Complete Guide',
-      excerpt: 'Everything you need to know about installing a Level 2 charging station at home, including costs and permits.',
-      content: 'Full article content here...',
+      id: "3",
+      title: "Building Your Home EV Charging Station: Complete Guide",
+      excerpt:
+        "Everything you need to know about installing a Level 2 charging station at home, including costs and permits.",
+      content: "Full article content here...",
       author: {
-        name: 'Alex Rivera',
-        avatar: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20person%20avatar%20headshot&image_size=square',
-        username: 'alex_r'
+        name: "Alex Rivera",
+        avatar:
+          "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20person%20avatar%20headshot&image_size=square",
+        username: "alex_r",
       },
       category: categoryName,
-      tags: ['charging', 'home', 'installation'],
-      featuredImage: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=home%20ev%20charging%20station%20installation&image_size=landscape_16_9',
-      publishedAt: '2024-01-10T09:15:00Z',
+      tags: ["charging", "home", "installation"],
+      featuredImage:
+        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=home%20ev%20charging%20station%20installation&image_size=landscape_16_9",
+      publishedAt: "2024-01-10T09:15:00Z",
       readTime: 15,
       views: 890,
       likes: 67,
       comments: 18,
-      isDraft: false
-    }
+      isDraft: false,
+    },
   ];
 
   // Get all unique tags from posts
   const allTags = useMemo(() => {
     const tags = new Set<string>();
-    mockPosts.forEach(post => {
-      post.tags.forEach(tag => tags.add(tag));
+    mockPosts.forEach((post) => {
+      post.tags.forEach((tag) => tags.add(tag));
     });
     return Array.from(tags);
   }, [mockPosts]);
 
   // Filter and sort posts
   const filteredPosts = useMemo(() => {
-    let filtered = mockPosts.filter(post => {
-      const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesTags = selectedTags.length === 0 || 
-                         selectedTags.some(tag => post.tags.includes(tag));
+    let filtered = mockPosts.filter((post) => {
+      const matchesSearch =
+        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTags =
+        selectedTags.length === 0 ||
+        selectedTags.some((tag) => post.tags.includes(tag));
       return matchesSearch && matchesTags;
     });
 
     // Sort posts
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'popular':
-          return (b.views + b.likes) - (a.views + a.likes);
-        case 'oldest':
-          return new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
-        case 'latest':
+        case "popular":
+          return b.views + b.likes - (a.views + a.likes);
+        case "oldest":
+          return (
+            new Date(a.publishedAt).getTime() -
+            new Date(b.publishedAt).getTime()
+          );
+        case "latest":
         default:
-          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+          return (
+            new Date(b.publishedAt).getTime() -
+            new Date(a.publishedAt).getTime()
+          );
       }
     });
 
@@ -144,18 +175,16 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
   }, [mockPosts, searchTerm, selectedTags, sortBy]);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const toggleTag = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
@@ -165,19 +194,26 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center space-x-4 mb-6">
-            <Link href="/blog" className="inline-flex items-center text-blue-600 hover:text-blue-700">
+            <Link
+              href="/blog"
+              className="inline-flex items-center text-blue-600 hover:text-blue-700"
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Blog
             </Link>
           </div>
-          
+
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">{categoryName}</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              {categoryName}
+            </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Discover the latest articles and insights in {categoryName.toLowerCase()}
+              Discover the latest articles and insights in{" "}
+              {categoryName.toLowerCase()}
             </p>
             <div className="mt-4 text-sm text-gray-500">
-              {filteredPosts.length} article{filteredPosts.length !== 1 ? 's' : ''} found
+              {filteredPosts.length} article
+              {filteredPosts.length !== 1 ? "s" : ""} found
             </div>
           </div>
         </div>
@@ -208,7 +244,9 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
                 <Filter className="h-4 w-4 text-gray-400" />
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'latest' | 'popular' | 'oldest')}
+                  onChange={(e) =>
+                    setSortBy(e.target.value as "latest" | "popular" | "oldest")
+                  }
                   className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="latest">Latest</option>
@@ -220,14 +258,22 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
               {/* View Mode */}
               <div className="flex items-center border border-gray-300 rounded-lg">
                 <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 ${
+                    viewMode === "grid"
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
                   <Grid className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 ${
+                    viewMode === "list"
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
                   <List className="h-4 w-4" />
                 </button>
@@ -238,16 +284,18 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
           {/* Tags Filter */}
           {allTags.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Filter by tags:</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Filter by tags:
+              </h3>
               <div className="flex flex-wrap gap-2">
-                {allTags.map(tag => (
+                {allTags.map((tag) => (
                   <button
                     key={tag}
                     onClick={() => toggleTag(tag)}
                     className={`px-3 py-1 rounded-full text-sm transition-colors ${
                       selectedTags.includes(tag)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
                     #{tag}
@@ -272,28 +320,36 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
             <div className="text-gray-400 mb-4">
               <Search className="h-12 w-12 mx-auto" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No articles found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No articles found
+            </h3>
             <p className="text-gray-600">
               {searchTerm || selectedTags.length > 0
-                ? 'Try adjusting your search or filters'
-                : `No articles available in ${categoryName} yet`
-              }
+                ? "Try adjusting your search or filters"
+                : `No articles available in ${categoryName} yet`}
             </p>
           </div>
         ) : (
-          <div className={viewMode === 'grid' 
-            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'
-            : 'space-y-6'
-          }>
-            {filteredPosts.map(post => (
+          <div
+            className={
+              viewMode === "grid"
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                : "space-y-6"
+            }
+          >
+            {filteredPosts.map((post) => (
               <article
                 key={post.id}
                 className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow ${
-                  viewMode === 'list' ? 'flex' : ''
+                  viewMode === "list" ? "flex" : ""
                 }`}
               >
-                <div className={viewMode === 'list' ? 'w-1/3' : ''}>
-                  <div className={`aspect-video ${viewMode === 'list' ? 'h-full' : ''}`}>
+                <div className={viewMode === "list" ? "w-1/3" : ""}>
+                  <div
+                    className={`aspect-video ${
+                      viewMode === "list" ? "h-full" : ""
+                    }`}
+                  >
                     <img
                       src={post.featuredImage}
                       alt={post.title}
@@ -301,10 +357,10 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
                     />
                   </div>
                 </div>
-                
-                <div className={`p-6 ${viewMode === 'list' ? 'flex-1' : ''}`}>
+
+                <div className={`p-6 ${viewMode === "list" ? "flex-1" : ""}`}>
                   <div className="flex items-center space-x-2 mb-3">
-                    {post.tags.slice(0, 2).map(tag => (
+                    {post.tags.slice(0, 2).map((tag) => (
                       <span
                         key={tag}
                         className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium"
@@ -313,20 +369,28 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
                       </span>
                     ))}
                   </div>
-                  
+
                   <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
-                    <Link href={`/blog/${post.id}`} className="hover:text-blue-600 transition-colors">
+                    <Link
+                      href={`/blog/${post.id}`}
+                      className="hover:text-blue-600 transition-colors"
+                    >
                       {post.title}
                     </Link>
                   </h2>
-                  
-                  <p className="text-gray-600 mb-4 line-clamp-2">{post.excerpt}</p>
-                  
+
+                  <p className="text-gray-600 mb-4 line-clamp-2">
+                    {post.excerpt}
+                  </p>
+
                   <div className="flex items-center justify-between text-sm text-gray-500">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-1">
                         <User className="h-4 w-4" />
-                        <Link href={`/profile/${post.author.username}`} className="hover:text-blue-600">
+                        <Link
+                          href={`/profile/${post.author.username}`}
+                          className="hover:text-blue-600"
+                        >
                           {post.author.name}
                         </Link>
                       </div>
@@ -340,7 +404,7 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
                     <div className="flex items-center space-x-4 text-sm text-gray-500">
                       <div className="flex items-center space-x-1">
@@ -356,7 +420,7 @@ const CategoryPage = ({ params }: CategoryPageProps) => {
                         <span>{post.comments}</span>
                       </div>
                     </div>
-                    
+
                     <Link
                       href={`/blog/${post.id}`}
                       className="text-blue-600 hover:text-blue-700 font-medium text-sm"

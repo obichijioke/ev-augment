@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/providers/AuthProvider";
+import ToastProvider from "@/providers/ToastProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -13,7 +14,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "EV Community Platform",
-  description: "Connect with EV enthusiasts, explore vehicles, and discover the electric future",
+  description:
+    "Connect with EV enthusiasts, explore vehicles, and discover the electric future",
 };
 
 export default function RootLayout({
@@ -26,10 +28,9 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased`}>
         <AuthProvider>
           <Navigation />
-          <main className="min-h-screen">
-            {children}
-          </main>
+          <main className="min-h-screen">{children}</main>
           <Footer />
+          <ToastProvider />
         </AuthProvider>
       </body>
     </html>

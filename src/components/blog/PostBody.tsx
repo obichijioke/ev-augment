@@ -12,13 +12,15 @@ interface PostBodyProps {
 const PostBody: React.FC<PostBodyProps> = ({ post }) => {
   return (
     <div className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-strong:text-gray-900 prose-code:text-pink-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100">
-      {post.featuredImage && (
-        <img
-          src={post.featuredImage}
-          alt={post.title}
-          className="w-full rounded-lg mb-8 shadow-lg"
-        />
-      )}
+      {post.featuredImage &&
+        typeof post.featuredImage === "string" &&
+        post.featuredImage.trim() !== "" && (
+          <img
+            src={post.featuredImage}
+            alt={post.title}
+            className="w-full rounded-lg mb-8 shadow-lg"
+          />
+        )}
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight, rehypeRaw]}
@@ -59,13 +61,18 @@ const PostBody: React.FC<PostBodyProps> = ({ post }) => {
               </code>
             );
           },
-          img: ({ src, alt }) => (
-            <img
-              src={src}
-              alt={alt}
-              className="w-full rounded-lg shadow-md my-6"
-            />
-          ),
+          img: ({ src, alt }) => {
+            if (!src || typeof src !== "string" || src.trim() === "") {
+              return null;
+            }
+            return (
+              <img
+                src={src}
+                alt={alt}
+                className="w-full rounded-lg shadow-md my-6"
+              />
+            );
+          },
           a: ({ href, children }) => (
             <a
               href={href}

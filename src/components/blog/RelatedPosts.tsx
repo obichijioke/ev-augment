@@ -17,11 +17,22 @@ const RelatedPosts: React.FC<RelatedPostsProps> = ({ posts }) => {
             className="group block"
           >
             <div className="overflow-hidden rounded-lg">
-              <img
-                src={post.featuredImage}
-                alt={post.title}
-                className="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-300"
-              />
+              {post.featuredImage &&
+              typeof post.featuredImage === "string" &&
+              post.featuredImage.trim() !== "" ? (
+                <img
+                  src={post.featuredImage}
+                  alt={post.title}
+                  className="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-300"
+                />
+              ) : (
+                <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                  <div className="text-gray-400 text-center">
+                    <div className="text-4xl mb-2">📄</div>
+                    <div className="text-sm">No Image</div>
+                  </div>
+                </div>
+              )}
             </div>
             <h3 className="mt-4 text-lg font-semibold text-gray-900 group-hover:text-blue-600">
               {post.title}
