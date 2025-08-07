@@ -4,7 +4,7 @@
 
 // Base API configuration
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002/api";
 
 // =============================================================================
 // TYPES AND INTERFACES

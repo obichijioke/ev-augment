@@ -9,7 +9,7 @@ import {
 } from "@/types/forum";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002/api";
 
 // Helper function to get auth token
 const getAuthToken = (): string | null => {

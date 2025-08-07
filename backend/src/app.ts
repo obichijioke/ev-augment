@@ -25,17 +25,17 @@ import forumModerationRoutes from "./routes/forumModeration";
 // import evListingRoutes from "./routes/evListings";
 // import marketplaceRoutes from "./routes/marketplace";
 
-// import blogRoutes from "./routes/blog";
+import blogRoutes from "./routes/blog";
 // import chargingStationRoutes from "./routes/chargingStations";
 // import directoryRoutes from "./routes/directory";
-// import likeRoutes from "./routes/likes";
+import likeRoutes from "./routes/likes";
 // import messageRoutes from "./routes/messages";
 // import notificationRoutes from "./routes/notifications";
 // import adminRoutes from "./routes/admin";
 // import adminVehicleListingRoutes from "./routes/adminVehicleListings";
 // import reviewRoutes from "./routes/reviews";
 // import searchRoutes from "./routes/search";
-// import uploadRoutes from "./routes/upload";
+import uploadRoutes from "./routes/upload";
 // import wantedRoutes from "./routes/wanted";
 
 // All routes are now converted to TypeScript! 🎉
@@ -173,17 +173,17 @@ app.use("/api/forum/moderation", forumModerationRoutes);
 // app.use("/api/ev-listings", evListingRoutes);
 // app.use("/api/marketplace", marketplaceRoutes);
 
-// app.use("/api/blog", blogRoutes);
+app.use("/api/blog", blogRoutes);
 // app.use("/api/charging-stations", chargingStationRoutes);
 // app.use("/api/directory", directoryRoutes);
-// app.use("/api/likes", likeRoutes);
+app.use("/api/likes", likeRoutes);
 // app.use("/api/messages", messageRoutes);
 // app.use("/api/notifications", notificationRoutes);
 // app.use("/api/admin", adminRoutes);
 // app.use("/api/admin/vehicle-listings", adminVehicleListingRoutes);
 // app.use("/api/reviews", reviewRoutes);
 // app.use("/api/search", searchRoutes);
-// app.use("/api/upload", uploadRoutes);
+app.use("/api/upload", uploadRoutes);
 // app.use("/api/wanted", wantedRoutes);
 
 // All routes are now active and converted to TypeScript! 🎉

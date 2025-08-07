@@ -386,3 +386,13 @@ export function useDocumentUpload(entityType: EntityType, entityId?: string) {
     maxFiles: 10,
   });
 }
+
+// Hook for blog post featured images
+export function useBlogImageUpload(postId?: string) {
+  return useFileUpload({
+    uploadType: "image",
+    entityType: "blog_post",
+    entityId: postId,
+    maxFiles: 1,
+  });
+}

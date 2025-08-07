@@ -396,6 +396,19 @@ router.get(
       throw notFoundError("User profile");
     }
 
+    // Get user role and permissions from user_profiles table
+    const { data: roleProfile, error: roleError } = await supabaseAdmin
+      .from("user_profiles")
+      .select("role, permissions, is_banned, ban_expires_at")
+      .eq("id", req.user!.id)
+      .single();
+
+    // Default role if not found
+    const role = roleProfile?.role || "user";
+    const permissions = roleProfile?.permissions || [];
+    const is_banned = roleProfile?.is_banned || false;
+    const ban_expires_at = roleProfile?.ban_expires_at || null;
+
     res.json({
       success: true,
       data: {
@@ -420,6 +433,11 @@ router.get(
           created_at: userProfile.created_at,
           updated_at: userProfile.updated_at,
           email_confirmed: !!req.user!.email_confirmed_at,
+          // Role and permissions
+          role: role,
+          permissions: permissions,
+          is_banned: is_banned,
+          ban_expires_at: ban_expires_at,
         },
       },
     } as ApiResponse<{ user: User }>);

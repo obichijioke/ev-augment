@@ -1,12 +1,15 @@
 export interface BlogPost {
   id: string;
   title: string;
+  slug: string;
   content: string;
+  excerpt?: string;
   author: {
+    id?: string;
     name: string;
     avatar: string;
     username: string;
-    bio: string;
+    bio?: string;
   };
   publishedAt: string;
   updatedAt?: string;
@@ -18,6 +21,7 @@ export interface BlogPost {
   likes: number;
   bookmarks: number;
   comments: Comment[];
+  status?: "draft" | "published" | "archived";
 }
 
 export interface Comment {

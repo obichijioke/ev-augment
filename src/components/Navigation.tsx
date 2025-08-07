@@ -15,8 +15,13 @@ import {
   Activity,
   PenTool,
   Shield,
+  FileText,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import {
+  useCanCreateBlog,
+  useCanAccessDraftManagement,
+} from "@/hooks/useBlogPermissions";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,6 +31,10 @@ const Navigation = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { user, isAuthenticated, logout, userProfile } = useAuthStore();
+
+  // Blog permissions
+  const canCreateBlog = useCanCreateBlog();
+  const canAccessDrafts = useCanAccessDraftManagement();
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -243,14 +252,26 @@ const Navigation = () => {
                       )}
 
                       <div className="border-t border-gray-100 my-1"></div>
-                      <Link
-                        href="/blog/create"
-                        className="flex items-center px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors font-medium"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        <PenTool className="w-4 h-4 mr-3" />
-                        Write Article
-                      </Link>
+                      {canCreateBlog && (
+                        <Link
+                          href="/blog/create"
+                          className="flex items-center px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          <PenTool className="w-4 h-4 mr-3" />
+                          Write Article
+                        </Link>
+                      )}
+                      {canAccessDrafts && (
+                        <Link
+                          href="/blog/drafts"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          <FileText className="w-4 h-4 mr-3" />
+                          My Drafts
+                        </Link>
+                      )}
                       <Link
                         href="/profile?tab=settings"
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
@@ -429,14 +450,26 @@ const Navigation = () => {
                     </Link>
                   )}
 
-                  <Link
-                    href="/blog/create"
-                    className="flex items-center px-3 py-2 text-base font-medium text-blue-600 hover:bg-blue-50 rounded-md"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <PenTool className="h-5 w-5 mr-2" />
-                    Write Article
-                  </Link>
+                  {canCreateBlog && (
+                    <Link
+                      href="/blog/create"
+                      className="flex items-center px-3 py-2 text-base font-medium text-blue-600 hover:bg-blue-50 rounded-md"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <PenTool className="h-5 w-5 mr-2" />
+                      Write Article
+                    </Link>
+                  )}
+                  {canAccessDrafts && (
+                    <Link
+                      href="/blog/drafts"
+                      className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-md"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <FileText className="h-5 w-5 mr-2" />
+                      My Drafts
+                    </Link>
+                  )}
                   <Link
                     href="/profile?tab=settings"
                     className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-md"
