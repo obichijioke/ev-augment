@@ -1,10 +1,28 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Plus, X, Star, Zap, Battery, Gauge, DollarSign, Search } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Plus,
+  X,
+  Star,
+  Zap,
+  Battery,
+  Gauge,
+  DollarSign,
+  Search,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import { VehicleListing } from "@/types/vehicle";
+import {
+  fetchVehicleDetails,
+  fetchVehicleListings,
+} from "@/services/vehicleApi";
 
-interface Vehicle {
+interface ComparisonVehicle {
   id: string;
   make: string;
   model: string;
@@ -27,111 +45,237 @@ interface Vehicle {
   };
 }
 
+// Helper function to convert VehicleListing to ComparisonVehicle
+const convertToComparisonVehicle = (
+  listing: VehicleListing
+): ComparisonVehicle => {
+  const performanceSpec = listing.performanceSpecs?.[0];
+  const batterySpec = listing.batterySpecs?.[0];
+  const dimensionSpec = listing.dimensionSpecs?.[0];
+  const environmentalSpec = listing.environmentalSpecs?.[0];
+
+  return {
+    id: listing.id,
+    make: listing.model?.manufacturer?.name || "Unknown",
+    model: listing.model?.name || "Unknown",
+    year: listing.year,
+    trim: listing.trim || "",
+    price: listing.msrp_base || 0,
+    rating: listing.average_rating || 0,
+    image:
+      listing.primary_image_url ||
+      listing.image_urls?.[0] ||
+      "/placeholder-car.jpg",
+    specs: {
+      range: performanceSpec?.range_epa
+        ? `${performanceSpec.range_epa} miles`
+        : "Unknown",
+      acceleration: performanceSpec?.acceleration_0_60
+        ? `${performanceSpec.acceleration_0_60}s`
+        : "Unknown",
+      topSpeed: performanceSpec?.top_speed
+        ? `${performanceSpec.top_speed} mph`
+        : "Unknown",
+      batteryCapacity: batterySpec?.battery_capacity_kwh
+        ? `${batterySpec.battery_capacity_kwh} kWh`
+        : "Unknown",
+      chargingSpeed: batterySpec?.charging_speed_dc_max
+        ? `${batterySpec.charging_speed_dc_max} kW`
+        : "Unknown",
+      efficiency: environmentalSpec?.efficiency_epa
+        ? `${environmentalSpec.efficiency_epa} MPGe`
+        : "Unknown",
+      drivetrain: performanceSpec?.drivetrain || "Unknown",
+      seating: dimensionSpec?.seating_capacity
+        ? `${dimensionSpec.seating_capacity} passengers`
+        : "Unknown",
+      cargoSpace: dimensionSpec?.cargo_volume
+        ? `${dimensionSpec.cargo_volume} cu ft`
+        : "Unknown",
+      warranty: batterySpec?.warranty_years
+        ? `${batterySpec.warranty_years} years`
+        : "Unknown",
+    },
+  };
+};
+
 const EVComparePage: React.FC = () => {
-  const [selectedVehicles, setSelectedVehicles] = useState<Vehicle[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const [selectedVehicles, setSelectedVehicles] = useState<ComparisonVehicle[]>(
+    []
+  );
+  const [availableVehicles, setAvailableVehicles] = useState<
+    ComparisonVehicle[]
+  >([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [showVehicleSelector, setShowVehicleSelector] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [loadingVehicles, setLoadingVehicles] = useState(false);
 
-  // Mock vehicle data
-  const availableVehicles: Vehicle[] = [
-    {
-      id: '1',
-      make: 'Tesla',
-      model: 'Model 3',
-      year: 2024,
-      trim: 'Long Range',
-      price: 47240,
-      rating: 4.8,
-      image: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=Tesla%20Model%203%20electric%20car%20blue%20modern%20sleek&image_size=square',
-      specs: {
-        range: '358 miles',
-        acceleration: '4.2 seconds',
-        topSpeed: '145 mph',
-        batteryCapacity: '75 kWh',
-        chargingSpeed: '250 kW',
-        efficiency: '4.1 mi/kWh',
-        drivetrain: 'Dual Motor AWD',
-        seating: '5 passengers',
-        cargoSpace: '15 cu ft',
-        warranty: '8 years / 120,000 miles'
-      }
-    },
-    {
-      id: '2',
-      make: 'BMW',
-      model: 'iX',
-      year: 2024,
-      trim: 'xDrive50',
-      price: 87100,
-      rating: 4.6,
-      image: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=BMW%20iX%20electric%20SUV%20luxury%20modern%20design&image_size=square',
-      specs: {
-        range: '324 miles',
-        acceleration: '4.6 seconds',
-        topSpeed: '124 mph',
-        batteryCapacity: '111.5 kWh',
-        chargingSpeed: '195 kW',
-        efficiency: '2.9 mi/kWh',
-        drivetrain: 'Dual Motor AWD',
-        seating: '5 passengers',
-        cargoSpace: '35 cu ft',
-        warranty: '4 years / 50,000 miles'
-      }
-    },
-    {
-      id: '3',
-      make: 'Ford',
-      model: 'Mustang Mach-E',
-      year: 2024,
-      trim: 'Premium',
-      price: 52400,
-      rating: 4.4,
-      image: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=Ford%20Mustang%20Mach-E%20electric%20SUV%20sporty%20red&image_size=square',
-      specs: {
-        range: '312 miles',
-        acceleration: '4.8 seconds',
-        topSpeed: '111 mph',
-        batteryCapacity: '91 kWh',
-        chargingSpeed: '150 kW',
-        efficiency: '3.4 mi/kWh',
-        drivetrain: 'Dual Motor AWD',
-        seating: '5 passengers',
-        cargoSpace: '29 cu ft',
-        warranty: '8 years / 100,000 miles'
-      }
+  // Parse vehicle IDs from URL parameters
+  const parseVehicleIdsFromUrl = (): string[] => {
+    const vehiclesParam = searchParams.get("vehicles");
+    if (!vehiclesParam) return [];
+
+    return vehiclesParam.split(",").filter((id) => id.trim().length > 0);
+  };
+
+  // Update URL with current vehicle selection
+  const updateUrlWithVehicles = (vehicleIds: string[]) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (vehicleIds.length > 0) {
+      params.set("vehicles", vehicleIds.join(","));
+    } else {
+      params.delete("vehicles");
     }
-  ];
 
-  const filteredVehicles = availableVehicles.filter(vehicle =>
-    !selectedVehicles.find(selected => selected.id === vehicle.id) &&
-    (vehicle.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     vehicle.model.toLowerCase().includes(searchQuery.toLowerCase()))
+    const newUrl = `/ev-listings/compare${
+      params.toString() ? `?${params.toString()}` : ""
+    }`;
+    router.replace(newUrl, { scroll: false });
+  };
+
+  // Load vehicles from URL parameters
+  const loadVehiclesFromUrl = async () => {
+    const vehicleIds = parseVehicleIdsFromUrl();
+    if (vehicleIds.length === 0) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const vehiclePromises = vehicleIds.map(async (id) => {
+        try {
+          const response = await fetchVehicleDetails(id);
+          return convertToComparisonVehicle(response.data);
+        } catch (error) {
+          console.error(`Failed to load vehicle ${id}:`, error);
+          return null;
+        }
+      });
+
+      const vehicles = await Promise.all(vehiclePromises);
+      const validVehicles = vehicles.filter(
+        (v): v is ComparisonVehicle => v !== null
+      );
+
+      setSelectedVehicles(validVehicles);
+
+      // Update URL to remove any invalid vehicle IDs
+      if (validVehicles.length !== vehicleIds.length) {
+        updateUrlWithVehicles(validVehicles.map((v) => v.id));
+      }
+    } catch (error) {
+      console.error("Error loading vehicles from URL:", error);
+      setError("Failed to load some vehicles. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load available vehicles for selection
+  const loadAvailableVehicles = async () => {
+    if (availableVehicles.length > 0) return; // Already loaded
+
+    setLoadingVehicles(true);
+    try {
+      const response = await fetchVehicleListings({ limit: 50 }); // Get more vehicles for selection
+      const comparisonVehicles = response.data.map(convertToComparisonVehicle);
+      setAvailableVehicles(comparisonVehicles);
+    } catch (error) {
+      console.error("Error loading available vehicles:", error);
+    } finally {
+      setLoadingVehicles(false);
+    }
+  };
+
+  // Load vehicles on component mount and when URL changes
+  useEffect(() => {
+    loadVehiclesFromUrl();
+  }, [searchParams]);
+
+  // Load available vehicles when selector is opened
+  useEffect(() => {
+    if (showVehicleSelector) {
+      loadAvailableVehicles();
+    }
+  }, [showVehicleSelector]);
+
+  // Filter available vehicles for selection
+  const filteredVehicles = availableVehicles.filter(
+    (vehicle) =>
+      !selectedVehicles.find((selected) => selected.id === vehicle.id) &&
+      (vehicle.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        vehicle.model.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const addVehicle = (vehicle: Vehicle) => {
+  const addVehicle = (vehicle: ComparisonVehicle) => {
     if (selectedVehicles.length < 3) {
-      setSelectedVehicles([...selectedVehicles, vehicle]);
+      const newSelectedVehicles = [...selectedVehicles, vehicle];
+      setSelectedVehicles(newSelectedVehicles);
+      updateUrlWithVehicles(newSelectedVehicles.map((v) => v.id));
       setShowVehicleSelector(false);
-      setSearchQuery('');
+      setSearchQuery("");
     }
   };
 
   const removeVehicle = (vehicleId: string) => {
-    setSelectedVehicles(selectedVehicles.filter(v => v.id !== vehicleId));
+    const newSelectedVehicles = selectedVehicles.filter(
+      (v) => v.id !== vehicleId
+    );
+    setSelectedVehicles(newSelectedVehicles);
+    updateUrlWithVehicles(newSelectedVehicles.map((v) => v.id));
   };
 
   const specCategories = [
-    { key: 'range', label: 'Range', icon: Zap, unit: '' },
-    { key: 'acceleration', label: '0-60 mph', icon: Gauge, unit: '' },
-    { key: 'topSpeed', label: 'Top Speed', icon: Gauge, unit: '' },
-    { key: 'batteryCapacity', label: 'Battery', icon: Battery, unit: '' },
-    { key: 'chargingSpeed', label: 'Charging Speed', icon: Zap, unit: '' },
-    { key: 'efficiency', label: 'Efficiency', icon: Zap, unit: '' },
-    { key: 'drivetrain', label: 'Drivetrain', icon: Gauge, unit: '' },
-    { key: 'seating', label: 'Seating', icon: Gauge, unit: '' },
-    { key: 'cargoSpace', label: 'Cargo Space', icon: Gauge, unit: '' },
-    { key: 'warranty', label: 'Warranty', icon: Gauge, unit: '' }
+    { key: "range", label: "Range", icon: Zap, unit: "" },
+    { key: "acceleration", label: "0-60 mph", icon: Gauge, unit: "" },
+    { key: "topSpeed", label: "Top Speed", icon: Gauge, unit: "" },
+    { key: "batteryCapacity", label: "Battery", icon: Battery, unit: "" },
+    { key: "chargingSpeed", label: "Charging Speed", icon: Zap, unit: "" },
+    { key: "efficiency", label: "Efficiency", icon: Zap, unit: "" },
+    { key: "drivetrain", label: "Drivetrain", icon: Gauge, unit: "" },
+    { key: "seating", label: "Seating", icon: Gauge, unit: "" },
+    { key: "cargoSpace", label: "Cargo Space", icon: Gauge, unit: "" },
+    { key: "warranty", label: "Warranty", icon: Gauge, unit: "" },
   ];
+
+  // Show loading state while initial vehicles are loading
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <Link
+                href="/ev-listings"
+                className="flex items-center text-blue-600 hover:text-blue-700"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Back to Listings
+              </Link>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Compare Electric Vehicles
+              </h1>
+              <div></div>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600 mr-3" />
+            <span className="text-lg text-gray-600">Loading vehicles...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -139,21 +283,37 @@ const EVComparePage: React.FC = () => {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/ev-listings" className="flex items-center text-blue-600 hover:text-blue-700">
+            <Link
+              href="/ev-listings"
+              className="flex items-center text-blue-600 hover:text-blue-700"
+            >
               <ArrowLeft className="w-5 h-5 mr-2" />
               Back to Listings
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900">Compare Electric Vehicles</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Compare Electric Vehicles
+            </h1>
             <div></div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
+              <span className="text-red-800">{error}</span>
+            </div>
+          </div>
+        )}
         {/* Vehicle Selection */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Selected Vehicles ({selectedVehicles.length}/3)</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Selected Vehicles ({selectedVehicles.length}/3)
+            </h2>
             <button
               onClick={() => setShowVehicleSelector(true)}
               disabled={selectedVehicles.length >= 3}
@@ -169,7 +329,9 @@ const EVComparePage: React.FC = () => {
               <div className="text-gray-500 mb-4">
                 <Zap className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <p className="text-lg">No vehicles selected for comparison</p>
-                <p className="text-sm">Add up to 3 electric vehicles to compare their specifications</p>
+                <p className="text-sm">
+                  Add up to 3 electric vehicles to compare their specifications
+                </p>
               </div>
               <button
                 onClick={() => setShowVehicleSelector(true)}
@@ -181,9 +343,16 @@ const EVComparePage: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {selectedVehicles.map((vehicle) => (
-                <div key={vehicle.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div
+                  key={vehicle.id}
+                  className="bg-white rounded-lg border border-gray-200 overflow-hidden"
+                >
                   <div className="relative">
-                    <img src={vehicle.image} alt={`${vehicle.make} ${vehicle.model}`} className="w-full h-48 object-cover" />
+                    <img
+                      src={vehicle.image}
+                      alt={`${vehicle.make} ${vehicle.model}`}
+                      className="w-full h-48 object-cover"
+                    />
                     <button
                       onClick={() => removeVehicle(vehicle.id)}
                       className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-50"
@@ -192,14 +361,18 @@ const EVComparePage: React.FC = () => {
                     </button>
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-lg">{vehicle.year} {vehicle.make} {vehicle.model}</h3>
+                    <h3 className="font-semibold text-lg">
+                      {vehicle.year} {vehicle.make} {vehicle.model}
+                    </h3>
                     <p className="text-gray-600 text-sm">{vehicle.trim}</p>
                     <div className="flex items-center justify-between mt-2">
                       <div className="flex items-center">
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
                         <span className="ml-1 text-sm">{vehicle.rating}</span>
                       </div>
-                      <div className="text-lg font-bold text-blue-600">${vehicle.price.toLocaleString()}</div>
+                      <div className="text-lg font-bold text-blue-600">
+                        ${vehicle.price.toLocaleString()}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -212,18 +385,29 @@ const EVComparePage: React.FC = () => {
         {selectedVehicles.length > 1 && (
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Detailed Comparison</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Detailed Comparison
+              </h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Specification</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">
+                      Specification
+                    </th>
                     {selectedVehicles.map((vehicle) => (
-                      <th key={vehicle.id} className="px-6 py-4 text-center text-sm font-medium text-gray-900 min-w-48">
+                      <th
+                        key={vehicle.id}
+                        className="px-6 py-4 text-center text-sm font-medium text-gray-900 min-w-48"
+                      >
                         <div>
-                          <div className="font-semibold">{vehicle.make} {vehicle.model}</div>
-                          <div className="text-xs text-gray-600">{vehicle.year} {vehicle.trim}</div>
+                          <div className="font-semibold">
+                            {vehicle.make} {vehicle.model}
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            {vehicle.year} {vehicle.trim}
+                          </div>
                         </div>
                       </th>
                     ))}
@@ -237,12 +421,15 @@ const EVComparePage: React.FC = () => {
                       Starting Price
                     </td>
                     {selectedVehicles.map((vehicle) => (
-                      <td key={vehicle.id} className="px-6 py-4 text-center text-sm text-gray-900 font-semibold">
+                      <td
+                        key={vehicle.id}
+                        className="px-6 py-4 text-center text-sm text-gray-900 font-semibold"
+                      >
                         ${vehicle.price.toLocaleString()}
                       </td>
                     ))}
                   </tr>
-                  
+
                   {/* Rating Row */}
                   <tr className="bg-gray-50">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 flex items-center">
@@ -250,7 +437,10 @@ const EVComparePage: React.FC = () => {
                       Rating
                     </td>
                     {selectedVehicles.map((vehicle) => (
-                      <td key={vehicle.id} className="px-6 py-4 text-center text-sm text-gray-900">
+                      <td
+                        key={vehicle.id}
+                        className="px-6 py-4 text-center text-sm text-gray-900"
+                      >
                         <div className="flex items-center justify-center">
                           <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
                           {vehicle.rating}
@@ -261,14 +451,24 @@ const EVComparePage: React.FC = () => {
 
                   {/* Spec Rows */}
                   {specCategories.map((category, index) => (
-                    <tr key={category.key} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                    <tr
+                      key={category.key}
+                      className={index % 2 === 0 ? "bg-gray-50" : ""}
+                    >
                       <td className="px-6 py-4 text-sm font-medium text-gray-900 flex items-center">
                         <category.icon className="w-4 h-4 mr-2 text-blue-600" />
                         {category.label}
                       </td>
                       {selectedVehicles.map((vehicle) => (
-                        <td key={vehicle.id} className="px-6 py-4 text-center text-sm text-gray-900">
-                          {vehicle.specs[category.key as keyof typeof vehicle.specs]}
+                        <td
+                          key={vehicle.id}
+                          className="px-6 py-4 text-center text-sm text-gray-900"
+                        >
+                          {
+                            vehicle.specs[
+                              category.key as keyof typeof vehicle.specs
+                            ]
+                          }
                         </td>
                       ))}
                     </tr>
@@ -286,7 +486,9 @@ const EVComparePage: React.FC = () => {
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-96 overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Add Vehicle to Compare</h3>
+                <h3 className="text-lg font-semibold">
+                  Add Vehicle to Compare
+                </h3>
                 <button
                   onClick={() => setShowVehicleSelector(false)}
                   className="p-2 hover:bg-gray-100 rounded-lg"
@@ -306,31 +508,56 @@ const EVComparePage: React.FC = () => {
               </div>
             </div>
             <div className="p-6 overflow-y-auto max-h-64">
-              <div className="space-y-3">
-                {filteredVehicles.map((vehicle) => (
-                  <button
-                    key={vehicle.id}
-                    onClick={() => addVehicle(vehicle)}
-                    className="w-full flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <img src={vehicle.image} alt={`${vehicle.make} ${vehicle.model}`} className="w-16 h-16 object-cover rounded-lg mr-4" />
-                    <div className="flex-1 text-left">
-                      <div className="font-medium">{vehicle.year} {vehicle.make} {vehicle.model}</div>
-                      <div className="text-sm text-gray-600">{vehicle.trim}</div>
-                      <div className="text-sm font-semibold text-blue-600">${vehicle.price.toLocaleString()}</div>
+              {loadingVehicles ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-600 mr-2" />
+                  <span className="text-gray-600">Loading vehicles...</span>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredVehicles.map((vehicle) => (
+                    <button
+                      key={vehicle.id}
+                      onClick={() => addVehicle(vehicle)}
+                      className="w-full flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <img
+                        src={vehicle.image}
+                        alt={`${vehicle.make} ${vehicle.model}`}
+                        className="w-16 h-16 object-cover rounded-lg mr-4"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/placeholder-car.jpg";
+                        }}
+                      />
+                      <div className="flex-1 text-left">
+                        <div className="font-medium">
+                          {vehicle.year} {vehicle.make} {vehicle.model}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {vehicle.trim}
+                        </div>
+                        <div className="text-sm font-semibold text-blue-600">
+                          ${vehicle.price.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
+                        <span className="text-sm">
+                          {vehicle.rating.toFixed(1)}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                  {filteredVehicles.length === 0 && !loadingVehicles && (
+                    <div className="text-center py-8 text-gray-500">
+                      {searchQuery
+                        ? "No vehicles found matching your search."
+                        : "No vehicles available for comparison."}
                     </div>
-                    <div className="flex items-center">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                      <span className="text-sm">{vehicle.rating}</span>
-                    </div>
-                  </button>
-                ))}
-                {filteredVehicles.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    No vehicles found matching your search.
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
