@@ -20,9 +20,9 @@ import forumRoutes from "./routes/forum";
 import forumImageRoutes from "./routes/forumImages";
 import forumModerationRoutes from "./routes/forumModeration";
 // import userRoutes from "./routes/users";
-// import vehicleRoutes from "./routes/vehicles";
-// import vehicleListingRoutes from "./routes/vehicleListings";
-// import evListingRoutes from "./routes/evListings";
+import vehicleRoutes from "./routes/vehicles";
+import vehicleListingRoutes from "./routes/vehicleListings";
+import evListingRoutes from "./routes/evListings";
 // import marketplaceRoutes from "./routes/marketplace";
 
 import blogRoutes from "./routes/blog";
@@ -168,9 +168,9 @@ app.use("/api/forum", forumRoutes);
 app.use("/api/forum/images", forumImageRoutes);
 app.use("/api/forum/moderation", forumModerationRoutes);
 // app.use("/api/users", userRoutes);
-// app.use("/api/vehicles", vehicleRoutes);
-// app.use("/api/vehicle-listings", vehicleListingRoutes);
-// app.use("/api/ev-listings", evListingRoutes);
+app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/vehicle-listings", vehicleListingRoutes);
+app.use("/api/ev-listings", evListingRoutes);
 // app.use("/api/marketplace", marketplaceRoutes);
 
 app.use("/api/blog", blogRoutes);
