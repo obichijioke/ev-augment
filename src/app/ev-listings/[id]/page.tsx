@@ -32,6 +32,7 @@ import {
   ApiError,
 } from "@/services/vehicleApi";
 import { useAuthStore } from "@/store/authStore";
+import VehicleReviews from "@/components/VehicleReviews";
 
 interface VehicleDetailsProps {
   params: Promise<{ id: string }>;
@@ -712,6 +713,11 @@ const VehicleDetailsPage: React.FC<VehicleDetailsProps> = ({ params }) => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-12">
+          <VehicleReviews vehicleId={id} vehicleName={vehicle.name} />
         </div>
       </div>
     </div>

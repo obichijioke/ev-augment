@@ -272,7 +272,7 @@ const forumSchemas = {
       .valid("newest", "oldest", "most_replies", "most_views")
       .default("newest"),
     page: Joi.number().integer().min(1).default(1),
-    limit: Joi.number().integer().min(1).max(50).default(20),
+    limit: Joi.number().integer().min(1).max(100).default(20),
   }),
 
   // Moderation schemas
@@ -355,6 +355,37 @@ const likeSchemas = {
   }),
 };
 
+// Review validation schemas
+const reviewSchemas = {
+  create: Joi.object({
+    entity_type: Joi.string()
+      .valid(
+        "charging_station",
+        "marketplace_listing",
+        "directory_listing",
+        "vehicle",
+        "vehicle_listing"
+      )
+      .required(),
+    entity_id: Joi.string().uuid().required(),
+    rating: Joi.number().integer().min(1).max(5).required(),
+    title: Joi.string().min(5).max(200).required(),
+    content: Joi.string().min(10).max(2000).required(),
+    pros: Joi.array().items(Joi.string().max(100)).max(10),
+    cons: Joi.array().items(Joi.string().max(100)).max(10),
+    reviewer_name: Joi.string().max(100),
+    reviewer_email: Joi.string().email().max(255),
+  }),
+
+  update: Joi.object({
+    rating: Joi.number().integer().min(1).max(5),
+    title: Joi.string().min(5).max(200),
+    content: Joi.string().min(10).max(2000),
+    pros: Joi.array().items(Joi.string().max(100)).max(10),
+    cons: Joi.array().items(Joi.string().max(100)).max(10),
+  }),
+};
+
 export {
   validate,
   userSchemas,
@@ -364,6 +395,7 @@ export {
   forumSchemas,
   blogSchemas,
   likeSchemas,
+  reviewSchemas,
 };
 
 export default validate;

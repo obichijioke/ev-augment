@@ -100,10 +100,10 @@ const ReplyItem: React.FC<ReplyItemProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
           <div className="flex items-center space-x-3">
-            {reply.author.avatar ? (
+            {reply.author?.avatar ? (
               <img
                 src={reply.author.avatar}
-                alt={reply.author.displayName}
+                alt={reply.author.displayName || "User"}
                 className="w-8 h-8 rounded-full"
               />
             ) : (
@@ -115,9 +115,9 @@ const ReplyItem: React.FC<ReplyItemProps> = ({
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-semibold text-gray-900">
-                  {reply.author.displayName}
+                  {reply.author?.displayName || "Anonymous User"}
                 </span>
-                {reply.author.isVerified && (
+                {reply.author?.isVerified && (
                   <CheckCircle className="h-3 w-3 text-blue-500" />
                 )}
                 {isOriginalPoster && (
@@ -233,7 +233,7 @@ const ReplyItem: React.FC<ReplyItemProps> = ({
               key={nestedReply.id}
               reply={nestedReply}
               threadId={threadId}
-              isOriginalPoster={nestedReply.author.id === reply.author.id}
+              isOriginalPoster={nestedReply.author?.id === reply.author?.id}
               nestingLevel={nestingLevel + 1}
               maxNestingLevel={maxNestingLevel}
               onReply={nestingLevel + 1 < maxNestingLevel ? onReply : undefined}
