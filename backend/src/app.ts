@@ -14,12 +14,14 @@ dotenv.config();
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { requestLogger } from "./middleware/logging";
 
+import { v4 as uuidv4 } from "uuid";
+
 // Import routes (auth and forum routes enabled)
 import authRoutes from "./routes/auth";
 import forumRoutes from "./routes/forum";
 import forumImageRoutes from "./routes/forumImages";
 import forumModerationRoutes from "./routes/forumModeration";
-// import userRoutes from "./routes/users";
+import userRoutes from "./routes/users";
 import vehicleRoutes from "./routes/vehicles";
 import vehicleListingRoutes from "./routes/vehicleListings";
 import evListingRoutes from "./routes/evListings";
@@ -31,8 +33,8 @@ import blogRoutes from "./routes/blog";
 import likeRoutes from "./routes/likes";
 // import messageRoutes from "./routes/messages";
 // import notificationRoutes from "./routes/notifications";
-// import adminRoutes from "./routes/admin";
-// import adminVehicleListingRoutes from "./routes/adminVehicleListings";
+import adminV2Routes from "./routes/admin/index";
+import adminVehicleListingRoutes from "./routes/adminVehicleListings";
 import reviewRoutes from "./routes/reviews";
 // import searchRoutes from "./routes/search";
 import uploadRoutes from "./routes/upload";
@@ -107,6 +109,11 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 } else {
   app.use(morgan("combined"));
+  // Lightweight request ID middleware
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    (req as any).id = (req.headers["x-request-id"] as string) || uuidv4();
+    next();
+  });
 }
 
 // Custom request logger (temporarily disabled)
@@ -127,7 +134,8 @@ const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req: Request) => {
-    // Skip rate limiting for health checks
+    // Skip rate limiting for health checks and preflight
+    if (req.method === "OPTIONS") return true;
     return req.path === "/health" || req.path === "/api/health";
   },
 });
@@ -145,6 +153,7 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req: Request) => req.method === "OPTIONS",
 });
 
 app.use("/api/auth/login", authLimiter);
@@ -167,7 +176,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/forum", forumRoutes);
 app.use("/api/forum/images", forumImageRoutes);
 app.use("/api/forum/moderation", forumModerationRoutes);
-// app.use("/api/users", userRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/vehicle-listings", vehicleListingRoutes);
 app.use("/api/ev-listings", evListingRoutes);
@@ -179,8 +188,8 @@ app.use("/api/blog", blogRoutes);
 app.use("/api/likes", likeRoutes);
 // app.use("/api/messages", messageRoutes);
 // app.use("/api/notifications", notificationRoutes);
-// app.use("/api/admin", adminRoutes);
-// app.use("/api/admin/vehicle-listings", adminVehicleListingRoutes);
+app.use("/api/admin/vehicle-listings", adminVehicleListingRoutes);
+app.use("/api/admin", adminV2Routes);
 app.use("/api/reviews", reviewRoutes);
 // app.use("/api/search", searchRoutes);
 app.use("/api/upload", uploadRoutes);
@@ -198,20 +207,18 @@ app.get("/api", (req: Request, res: Response) => {
       auth: "/api/auth - Authentication endpoints",
       users: "/api/users - User management",
       vehicles: "/api/vehicles - Vehicle management",
+      vehicleListings: "/api/vehicle-listings - Vehicle listings",
       evListings: "/api/ev-listings - EV listings",
-      marketplace: "/api/marketplace - Marketplace listings",
-      wanted: "/api/wanted - Wanted ads",
-
+      forum: "/api/forum - Forum",
+      forumImages: "/api/forum/images - Forum images",
+      forumModeration: "/api/forum/moderation - Forum moderation",
       blog: "/api/blog - Blog posts and articles",
-      chargingStations: "/api/charging-stations - EV charging station data",
-      directory: "/api/directory - Business directory",
       reviews: "/api/reviews - User reviews and ratings",
       likes: "/api/likes - Content likes and reactions",
-      messages: "/api/messages - Private messaging",
       upload: "/api/upload - File upload management",
-      search: "/api/search - Search functionality",
-      notifications: "/api/notifications - User notifications",
       admin: "/api/admin - Administrative functions",
+      adminVehicleListings:
+        "/api/admin/vehicle-listings - Admin vehicle listings",
     },
     endpoints: {
       health: "/health - Health check",

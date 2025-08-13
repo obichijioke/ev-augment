@@ -1,5 +1,4 @@
-import jwt from "jsonwebtoken";
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { getUserFromToken, supabaseAdmin } from "../services/supabaseClient";
 import { AuthenticatedRequest } from "../types";
 
@@ -36,6 +35,18 @@ const authenticateToken = async (
     req.user = user;
     req.token = token;
 
+    // Cache DB role for authorization checks
+    try {
+      const { data: roleProfile } = await supabaseAdmin
+        .from("user_profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+      (req as any).userRole = roleProfile?.role;
+    } catch (e) {
+      // Non-fatal: role will be fetched lazily in middleware if needed
+    }
+
     next();
   } catch (error) {
     console.error("Authentication error:", error);
@@ -50,7 +61,7 @@ const authenticateToken = async (
 // Middleware for optional authentication (doesn't fail if no token)
 const optionalAuth = async (
   req: AuthenticatedRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
@@ -63,6 +74,17 @@ const optionalAuth = async (
       if (!error && user) {
         req.user = user;
         req.token = token;
+        // Cache DB role for authorization-aware handlers that might use it
+        try {
+          const { data: roleProfile } = await supabaseAdmin
+            .from("user_profiles")
+            .select("role")
+            .eq("id", user.id)
+            .single();
+          (req as any).userRole = roleProfile?.role;
+        } catch (e) {
+          // ignore in optional auth
+        }
       }
     }
 
@@ -88,33 +110,26 @@ const requireAdmin = async (
       return;
     }
 
-    // First check user_metadata/app_metadata for backward compatibility
-    const metadataAdmin =
-      req.user.user_metadata?.role === "admin" ||
-      req.user.app_metadata?.role === "admin";
-
-    if (metadataAdmin) {
-      next();
-      return;
+    // Use cached role if available; fallback to DB
+    let role = (req as any).userRole as string | undefined;
+    if (!role) {
+      const { data: userProfile, error } = await supabaseAdmin
+        .from("user_profiles")
+        .select("role")
+        .eq("id", req.user.id)
+        .single();
+      if (error) {
+        console.error("Error fetching user profile:", error);
+        res.status(500).json({
+          error: "Authorization check failed",
+          message: "Unable to verify user permissions",
+        });
+        return;
+      }
+      role = userProfile?.role;
     }
 
-    // Check user_profiles table for admin role
-    const { data: userProfile, error } = await supabaseAdmin
-      .from("user_profiles")
-      .select("role")
-      .eq("id", req.user.id)
-      .single();
-
-    if (error) {
-      console.error("Error fetching user profile:", error);
-      res.status(500).json({
-        error: "Authorization check failed",
-        message: "Unable to verify user permissions",
-      });
-      return;
-    }
-
-    const isAdmin = userProfile?.role === "admin";
+    const isAdmin = role === "admin";
 
     if (!isAdmin) {
       res.status(403).json({
@@ -150,44 +165,40 @@ const requireModerator = async (
       return;
     }
 
-    // First check user_metadata/app_metadata for backward compatibility
-    const userRole =
-      req.user.user_metadata?.role || req.user.app_metadata?.role;
-    const metadataModerator = ["admin", "moderator"].includes(userRole);
+    // Use cached role if available; fallback to DB
+    let role = (req as any).userRole as string | undefined;
+    if (!role) {
+      const { data: userProfile, error } = await supabaseAdmin
+        .from("user_profiles")
+        .select("role")
+        .eq("id", req.user.id)
+        .single();
 
-    if (metadataModerator) {
-      next();
-      return;
-    }
+      if (error) {
+        console.error("Error fetching user profile:", error);
 
-    // Check user_profiles table for moderator/admin role
-    const { data: userProfile, error } = await supabaseAdmin
-      .from("user_profiles")
-      .select("role")
-      .eq("id", req.user.id)
-      .single();
+        // If user_profiles table doesn't exist, deny access
+        if (
+          (error as any).code === "42P01" ||
+          (error as any).code === "42703"
+        ) {
+          res.status(403).json({
+            error: "Access denied",
+            message: "Moderator permissions not configured",
+          });
+          return;
+        }
 
-    if (error) {
-      console.error("Error fetching user profile:", error);
-
-      // If user_profiles table doesn't exist, deny access
-      if (error.code === "42P01" || error.code === "42703") {
-        console.log("user_profiles table missing, denying moderator access");
-        res.status(403).json({
-          error: "Access denied",
-          message: "Moderator permissions not configured",
+        res.status(500).json({
+          error: "Authorization check failed",
+          message: "Unable to verify user permissions",
         });
         return;
       }
-
-      res.status(500).json({
-        error: "Authorization check failed",
-        message: "Unable to verify user permissions",
-      });
-      return;
+      role = userProfile?.role;
     }
 
-    const isModerator = ["admin", "moderator"].includes(userProfile?.role);
+    const isModerator = ["admin", "moderator"].includes(role || "");
 
     if (!isModerator) {
       res.status(403).json({
@@ -227,24 +238,18 @@ const requireOwnership = (
         return;
       }
 
-      // Admin can access any resource - check metadata first
-      const metadataAdmin =
-        req.user.user_metadata?.role === "admin" ||
-        req.user.app_metadata?.role === "admin";
-
-      if (metadataAdmin) {
-        next();
-        return;
+      // Use cached role if available; fallback to DB
+      let role = (req as any).userRole as string | undefined;
+      if (!role) {
+        const { data: userProfile } = await supabaseAdmin
+          .from("user_profiles")
+          .select("role")
+          .eq("id", req.user.id)
+          .single();
+        role = userProfile?.role;
       }
 
-      // Check user_profiles table for admin role
-      const { data: userProfile } = await supabaseAdmin
-        .from("user_profiles")
-        .select("role")
-        .eq("id", req.user.id)
-        .single();
-
-      if (userProfile?.role === "admin") {
+      if (role === "admin") {
         next();
         return;
       }
@@ -310,7 +315,7 @@ const requireVerified = async (
 // Middleware to extract user info from token without requiring authentication
 const extractUser = async (
   req: AuthenticatedRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
@@ -322,6 +327,17 @@ const extractUser = async (
       if (user) {
         req.user = user;
         req.token = token;
+        // Cache DB role for downstream handlers
+        try {
+          const { data: roleProfile } = await supabaseAdmin
+            .from("user_profiles")
+            .select("role")
+            .eq("id", user.id)
+            .single();
+          (req as any).userRole = roleProfile?.role;
+        } catch (e) {
+          // ignore; handlers can fetch on demand
+        }
       }
     }
 

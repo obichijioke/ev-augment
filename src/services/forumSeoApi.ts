@@ -6,7 +6,7 @@
 import { ForumThread, ForumCategory } from "@/types/forum";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4004/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002/api";
 
 // Server-side fetch function with error handling
 async function serverFetch(url: string, options?: RequestInit) {

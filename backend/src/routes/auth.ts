@@ -297,7 +297,7 @@ router.post(
 );
 
 // @route   POST /api/auth/reset-password
-// @desc    Reset password with token
+// @desc    Reset password with recovery token (Supabase v2)
 // @access  Public
 router.post(
   "/reset-password",
@@ -305,12 +305,28 @@ router.post(
   asyncHandler(async (req, res) => {
     const { token, password } = req.body;
 
-    const { data, error } = await supabase.auth.updateUser({
+    // Verify recovery token to establish a session
+    const { data: verifyData, error: verifyError } =
+      await supabase.auth.verifyOtp({
+        token_hash: token,
+        type: "recovery",
+      });
+
+    if (verifyError) {
+      throw unauthorizedError("Invalid or expired reset token");
+    }
+
+    // Update the password for the current session user
+    const { error: updateError } = await supabase.auth.updateUser({
       password,
     });
 
-    if (error) {
-      throw unauthorizedError("Invalid or expired reset token");
+    if (updateError) {
+      throw createError(
+        "Failed to reset password",
+        500,
+        "PASSWORD_RESET_FAILED"
+      );
     }
 
     res.json({

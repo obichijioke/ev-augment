@@ -3,6 +3,7 @@ import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import { supabase, supabaseAdmin } from "../services/supabaseClient";
 import { authenticateToken } from "../middleware/auth";
+import { reqIsModerator } from "../utils/roleUtils";
 import { validate, forumSchemas } from "../middleware/validation";
 import { AuthenticatedRequest } from "../types";
 import { createError, validationError } from "../middleware/errorHandler";
@@ -241,20 +242,11 @@ router.delete(
         return next(createError("Image not found", 404));
       }
 
-      // Check if user is the author or admin/moderator
-      const { data: userProfile } = await supabaseAdmin
-        .from("user_profiles")
-        .select("role, forum_role")
-        .eq("id", req.user!.id)
-        .single();
-
+      // Check if user is the author or has moderator/admin role
       const isAuthor = image.author_id === req.user!.id;
-      const isAdmin =
-        userProfile &&
-        (["admin", "moderator"].includes(userProfile.role) ||
-          ["admin", "moderator"].includes(userProfile.forum_role));
+      const isAdminOrMod = reqIsModerator(req as any);
 
-      if (!isAuthor && !isAdmin) {
+      if (!isAuthor && !isAdminOrMod) {
         return next(createError("Insufficient permissions", 403));
       }
 

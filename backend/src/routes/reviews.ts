@@ -22,6 +22,8 @@ import {
   requireOwnership,
   requireModerator,
 } from "../middleware/auth";
+import { reqIsOwner } from "../utils/roleUtils";
+
 import { AuthenticatedRequest } from "../types";
 import { User, ApiResponse, PaginatedResponse } from "../types/database";
 import { toString, toNumber } from "../utils/typeUtils";
@@ -358,7 +360,7 @@ router.put(
       throw notFoundError("Review");
     }
 
-    if (existingReview.reviewer_id !== req.user.id) {
+    if (!reqIsOwner(req as any, existingReview.reviewer_id)) {
       throw forbiddenError("You can only update your own reviews");
     }
 

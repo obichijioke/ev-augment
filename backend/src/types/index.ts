@@ -1,23 +1,21 @@
 // Export all database types
-export * from './database';
+export * from "./database";
 
 // Export all API types
-export * from './api';
+export * from "./api";
 
 // Re-export commonly used types for convenience
 export type {
   User,
   Vehicle,
   MarketplaceListing,
-  ForumPost,
-  ForumComment,
   ChargingStation,
   BlogPost,
   Notification,
   ApiResponse,
   PaginatedResponse,
-  AuthenticatedRequest
-} from './database';
+  AuthenticatedRequest,
+} from "./database";
 
 export type {
   LoginRequest,
@@ -29,5 +27,5 @@ export type {
   JWTPayload,
   ValidationError,
   ApiError,
-  PaginationMeta
-} from './api';
+  PaginationMeta,
+} from "./api";

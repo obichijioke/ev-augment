@@ -31,6 +31,7 @@ import {
   requireModerator,
 } from "../middleware/auth";
 import { toString, toNumber } from "../utils/typeUtils";
+import { reqIsModerator, reqIsOwner } from "../utils/roleUtils";
 
 const router: Router = express.Router();
 
@@ -267,11 +268,8 @@ router.get(
       throw notFoundError("Directory listing");
     }
 
-    // Check if user can view this listing
-    const isModerator =
-      req.user &&
-      ((req as any).user.role === "moderator" ||
-        (req as any).user.role === "admin");
+    // Check if user can view this listing (cached role)
+    const isModerator = reqIsModerator(req as any);
     const isOwner = req.user && (req as any).user.id === listing.owner_id;
 
     if (listing.status !== "approved" && !isModerator && !isOwner) {
@@ -390,7 +388,7 @@ router.put(
       throw notFoundError("Directory listing");
     }
 
-    if (existingListing.owner_id !== (req as any).user.id) {
+    if (!reqIsOwner(req as any, existingListing.owner_id)) {
       throw forbiddenError("You can only update your own listings");
     }
 
@@ -469,7 +467,7 @@ router.delete(
       throw notFoundError("Directory listing");
     }
 
-    if (existingListing.owner_id !== (req as any).user.id) {
+    if (!reqIsOwner(req as any, existingListing.owner_id)) {
       throw forbiddenError("You can only delete your own listings");
     }
 

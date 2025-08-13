@@ -1,7 +1,7 @@
 import { ApiResponse, PaginatedResponse } from "@/types/api";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4003/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002/api";
 
 export interface Review {
   id: string;

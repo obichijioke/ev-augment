@@ -60,17 +60,15 @@ const startServer = async (): Promise<void> => {
         console.log("   • Authentication: /api/auth");
         console.log("   • Users: /api/users");
         console.log("   • Vehicles: /api/vehicles");
-        console.log("   • Marketplace: /api/marketplace");
-        console.log("   • Wanted Ads: /api/wanted");
+        console.log("   • Vehicle Listings: /api/vehicle-listings");
+        console.log("   • EV Listings: /api/ev-listings");
         console.log("   • Forum: /api/forum");
+        console.log("   • Forum Images: /api/forum/images");
+        console.log("   • Forum Moderation: /api/forum/moderation");
         console.log("   • Blog: /api/blog");
-        console.log("   • Charging Stations: /api/charging-stations");
-        console.log("   • Directory: /api/directory");
         console.log("   • Reviews: /api/reviews");
         console.log("   • Likes: /api/likes");
-        console.log("   • Messages: /api/messages");
         console.log("   • Upload: /api/upload");
-        console.log("   • Notifications: /api/notifications");
         console.log("   • Admin: /api/admin");
         console.log(
           "\n📖 Full API documentation: http://localhost:" + PORT + "/api"

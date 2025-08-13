@@ -206,7 +206,11 @@ const forumSchemas = {
     description: Joi.string().max(500),
     icon: Joi.string().max(50),
     color: Joi.string().pattern(/^#[0-9A-F]{6}$/i),
-    slug: Joi.string().alphanum().min(2).max(100).required(),
+    slug: Joi.string()
+      .min(2)
+      .max(100)
+      .pattern(/^[a-z0-9-]+$/)
+      .required(),
     sort_order: Joi.number().integer().min(0).default(0),
   }),
 
@@ -215,7 +219,10 @@ const forumSchemas = {
     description: Joi.string().max(500),
     icon: Joi.string().max(50),
     color: Joi.string().pattern(/^#[0-9A-F]{6}$/i),
-    slug: Joi.string().alphanum().min(2).max(100),
+    slug: Joi.string()
+      .min(2)
+      .max(100)
+      .pattern(/^[a-z0-9-]+$/),
     sort_order: Joi.number().integer().min(0),
     is_active: Joi.boolean(),
   }),
@@ -386,6 +393,73 @@ const reviewSchemas = {
   }),
 };
 
+// Placeholder schemas for routes not yet fully implemented
+const chargingStationSchemas = {
+  create: Joi.object({
+    name: Joi.string().min(2).max(200).required(),
+  }),
+  update: Joi.object({
+    name: Joi.string().min(2).max(200),
+  }),
+};
+
+const directorySchemas = {
+  create: Joi.object({
+    name: Joi.string().min(2).max(200).required(),
+    category: Joi.string().max(100),
+  }),
+  update: Joi.object({
+    name: Joi.string().min(2).max(200),
+    category: Joi.string().max(100),
+  }),
+};
+
+const marketplaceSchemas = {
+  create: Joi.object({
+    title: Joi.string().min(2).max(200).required(),
+  }),
+  update: Joi.object({
+    title: Joi.string().min(2).max(200),
+  }),
+};
+
+const messageSchemas = {
+  create: Joi.object({
+    recipient_id: Joi.string().uuid().required(),
+    content: Joi.string().min(1).max(5000).required(),
+  }),
+};
+
+const notificationSchemas = {
+  create: Joi.object({
+    user_id: Joi.string().uuid().required(),
+    type: Joi.string().max(100).required(),
+    title: Joi.string().max(200).required(),
+    message: Joi.string().max(2000).required(),
+  }),
+  updatePreferences: Joi.object().unknown(true),
+  broadcast: Joi.object({
+    title: Joi.string().min(1).max(200).required(),
+    message: Joi.string().min(1).max(2000).required(),
+    priority: Joi.string()
+      .valid("low", "normal", "high", "urgent")
+      .default("normal"),
+    action_url: Joi.string().uri().allow("", null),
+    user_filter: Joi.object().unknown(true),
+    send_email: Joi.boolean().default(false),
+    send_push: Joi.boolean().default(false),
+  }),
+};
+
+const wantedSchemas = {
+  create: Joi.object({
+    title: Joi.string().min(2).max(200).required(),
+  }),
+  update: Joi.object({
+    title: Joi.string().min(2).max(200),
+  }),
+};
+
 export {
   validate,
   userSchemas,
@@ -396,6 +470,13 @@ export {
   blogSchemas,
   likeSchemas,
   reviewSchemas,
+  // Additional schema groups referenced by routes (lightweight placeholders)
+  chargingStationSchemas,
+  directorySchemas,
+  marketplaceSchemas,
+  messageSchemas,
+  notificationSchemas,
+  wantedSchemas,
 };
 
 export default validate;
