@@ -152,6 +152,63 @@ export const adminApi = {
     }),
   bulkBlogPosts: (body: any) => apiPost(`/admin/blog/posts/bulk`, body),
 
+  // EV Listings (admin)
+  getEvListings: (params: Record<string, any>) => {
+    const qs = new URLSearchParams();
+    Object.entries(params || {}).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
+    });
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiGet(`/admin/vehicle-listings${suffix}`);
+  },
+  updateEvListing: (id: string, body: any) =>
+    apiPut(`/admin/vehicle-listings/${id}`, body),
+  deleteEvListing: (id: string) =>
+    fetch(`${API_BASE_URL}/admin/vehicle-listings/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        ...(getAccessToken()
+          ? { Authorization: `Bearer ${getAccessToken()}` }
+          : {}),
+      },
+    }).then(async (res) => {
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw {
+          success: false,
+          message: errorData.message || `HTTP error! status: ${res.status}`,
+          error: { status: res.status, code: errorData.code },
+        } as ApiError;
+      }
+      return res.json();
+    }),
+  bulkEvListings: (body: any) => apiPost(`/admin/vehicle-listings/bulk`, body),
+  bulkUploadEvListings: async (file: File) => {
+    const token = getAccessToken();
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(
+      `${API_BASE_URL}/admin/vehicle-listings/bulk-upload`,
+      {
+        method: "POST",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: form,
+      }
+    );
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw {
+        success: false,
+        message: errorData.message || `HTTP error! status: ${res.status}`,
+        error: { status: res.status, code: errorData.code },
+      } as ApiError;
+    }
+    return res.json();
+  },
+
   // Moderation
   getPendingContent: (
     type?: "marketplace" | "directory",
