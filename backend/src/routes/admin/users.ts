@@ -18,6 +18,7 @@ const adminSchemas = {
     role: Joi.string().valid("user", "moderator", "admin"),
     is_active: Joi.boolean(),
     is_verified: Joi.boolean(),
+    is_banned: Joi.boolean(),
     notes: Joi.string().max(500),
   }),
   bulkUpdateUsers: Joi.object({
@@ -213,12 +214,14 @@ router.put(
   validate(adminSchemas.updateUser),
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params as any;
-    const { role, is_active, is_verified } = req.body as any;
+    const { role, is_active, is_verified, is_banned } = req.body as any;
 
     // Only admins can change roles; ensure role updates write to user_profiles.role
-    const updates: any = {};
-    if (typeof is_active === "boolean") updates.is_active = is_active;
-    if (typeof is_verified === "boolean") updates.is_verified = is_verified;
+    const profileUpdates: any = {};
+    const userUpdates: any = {};
+    if (typeof is_active === "boolean") profileUpdates.is_active = is_active;
+    if (typeof is_banned === "boolean") profileUpdates.is_banned = is_banned;
+    if (typeof is_verified === "boolean") userUpdates.is_verified = is_verified;
 
     if (role) {
       // Update role in user_profiles only
@@ -229,15 +232,26 @@ router.put(
       if (roleErr) throw createError("Failed to update role", 500);
     }
 
-    if (Object.keys(updates).length) {
+    if (Object.keys(profileUpdates).length) {
       const { error } = await supabaseAdmin
         .from("user_profiles")
-        .update(updates)
+        .update(profileUpdates)
         .eq("id", id);
       if (error) throw createError("Failed to update user", 500);
     }
 
-    res.json({ success: true, data: { id, ...updates, role } });
+    if (Object.keys(userUpdates).length) {
+      const { error } = await supabaseAdmin
+        .from("users")
+        .update(userUpdates)
+        .eq("id", id);
+      if (error) throw createError("Failed to update user data", 500);
+    }
+
+    res.json({
+      success: true,
+      data: { id, ...profileUpdates, ...userUpdates, role },
+    });
   })
 );
 

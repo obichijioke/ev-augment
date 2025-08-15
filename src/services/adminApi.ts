@@ -1,6 +1,7 @@
 import { ApiError } from "./adminVehicleApi";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002/api";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002/api";
 
 function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -118,8 +119,45 @@ export const adminApi = {
   updateUser: (id: string, body: any) => apiPut(`/admin/users/${id}`, body),
   bulkUsers: (body: any) => apiPost(`/admin/users/bulk`, body),
 
+  // Blog (admin)
+  getBlogPosts: (params: Record<string, any>) => {
+    const qs = new URLSearchParams();
+    Object.entries(params || {}).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
+    });
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiGet(`/admin/blog/posts${suffix}`);
+  },
+  updateBlogPost: (id: string, body: any) =>
+    apiPut(`/admin/blog/posts/${id}`, body),
+  deleteBlogPost: (id: string) =>
+    fetch(`${API_BASE_URL}/admin/blog/posts/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        ...(getAccessToken()
+          ? { Authorization: `Bearer ${getAccessToken()}` }
+          : {}),
+      },
+    }).then(async (res) => {
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw {
+          success: false,
+          message: errorData.message || `HTTP error! status: ${res.status}`,
+          error: { status: res.status, code: errorData.code },
+        } as ApiError;
+      }
+      return res.json();
+    }),
+  bulkBlogPosts: (body: any) => apiPost(`/admin/blog/posts/bulk`, body),
+
   // Moderation
-  getPendingContent: (type?: "marketplace" | "directory", page?: number, limit?: number) => {
+  getPendingContent: (
+    type?: "marketplace" | "directory",
+    page?: number,
+    limit?: number
+  ) => {
     const qs = new URLSearchParams();
     if (type) qs.set("type", type);
     if (page) qs.set("page", String(page));
@@ -129,8 +167,11 @@ export const adminApi = {
   },
   approveContent: (type: string, id: string, notes?: string) =>
     apiPut(`/admin/content/${type}/${id}/approve`, { notes }),
-  rejectContent: (type: string, id: string, payload: { reason: string; notes?: string }) =>
-    apiPut(`/admin/content/${type}/${id}/reject`, payload),
+  rejectContent: (
+    type: string,
+    id: string,
+    payload: { reason: string; notes?: string }
+  ) => apiPut(`/admin/content/${type}/${id}/reject`, payload),
 
   // Forum
   getForumThreads: (params: Record<string, any>) => {
@@ -141,7 +182,8 @@ export const adminApi = {
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     return apiGet(`/admin/forum/threads${suffix}`);
   },
-  updateForumThread: (id: string, body: any) => apiPut(`/admin/forum/threads/${id}`, body),
+  updateForumThread: (id: string, body: any) =>
+    apiPut(`/admin/forum/threads/${id}`, body),
   bulkForumThreads: (body: any) => apiPost(`/admin/forum/threads/bulk`, body),
 
   // Reports
@@ -153,7 +195,8 @@ export const adminApi = {
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     return apiGet(`/admin/reports${suffix}`);
   },
-  resolveReport: (id: string, body: any) => apiPut(`/admin/reports/${id}/resolve`, body),
+  resolveReport: (id: string, body: any) =>
+    apiPut(`/admin/reports/${id}/resolve`, body),
 
   // Admin-only
   getAnalytics: (params: Record<string, any>) => {
@@ -175,4 +218,3 @@ export const adminApi = {
     return apiGet(`/admin/logs${suffix}`);
   },
 };
-

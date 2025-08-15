@@ -7,6 +7,7 @@ import reports from "./reports";
 import analytics from "./analytics";
 import settings from "./settings";
 import logs from "./logs";
+import blog from "./blog";
 
 const router = express.Router();
 
@@ -18,6 +19,6 @@ router.use(reports);
 router.use(analytics);
 router.use(settings);
 router.use(logs);
+router.use(blog);
 
 export default router;
-

@@ -107,6 +107,7 @@ export default function NewAdminLayout({
             label="Moderation"
             icon={CheckCircle2}
           />
+          <NavLink href="/new-admin/blog" label="Blog" icon={FileText} />
           <NavLink href="/new-admin/forum" label="Forum" icon={MessageSquare} />
           <NavLink href="/new-admin/reports" label="Reports" icon={FileText} />
           <NavLink

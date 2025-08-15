@@ -373,6 +373,14 @@ export default function NewAdminUsersPage() {
                         >
                           {u.is_verified ? "Unverify" : "Verify"}
                         </button>
+                        <button
+                          className="text-xs px-2 py-1 border border-gray-200 rounded-md"
+                          onClick={() =>
+                            onUpdateUser(u.id, { is_banned: !u.is_banned })
+                          }
+                        >
+                          {u.is_banned ? "Unban" : "Ban"}
+                        </button>
                       </div>
                     </td>
                   )}
