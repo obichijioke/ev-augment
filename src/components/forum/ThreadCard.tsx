@@ -17,12 +17,14 @@ interface ThreadCardProps {
   thread: ForumThread;
   showCategory?: boolean;
   className?: string;
+  href?: string; // Allow custom href for SEO-friendly URLs
 }
 
 const ThreadCard: React.FC<ThreadCardProps> = ({
   thread,
   showCategory = false,
   className = "",
+  href,
 }) => {
   const formatNumber = (num: number): string => {
     if (num >= 1000) {
@@ -76,7 +78,12 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
               <Lock className="h-4 w-4 text-gray-500 flex-shrink-0" />
             )}
             <Link
-              href={`/forums/thread/${thread.id}`}
+              href={
+                href ||
+                `/forums/${thread.category?.slug || "general"}/${
+                  thread.slug || thread.id
+                }`
+              }
               className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2"
             >
               {thread.title}

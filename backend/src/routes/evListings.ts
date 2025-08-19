@@ -14,6 +14,7 @@ import {
   createError,
 } from "../middleware/errorHandler";
 import { AuthenticatedRequest } from "../types";
+import { reqIsAdmin, reqIsOwner, reqIsModerator } from "../utils/roleUtils";
 import {
   EVListing,
   User,
@@ -271,14 +272,8 @@ router.post(
   authenticateToken,
   validate(evListingSchemas.create),
   asyncHandler(async (req: AuthenticatedRequest, res) => {
-    // Check if user is admin
-    const { data: userProfile } = await supabaseAdmin
-      .from("user_profiles")
-      .select("role")
-      .eq("id", req.user.id)
-      .single();
-
-    if (!userProfile || userProfile.role !== "admin") {
+    // Check if user is admin (cached role)
+    if (!reqIsAdmin(req as any)) {
       return res.status(403).json({
         success: false,
         message: "Admin access required",
@@ -317,14 +312,8 @@ router.put(
   asyncHandler(async (req: AuthenticatedRequest, res) => {
     const { id } = req.params;
 
-    // Check if user is admin
-    const { data: userProfile } = await supabaseAdmin
-      .from("user_profiles")
-      .select("role")
-      .eq("id", req.user.id)
-      .single();
-
-    if (!userProfile || userProfile.role !== "admin") {
+    // Check if user is admin (cached role)
+    if (!reqIsAdmin(req as any)) {
       return res.status(403).json({
         success: false,
         message: "Admin access required",
@@ -369,14 +358,8 @@ router.delete(
   asyncHandler(async (req: AuthenticatedRequest, res) => {
     const { id } = req.params;
 
-    // Check if user is admin
-    const { data: userProfile } = await supabaseAdmin
-      .from("user_profiles")
-      .select("role")
-      .eq("id", req.user.id)
-      .single();
-
-    if (!userProfile || userProfile.role !== "admin") {
+    // Check if user is admin (cached role)
+    if (!reqIsAdmin(req as any)) {
       return res.status(403).json({
         success: false,
         message: "Admin access required",

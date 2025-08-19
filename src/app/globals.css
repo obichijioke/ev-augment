@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -6,13 +6,14 @@
 
 :root {
   /* EV Platform Color Scheme */
-  --primary-blue: #007BFF;
-  --clean-white: #FFFFFF;
-  --dark-gray: #343A40;
-  --light-gray: #F8F9FA;
-  --green-accent: #28A745;
+  --primary-blue: #007bff;
+  --clean-white: #ffffff;
+  --dark-gray: #343a40;
+  --light-gray: #f8f9fa;
+  --green-accent: #28a745;
   --card-background: var(--clean-white);
-  --border: oklch(0.922 0 0);
+  /* Use Tailwind gray-200 for default border color */
+  --border: #e5e7eb;
   --muted: oklch(0.97 0 0);
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -49,7 +50,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --card-background: #2d2d2d;
-    --border: #404040;
+    --border: #d1d1d1;
     --muted: #404040;
   }
 }
@@ -57,13 +58,14 @@
 body {
   color: #1f2937;
   background-color: #ffffff;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
   font-size: 16px;
   line-height: 1.6;
 }
 
 .btn-primary {
-  background-color: #007BFF;
+  background-color: #007bff;
   color: white;
   font-weight: 500;
   padding: 0.5rem 1rem;
@@ -115,11 +117,11 @@ body {
 }
 
 .nav-link:hover {
-  color: #007BFF;
+  color: #007bff;
 }
 
 .nav-link-active {
-  color: #007BFF;
+  color: #007bff;
   font-weight: 600;
 }
 
@@ -142,6 +144,34 @@ body {
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@layer components {
+  /* Admin UI building blocks */
+  .admin-card {
+    @apply bg-white border border-gray-200 rounded-lg;
+  }
+  .admin-panel {
+    @apply bg-white border border-gray-200 rounded-md;
+  }
+  .admin-input {
+    @apply border border-gray-200 rounded-md;
+  }
+  .admin-select {
+    @apply border border-gray-200 rounded-md;
+  }
+  .admin-btn {
+    @apply border border-gray-200 rounded-md;
+  }
+  .admin-btn-xs {
+    @apply text-xs px-2 py-1 border border-gray-200 rounded;
+  }
+  .admin-table {
+    @apply bg-white border border-gray-200 rounded-lg overflow-hidden;
+  }
+  .admin-row {
+    @apply border-t border-gray-200;
   }
 }
 
@@ -199,7 +229,7 @@ body {
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(0.922 0 0);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);

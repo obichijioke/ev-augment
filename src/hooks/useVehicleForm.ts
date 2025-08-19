@@ -90,7 +90,7 @@ export const useVehicleForm = ({
     } else {
       // Extract feature IDs from vehicle features
       const vehicleFeatureIds: string[] = [];
-      
+
       if (vehicle.features) {
         if (Array.isArray(vehicle.features)) {
           // New structure: array of vehicle_features
@@ -124,7 +124,8 @@ export const useVehicleForm = ({
         description: vehicle.description || "",
         msrp_base: vehicle.msrp_base || 0,
         msrp_max: vehicle.msrp_max || 0,
-        availability_status: (vehicle.availability_status as any) || "available",
+        availability_status:
+          (vehicle.availability_status as any) || "available",
         primary_image_url: vehicle.primary_image_url || "",
         image_urls: vehicle.image_urls || [],
         is_featured: vehicle.is_featured || false,
@@ -279,13 +280,16 @@ export const useVehicleForm = ({
         }
       }
 
+      // Prepare payload (backend expects msrp_base/msrp_max and image fields as-is)
+      const payload: any = { ...cleanedData };
+
       let result;
       if (vehicle) {
         // Update existing vehicle
-        result = await updateVehicleListing(vehicle.id, cleanedData);
+        result = await updateVehicleListing(vehicle.id, payload);
       } else {
         // Create new vehicle
-        result = await createVehicleListing(cleanedData);
+        result = await createVehicleListing(payload);
       }
 
       setSubmitMessage({

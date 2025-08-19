@@ -21,6 +21,8 @@ import {
   optionalAuth,
   requireOwnership,
 } from "../middleware/auth";
+import { reqIsOwner } from "../utils/roleUtils";
+
 import { AuthenticatedRequest } from "../types";
 import { toString, toNumber } from "../utils/typeUtils";
 import {
@@ -290,7 +292,7 @@ router.put(
       throw notFoundError("Wanted ad");
     }
 
-    if (existingWantedAd.user_id !== req.user.id) {
+    if (!reqIsOwner(req as any, existingWantedAd.user_id)) {
       throw forbiddenError("You can only update your own wanted ads");
     }
 
@@ -350,7 +352,7 @@ router.delete(
       throw notFoundError("Wanted ad");
     }
 
-    if (existingWantedAd.user_id !== req.user.id) {
+    if (!reqIsOwner(req as any, existingWantedAd.user_id)) {
       throw forbiddenError("You can only delete your own wanted ads");
     }
 
@@ -396,7 +398,7 @@ router.post(
       throw notFoundError("Wanted ad");
     }
 
-    if (existingWantedAd.user_id !== req.user.id) {
+    if (!reqIsOwner(req as any, existingWantedAd.user_id)) {
       throw forbiddenError("You can only fulfill your own wanted ads");
     }
 
@@ -709,7 +711,7 @@ router.post(
       throw notFoundError("Wanted ad");
     }
 
-    if (existingWantedAd.user_id !== req.user.id) {
+    if (!reqIsOwner(req as any, existingWantedAd.user_id)) {
       throw forbiddenError("You can only extend your own wanted ads");
     }
 

@@ -8,6 +8,8 @@ import {
   validationError,
 } from "../middleware/errorHandler";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
+import { reqIsModerator } from "../utils/roleUtils";
+
 import {
   buildPagination,
   buildPaginationMetadata,
@@ -597,11 +599,8 @@ router.delete(
       throw validationError("Invalid like ID format");
     }
 
-    // Check if user is admin or moderator
-    if (
-      (req as any).user.role !== "admin" &&
-      (req as any).user.role !== "moderator"
-    ) {
+    // Check if user is admin or moderator (cached DB role)
+    if (!reqIsModerator(req as any)) {
       throw forbiddenError(
         "Only administrators and moderators can remove likes"
       );

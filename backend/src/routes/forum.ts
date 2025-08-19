@@ -7,6 +7,7 @@ import {
   commonSchemas,
 } from "../middleware/validation";
 import { AuthenticatedRequest } from "../types";
+import { reqIsModerator, reqIsOwner } from "../utils/roleUtils";
 import {
   asyncHandler,
   createError,
@@ -50,7 +51,7 @@ router.post(
   async (req: AuthenticatedRequest, res, next) => {
     try {
       // Check if user is admin/moderator
-      const { data: userProfile } = await supabase
+      const { data: userProfile } = await supabaseAdmin
         .from("user_profiles")
         .select("role, forum_role")
         .eq("id", req.user!.id)
@@ -64,7 +65,7 @@ router.post(
         return next(createError("Insufficient permissions", 403));
       }
 
-      const { data: category, error } = await supabase
+      const { data: category, error } = await supabaseAdmin
         .from("forum_categories")
         .insert([req.body])
         .select()
@@ -81,6 +82,178 @@ router.post(
         success: true,
         data: category,
         message: "Category created successfully",
+      });
+    } catch (error) {
+      next(createError("Internal server error", 500));
+    }
+  }
+);
+
+// PUT /api/forum/categories/:id - Update category (Admin only)
+router.put(
+  "/categories/:id",
+  (req, res, next) => {
+    console.log("🚀 PUT /categories/:id route matched! ID:", req.params.id);
+    next();
+  },
+  authenticateToken,
+  validate(forumSchemas.updateCategory),
+  async (req: AuthenticatedRequest, res, next) => {
+    console.log("🚀 PUT /categories/:id endpoint reached!");
+    try {
+      const { id } = req.params;
+
+      // Check if user is admin/moderator
+      console.log("🔍 Checking permissions for user:", req.user!.id);
+      const { data: userProfile, error: profileError } = await supabaseAdmin
+        .from("user_profiles")
+        .select("role, forum_role")
+        .eq("id", req.user!.id)
+        .single();
+
+      console.log("👤 User profile:", userProfile);
+      console.log("❌ Profile error:", profileError);
+
+      if (
+        !userProfile ||
+        (!["admin", "moderator"].includes(userProfile.role) &&
+          !["admin", "moderator"].includes(userProfile.forum_role))
+      ) {
+        console.log("🚫 Authorization failed - insufficient permissions");
+        return next(createError("Insufficient permissions", 403));
+      }
+
+      console.log("✅ Authorization passed");
+
+      // Check if category exists
+      const { data: existingCategory, error: fetchError } = await supabaseAdmin
+        .from("forum_categories")
+        .select("id")
+        .eq("id", id)
+        .single();
+
+      if (fetchError || !existingCategory) {
+        return next(createError("Category not found", 404));
+      }
+
+      const updateData = {
+        ...req.body,
+        updated_at: new Date().toISOString(),
+      };
+
+      console.log("📝 Update data:", updateData);
+
+      const { data: category, error } = await supabaseAdmin
+        .from("forum_categories")
+        .update(updateData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      console.log("📊 Update result - Category:", category);
+      console.log("❌ Update error:", error);
+
+      if (error) {
+        console.log("💥 Update failed with error:", error);
+        if (error.code === "23505") {
+          return next(validationError("Category name or slug already exists"));
+        }
+        return next(createError("Failed to update category", 500));
+      }
+
+      res.json({
+        success: true,
+        data: category,
+        message: "Category updated successfully",
+      });
+    } catch (error) {
+      next(createError("Internal server error", 500));
+    }
+  }
+);
+
+// DELETE /api/forum/categories/:id - Delete category (Admin only)
+router.delete(
+  "/categories/:id",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { id } = req.params;
+      const { force } = req.query;
+
+      // Check if user is admin/moderator
+      const { data: userProfile } = await supabaseAdmin
+        .from("user_profiles")
+        .select("role, forum_role")
+        .eq("id", req.user!.id)
+        .single();
+
+      if (
+        !userProfile ||
+        (!["admin", "moderator"].includes(userProfile.role) &&
+          !["admin", "moderator"].includes(userProfile.forum_role))
+      ) {
+        return next(createError("Insufficient permissions", 403));
+      }
+
+      // Check if category exists
+      const { data: existingCategory, error: fetchError } = await supabaseAdmin
+        .from("forum_categories")
+        .select("id, thread_count")
+        .eq("id", id)
+        .single();
+
+      if (fetchError || !existingCategory) {
+        return next(createError("Category not found", 404));
+      }
+
+      // Check if category has threads (unless force delete)
+      if (existingCategory.thread_count > 0 && force !== "true") {
+        return next(
+          createError(
+            "Cannot delete category with existing threads. Use force=true to override.",
+            400
+          )
+        );
+      }
+
+      // If force delete, first delete all threads in this category
+      if (force === "true" && existingCategory.thread_count > 0) {
+        // Get all threads in this category
+        const { data: threads } = await supabaseAdmin
+          .from("forum_threads")
+          .select("id")
+          .eq("category_id", id);
+
+        if (threads && threads.length > 0) {
+          const threadIds = threads.map((t) => t.id);
+
+          // Delete all replies in these threads
+          await supabaseAdmin
+            .from("forum_replies")
+            .delete()
+            .in("thread_id", threadIds);
+
+          // Delete all threads in this category
+          await supabaseAdmin
+            .from("forum_threads")
+            .delete()
+            .eq("category_id", id);
+        }
+      }
+
+      const { error } = await supabaseAdmin
+        .from("forum_categories")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        return next(createError("Failed to delete category", 500));
+      }
+
+      res.json({
+        success: true,
+        message: "Category deleted successfully",
       });
     } catch (error) {
       next(createError("Internal server error", 500));
@@ -427,20 +600,11 @@ router.put(
         return next(createError("Thread not found", 404));
       }
 
-      // Check permissions
-      const { data: userProfile } = await supabaseAdmin
-        .from("user_profiles")
-        .select("role, forum_role")
-        .eq("id", req.user!.id)
-        .single();
+      // Check permissions using cached role
+      const isAuthor = reqIsOwner(req as any, thread.author_id);
+      const isAdminOrMod = reqIsModerator(req as any);
 
-      const isAuthor = thread.author_id === req.user!.id;
-      const isAdmin =
-        userProfile &&
-        (["admin", "moderator"].includes(userProfile.role) ||
-          ["admin", "moderator"].includes(userProfile.forum_role));
-
-      if (!isAuthor && !isAdmin) {
+      if (!isAuthor && !isAdminOrMod) {
         return next(createError("Insufficient permissions", 403));
       }
 
@@ -485,20 +649,11 @@ router.delete(
         return next(createError("Thread not found", 404));
       }
 
-      // Check permissions
-      const { data: userProfile } = await supabaseAdmin
-        .from("user_profiles")
-        .select("role, forum_role")
-        .eq("id", req.user!.id)
-        .single();
+      // Check permissions using cached role
+      const isAuthor = reqIsOwner(req as any, thread.author_id);
+      const isAdminOrMod = reqIsModerator(req as any);
 
-      const isAuthor = thread.author_id === req.user!.id;
-      const isAdmin =
-        userProfile &&
-        (["admin", "moderator"].includes(userProfile.role) ||
-          ["admin", "moderator"].includes(userProfile.forum_role));
-
-      if (!isAuthor && !isAdmin) {
+      if (!isAuthor && !isAdminOrMod) {
         return next(createError("Insufficient permissions", 403));
       }
 
@@ -607,7 +762,7 @@ router.put(
       const { id } = req.params;
 
       // Check if reply exists and get author
-      const { data: reply, error: fetchError } = await supabase
+      const { data: reply, error: fetchError } = await supabaseAdmin
         .from("forum_replies")
         .select("author_id")
         .eq("id", id)
@@ -617,24 +772,15 @@ router.put(
         return next(createError("Reply not found", 404));
       }
 
-      // Check permissions
-      const { data: userProfile } = await supabase
-        .from("user_profiles")
-        .select("role, forum_role")
-        .eq("id", req.user!.id)
-        .single();
+      // Check permissions using cached role
+      const isAuthor = reqIsOwner(req as any, reply.author_id);
+      const isAdminOrMod = reqIsModerator(req as any);
 
-      const isAuthor = reply.author_id === req.user!.id;
-      const isAdmin =
-        userProfile &&
-        (["admin", "moderator"].includes(userProfile.role) ||
-          ["admin", "moderator"].includes(userProfile.forum_role));
-
-      if (!isAuthor && !isAdmin) {
+      if (!isAuthor && !isAdminOrMod) {
         return next(createError("Insufficient permissions", 403));
       }
 
-      const { data: updatedReply, error } = await supabase
+      const { data: updatedReply, error } = await supabaseAdmin
         .from("forum_replies")
         .update(req.body)
         .eq("id", id)
@@ -665,7 +811,7 @@ router.delete(
       const { id } = req.params;
 
       // Check if reply exists and get author
-      const { data: reply, error: fetchError } = await supabase
+      const { data: reply, error: fetchError } = await supabaseAdmin
         .from("forum_replies")
         .select("author_id")
         .eq("id", id)
@@ -675,25 +821,16 @@ router.delete(
         return next(createError("Reply not found", 404));
       }
 
-      // Check permissions
-      const { data: userProfile } = await supabase
-        .from("user_profiles")
-        .select("role, forum_role")
-        .eq("id", req.user!.id)
-        .single();
+      // Check permissions using cached role
+      const isAuthor = reqIsOwner(req as any, reply.author_id);
+      const isAdminOrMod = reqIsModerator(req as any);
 
-      const isAuthor = reply.author_id === req.user!.id;
-      const isAdmin =
-        userProfile &&
-        (["admin", "moderator"].includes(userProfile.role) ||
-          ["admin", "moderator"].includes(userProfile.forum_role));
-
-      if (!isAuthor && !isAdmin) {
+      if (!isAuthor && !isAdminOrMod) {
         return next(createError("Insufficient permissions", 403));
       }
 
       // Soft delete by setting is_deleted = true
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from("forum_replies")
         .update({ is_deleted: true })
         .eq("id", id);
@@ -726,23 +863,14 @@ router.post(
       const { id } = req.params;
       const { action, reason } = req.body;
 
-      // Check if user is admin/moderator
-      const { data: userProfile } = await supabase
-        .from("user_profiles")
-        .select("role, forum_role")
-        .eq("id", req.user!.id)
-        .single();
-
-      if (
-        !userProfile ||
-        (!["admin", "moderator"].includes(userProfile.role) &&
-          !["admin", "moderator"].includes(userProfile.forum_role))
-      ) {
+      // Check if user is admin/moderator by cached role (global auth)
+      const isAdminOrMod = reqIsModerator(req as any);
+      if (!isAdminOrMod) {
         return next(createError("Insufficient permissions", 403));
       }
 
       // Check if thread exists
-      const { data: thread, error: fetchError } = await supabase
+      const { data: thread, error: fetchError } = await supabaseAdmin
         .from("forum_threads")
         .select("*")
         .eq("id", id)
@@ -777,7 +905,7 @@ router.post(
           return next(validationError("Invalid moderation action"));
       }
 
-      const { data: updatedThread, error } = await supabase
+      const { data: updatedThread, error } = await supabaseAdmin
         .from("forum_threads")
         .update(updateData)
         .eq("id", id)

@@ -167,9 +167,23 @@ export const useAuthStore = create<AuthStore>()(
             ? transformApiSession(response.data.session)
             : null;
 
+          // Also fetch the user profile to get role information
+          let userProfile = null;
+          if (session?.accessToken) {
+            try {
+              const profileResponse = await authService.getProfile(
+                session.accessToken
+              );
+              userProfile = profileResponse.data.profile;
+            } catch (profileError) {
+              console.error("Failed to fetch user profile:", profileError);
+            }
+          }
+
           set({
             user,
             session,
+            userProfile,
             isAuthenticated: true,
             isLoading: false,
           });

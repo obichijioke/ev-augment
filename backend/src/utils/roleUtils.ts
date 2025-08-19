@@ -20,7 +20,7 @@ export const FORUM_PERMISSIONS = {
   DELETE_OWN_POSTS: "delete_own_posts",
   VOTE: "vote",
   REPORT: "report",
-  
+
   // Moderation permissions
   MODERATE_POSTS: "moderate_posts",
   MODERATE_REPLIES: "moderate_replies",
@@ -29,7 +29,7 @@ export const FORUM_PERMISSIONS = {
   FEATURE_POSTS: "feature_posts",
   DELETE_ANY_POSTS: "delete_any_posts",
   EDIT_ANY_POSTS: "edit_any_posts",
-  
+
   // Admin permissions
   MANAGE_CATEGORIES: "manage_categories",
   MANAGE_USERS: "manage_users",
@@ -38,7 +38,8 @@ export const FORUM_PERMISSIONS = {
   BAN_USERS: "ban_users",
 } as const;
 
-export type ForumPermission = typeof FORUM_PERMISSIONS[keyof typeof FORUM_PERMISSIONS];
+export type ForumPermission =
+  (typeof FORUM_PERMISSIONS)[keyof typeof FORUM_PERMISSIONS];
 
 // Default permissions for each role
 export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, ForumPermission[]> = {
@@ -106,7 +107,10 @@ export function hasPermission(
 /**
  * Check if a user has a role with sufficient hierarchy level
  */
-export function hasRoleLevel(userRole: string | undefined, minimumRole: UserRole): boolean {
+export function hasRoleLevel(
+  userRole: string | undefined,
+  minimumRole: UserRole
+): boolean {
   if (!userRole || !(userRole in ROLE_HIERARCHY)) {
     return false;
   }
@@ -124,11 +128,12 @@ export function getEffectivePermissions(
   userRole: string | undefined,
   userPermissions: string[] = []
 ): ForumPermission[] {
-  const rolePermissions = userRole && userRole in DEFAULT_ROLE_PERMISSIONS
-    ? DEFAULT_ROLE_PERMISSIONS[userRole as UserRole]
-    : [];
+  const rolePermissions =
+    userRole && userRole in DEFAULT_ROLE_PERMISSIONS
+      ? DEFAULT_ROLE_PERMISSIONS[userRole as UserRole]
+      : [];
 
-  const customPermissions = userPermissions.filter(p => 
+  const customPermissions = userPermissions.filter((p) =>
     Object.values(FORUM_PERMISSIONS).includes(p as ForumPermission)
   ) as ForumPermission[];
 
@@ -139,9 +144,18 @@ export function getEffectivePermissions(
 /**
  * Check if user can moderate content
  */
-export function canModerate(userRole: string | undefined, userPermissions: string[] = []): boolean {
-  return hasPermission(userRole, userPermissions, FORUM_PERMISSIONS.MODERATE_POSTS) ||
-         hasPermission(userRole, userPermissions, FORUM_PERMISSIONS.MODERATE_REPLIES);
+export function canModerate(
+  userRole: string | undefined,
+  userPermissions: string[] = []
+): boolean {
+  return (
+    hasPermission(
+      userRole,
+      userPermissions,
+      FORUM_PERMISSIONS.MODERATE_POSTS
+    ) ||
+    hasPermission(userRole, userPermissions, FORUM_PERMISSIONS.MODERATE_REPLIES)
+  );
 }
 
 /**
@@ -230,4 +244,24 @@ export function canAssignRole(
   }
 
   return assignerLevel > targetLevel;
+}
+
+// Lightweight helpers for requests to use cached role on req
+export function reqIsAdmin(req: { userRole?: string }): boolean {
+  return req?.userRole === "admin";
+}
+
+export function reqIsModerator(req: { userRole?: string }): boolean {
+  const role = req?.userRole || "";
+  return role === "moderator" || role === "admin";
+}
+
+// Ownership helper using cached req.user or req.userId
+export function reqIsOwner(
+  req: { user?: { id?: string } } & { userId?: string },
+  ownerId: string | null | undefined
+): boolean {
+  if (!ownerId) return false;
+  const id = (req as any).user?.id || (req as any).userId;
+  return !!id && id === ownerId;
 }

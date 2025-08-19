@@ -16,6 +16,8 @@ import {
   forbiddenError,
   createError,
 } from "../middleware/errorHandler";
+import { reqIsOwner, reqIsModerator } from "../utils/roleUtils";
+
 import {
   authenticateToken,
   optionalAuth,
@@ -184,11 +186,10 @@ router.get(
     }
 
     // Check if user can view this vehicle
-    const isOwner = req.user && req.user.id === vehicle.owner_id;
-    const isAdmin =
-      req.user && (req.user.role === "admin" || req.user.role === "moderator");
+    const isOwner = reqIsOwner(req as any, vehicle.owner_id);
+    const isAdminOrMod = reqIsModerator(req as any);
 
-    if (!vehicle.is_public && !isOwner && !isAdmin) {
+    if (!vehicle.is_public && !isOwner && !isAdminOrMod) {
       throw forbiddenError("This vehicle is private");
     }
 

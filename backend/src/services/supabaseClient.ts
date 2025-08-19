@@ -176,17 +176,30 @@ const getUserFromToken = async (
   token: string
 ): Promise<{ user?: User; error?: string }> => {
   try {
+    if (process.env.NODE_ENV === "development") {
+      console.log("🔍 Verifying token with Supabase");
+    }
+
     const {
       data: { user },
       error,
     } = await supabase.auth.getUser(token);
 
+    console.log("📊 Supabase response - User:", user ? "Found" : "Not found");
+    console.log("📊 Supabase response - Error:", error);
+
     if (error || !user) {
+      console.log(
+        "❌ Token verification failed:",
+        error?.message || "No user found"
+      );
       return { error: "Invalid token" };
     }
 
+    console.log("✅ Token verification successful for user:", user.id);
     return { user };
   } catch (error) {
+    console.log("💥 Exception in getUserFromToken:", error);
     return { error: "Token verification failed" };
   }
 };

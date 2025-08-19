@@ -26,6 +26,7 @@ import {
   PaginatedResponse,
 } from "../types/database";
 import { toString, toNumber } from "../utils/typeUtils";
+import { reqIsModerator, reqIsOwner } from "../utils/roleUtils";
 
 // TypeScript interfaces removed to fix compilation errors
 
@@ -77,10 +78,8 @@ router.get(
       )
       .range(from, to);
 
-    // Only show published posts for non-moderators
-    const userRole =
-      req.user?.user_metadata?.role || req.user?.app_metadata?.role;
-    const isModerator = req.user && ["admin", "moderator"].includes(userRole);
+    // Only show published posts for non-moderators (cached role)
+    const isModerator = reqIsModerator(req as any);
     if (!isModerator) {
       query = query.eq("status", "published");
     } else if (status) {
@@ -230,10 +229,8 @@ router.get(
       throw notFoundError("Blog post");
     }
 
-    // Check if user can view this post
-    const userRole =
-      req.user?.user_metadata?.role || req.user?.app_metadata?.role;
-    const isModerator = req.user && ["admin", "moderator"].includes(userRole);
+    // Check if user can view this post (cached role)
+    const isModerator = reqIsModerator(req as any);
     const isAuthor = req.user && (req.user as any).id === post.author_id;
 
     if (post.status !== "published" && !isModerator && !isAuthor) {
@@ -315,22 +312,11 @@ router.put(
     }
 
     // Check permissions (author or moderator)
-    const isAuthor = existingPost.author_id === (req.user as any).id;
+    const isAuthor = reqIsOwner(req as any, existingPost.author_id);
 
-    // Get user role from user_profiles table
-    const { data: userProfile, error: profileError } = await supabaseAdmin
-      .from("user_profiles")
-      .select("role")
-      .eq("id", (req.user as any).id)
-      .single();
-
-    if (profileError) {
-      console.error("Error fetching user profile:", profileError);
-      throw forbiddenError("Unable to verify user permissions");
-    }
-
-    const userRole = userProfile?.role || "user";
-    const isModerator = ["admin", "moderator"].includes(userRole);
+    // Use cached user role
+    const userRole = ((req as any).userRole as string) || "user";
+    const isModerator = reqIsModerator(req as any);
 
     // Debug logging
     console.log("Blog edit permission check:", {
@@ -422,22 +408,11 @@ router.delete(
     }
 
     // Check permissions (author or moderator)
-    const isAuthor = existingPost.author_id === (req.user as any).id;
+    const isAuthor = reqIsOwner(req as any, existingPost.author_id);
 
-    // Get user role from user_profiles table
-    const { data: userProfile, error: profileError } = await supabaseAdmin
-      .from("user_profiles")
-      .select("role")
-      .eq("id", (req.user as any).id)
-      .single();
-
-    if (profileError) {
-      console.error("Error fetching user profile:", profileError);
-      throw forbiddenError("Unable to verify user permissions");
-    }
-
-    const userRole = userProfile?.role || "user";
-    const isModerator = ["admin", "moderator"].includes(userRole);
+    // Use cached user role
+    const userRole = ((req as any).userRole as string) || "user";
+    const isModerator = reqIsModerator(req as any);
 
     if (!isAuthor && !isModerator) {
       throw forbiddenError("You can only delete your own posts");
@@ -488,10 +463,8 @@ router.get(
       throw notFoundError("Blog post");
     }
 
-    // Check if user can view this post
-    const userRole =
-      req.user?.user_metadata?.role || req.user?.app_metadata?.role;
-    const isModerator = req.user && ["admin", "moderator"].includes(userRole);
+    // Check if user can view this post (cached role)
+    const isModerator = reqIsModerator(req as any);
     const isAuthor = req.user && (req.user as any).id === post.author_id;
 
     if (post.status !== "published" && !isModerator && !isAuthor) {
@@ -699,11 +672,9 @@ router.put(
       throw notFoundError("Blog comment");
     }
 
-    // Check permissions (author or moderator)
-    const isAuthor = existingComment.author_id === (req.user as any).id;
-    const userRole =
-      req.user.user_metadata?.role || req.user.app_metadata?.role;
-    const isModerator = ["admin", "moderator"].includes(userRole);
+    // Check permissions (author or moderator) using cached role
+    const isAuthor = reqIsOwner(req as any, existingComment.author_id);
+    const isModerator = reqIsModerator(req as any);
 
     if (!isAuthor && !isModerator) {
       throw forbiddenError("You can only edit your own comments");
@@ -770,22 +741,11 @@ router.delete(
     }
 
     // Check permissions (author or moderator)
-    const isAuthor = existingComment.author_id === (req.user as any).id;
+    const isAuthor = reqIsOwner(req as any, existingComment.author_id);
 
-    // Get user role from user_profiles table
-    const { data: userProfile, error: profileError } = await supabaseAdmin
-      .from("user_profiles")
-      .select("role")
-      .eq("id", (req.user as any).id)
-      .single();
-
-    if (profileError) {
-      console.error("Error fetching user profile:", profileError);
-      throw forbiddenError("Unable to verify user permissions");
-    }
-
-    const userRole = userProfile?.role || "user";
-    const isModerator = ["admin", "moderator"].includes(userRole);
+    // Use cached user role
+    const userRole = ((req as any).userRole as string) || "user";
+    const isModerator = reqIsModerator(req as any);
 
     if (!isAuthor && !isModerator) {
       throw forbiddenError("You can only delete your own comments");
