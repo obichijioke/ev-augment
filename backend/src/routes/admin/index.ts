@@ -8,6 +8,7 @@ import analytics from "./analytics";
 import settings from "./settings";
 import logs from "./logs";
 import blog from "./blog";
+import vehicleListings from "./vehicleListings";
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use(analytics);
 router.use(settings);
 router.use(logs);
 router.use(blog);
+router.use("/vehicle-listings", vehicleListings);
 
 export default router;

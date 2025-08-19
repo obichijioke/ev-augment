@@ -34,7 +34,6 @@ import likeRoutes from "./routes/likes";
 // import messageRoutes from "./routes/messages";
 // import notificationRoutes from "./routes/notifications";
 import adminV2Routes from "./routes/admin/index";
-import adminVehicleListingRoutes from "./routes/adminVehicleListings";
 import reviewRoutes from "./routes/reviews";
 // import searchRoutes from "./routes/search";
 import uploadRoutes from "./routes/upload";
@@ -188,7 +187,6 @@ app.use("/api/blog", blogRoutes);
 app.use("/api/likes", likeRoutes);
 // app.use("/api/messages", messageRoutes);
 // app.use("/api/notifications", notificationRoutes);
-app.use("/api/admin/vehicle-listings", adminVehicleListingRoutes);
 app.use("/api/admin", adminV2Routes);
 app.use("/api/reviews", reviewRoutes);
 // app.use("/api/search", searchRoutes);
@@ -217,8 +215,6 @@ app.get("/api", (req: Request, res: Response) => {
       likes: "/api/likes - Content likes and reactions",
       upload: "/api/upload - File upload management",
       admin: "/api/admin - Administrative functions",
-      adminVehicleListings:
-        "/api/admin/vehicle-listings - Admin vehicle listings",
     },
     endpoints: {
       health: "/health - Health check",

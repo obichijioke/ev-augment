@@ -37,10 +37,11 @@ const vehicleListingSchema = Joi.object({
     .max(new Date().getFullYear() + 5)
     .required(),
   trim: Joi.string().max(100).optional(),
-  starting_price: Joi.number().precision(2).optional(),
-  max_price: Joi.number().precision(2).optional(),
+  msrp_base: Joi.number().precision(2).optional(),
+  msrp_max: Joi.number().precision(2).optional(),
   availability_status: Joi.string().max(50).optional(),
-  images: Joi.array().items(Joi.string()).optional(),
+  primary_image_url: Joi.string().uri().optional(),
+  image_urls: Joi.array().items(Joi.string()).optional(),
   description: Joi.string().optional(),
   key_features: Joi.array().items(Joi.string()).optional(),
 
@@ -159,13 +160,44 @@ router.post(
       environmentalSpecs,
       features,
       ...listingData
-    } = req.body;
+    } = req.body as any;
+
+    // Backward compatibility: map `images` -> primary_image_url + image_urls if provided
+    const listingDataMapped: any = { ...listingData };
+    if (Array.isArray((req.body as any).images)) {
+      const arr = ((req.body as any).images as string[]).filter(
+        (u) => !!u && u.trim() !== ""
+      );
+      if (arr.length > 0) {
+        if (!listingDataMapped.primary_image_url)
+          listingDataMapped.primary_image_url = arr[0];
+        if (!listingDataMapped.image_urls)
+          listingDataMapped.image_urls = arr.slice(1);
+      }
+      delete listingDataMapped.images;
+    }
+
+    // Coerce numeric MSRP if sent as strings
+    if (
+      listingDataMapped.msrp_base !== undefined &&
+      typeof listingDataMapped.msrp_base === "string"
+    ) {
+      const n = parseFloat(listingDataMapped.msrp_base);
+      if (!Number.isNaN(n)) listingDataMapped.msrp_base = n;
+    }
+    if (
+      listingDataMapped.msrp_max !== undefined &&
+      typeof listingDataMapped.msrp_max === "string"
+    ) {
+      const n = parseFloat(listingDataMapped.msrp_max);
+      if (!Number.isNaN(n)) listingDataMapped.msrp_max = n;
+    }
 
     // Start a transaction to create the listing and all related specs
     const { data: listing, error: listingError } = await supabaseAdmin
       .from("vehicle_listings")
       .insert({
-        ...listingData,
+        ...listingDataMapped,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -309,13 +341,44 @@ router.put(
       environmentalSpecs,
       features,
       ...listingData
-    } = req.body;
+    } = req.body as any;
+
+    // Backward compatibility: map `images` -> primary_image_url + image_urls if provided
+    const listingDataMapped: any = { ...listingData };
+    if (Array.isArray((req.body as any).images)) {
+      const arr = ((req.body as any).images as string[]).filter(
+        (u) => !!u && u.trim() !== ""
+      );
+      if (arr.length > 0) {
+        if (!listingDataMapped.primary_image_url)
+          listingDataMapped.primary_image_url = arr[0];
+        if (!listingDataMapped.image_urls)
+          listingDataMapped.image_urls = arr.slice(1);
+      }
+      delete listingDataMapped.images;
+    }
+
+    // Coerce numeric MSRP if sent as strings
+    if (
+      listingDataMapped.msrp_base !== undefined &&
+      typeof listingDataMapped.msrp_base === "string"
+    ) {
+      const n = parseFloat(listingDataMapped.msrp_base);
+      if (!Number.isNaN(n)) listingDataMapped.msrp_base = n;
+    }
+    if (
+      listingDataMapped.msrp_max !== undefined &&
+      typeof listingDataMapped.msrp_max === "string"
+    ) {
+      const n = parseFloat(listingDataMapped.msrp_max);
+      if (!Number.isNaN(n)) listingDataMapped.msrp_max = n;
+    }
 
     // Update the main listing
     const { data: listing, error: listingError } = await supabaseAdmin
       .from("vehicle_listings")
       .update({
-        ...listingData,
+        ...listingDataMapped,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -323,7 +386,15 @@ router.put(
       .single();
 
     if (listingError) {
-      throw notFoundError("Vehicle listing");
+      const code = (listingError as any)?.code;
+      if (code === "PGRST116") {
+        throw notFoundError("Vehicle listing");
+      }
+      throw createError(
+        `Failed to update vehicle listing: ${listingError.message}`,
+        400,
+        "UPDATE_LISTING_FAILED"
+      );
     }
 
     // Update performance specs if provided
@@ -649,7 +720,7 @@ const upload = multer({
 
 /**
  * CSV format (header row required):
- * model_id,year,trim,starting_price,max_price,availability_status,description,is_featured,is_active
+ * model_id,year,trim,msrp_base,msrp_max,availability_status,description,is_featured,is_active
  */
 router.post(
   "/bulk-upload",
@@ -670,8 +741,8 @@ router.post(
       "model_id",
       "year",
       "trim",
-      "starting_price",
-      "max_price",
+      "msrp_base",
+      "msrp_max",
       "availability_status",
       "description",
       "is_featured",
@@ -694,8 +765,8 @@ router.post(
       const model_id = cols[idx.model_id]?.trim();
       const yearStr = cols[idx.year]?.trim();
       const trim = cols[idx.trim]?.trim();
-      const starting_price = cols[idx.starting_price]?.trim();
-      const max_price = cols[idx.max_price]?.trim();
+      const msrp_base = cols[idx.msrp_base]?.trim();
+      const msrp_max = cols[idx.msrp_max]?.trim();
       const availability_status = cols[idx.availability_status]?.trim();
       const description = cols[idx.description]?.trim();
       const is_featured =
@@ -711,8 +782,8 @@ router.post(
         model_id,
         year,
         trim: trim || null,
-        starting_price: starting_price ? parseFloat(starting_price) : null,
-        max_price: max_price ? parseFloat(max_price) : null,
+        msrp_base: msrp_base ? parseFloat(msrp_base) : null,
+        msrp_max: msrp_max ? parseFloat(msrp_max) : null,
         availability_status: availability_status || null,
         description: description || null,
         is_featured,

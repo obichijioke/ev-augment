@@ -5,6 +5,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/useToast";
 import { adminApi } from "@/services/adminApi";
 import { useUserRole } from "@/hooks/useUserRole";
+import VehicleManagementForm from "@/components/admin/VehicleManagementForm";
+import { fetchVehicleDetails } from "@/services/vehicleApi";
 
 // helper fetchers for dropdowns
 async function fetchManufacturers() {
@@ -58,6 +60,11 @@ export default function AdminEvListingsPage() {
   const [models, setModels] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkStatus, setBulkStatus] = useState<string>("");
+
+  // Create/Edit form state
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editingFull, setEditingFull] = useState<any | null>(null);
 
   // initialize from URL
   useEffect(() => {
@@ -171,6 +178,17 @@ export default function AdminEvListingsPage() {
     filters.sortOrder,
   ]);
 
+  // Prefill specs for editing
+  useEffect(() => {
+    if (!editing?.id) {
+      setEditingFull(null);
+      return;
+    }
+    fetchVehicleDetails(editing.id)
+      .then((res) => setEditingFull(res.data))
+      .catch(() => setEditingFull(editing));
+  }, [editing?.id]);
+
   const onToggleActive = async (id: string, current: boolean) => {
     try {
       await adminApi.updateEvListing(id, { is_active: !current });
@@ -227,6 +245,16 @@ export default function AdminEvListingsPage() {
             onClick={() => loadListings()}
           >
             Apply
+          </button>
+          <button
+            className="px-3 py-2 border border-gray-200 rounded-md text-sm"
+            onClick={() => {
+              setEditing(null);
+              setEditingFull(null);
+              setShowForm(true);
+            }}
+          >
+            New listing
           </button>
         </div>
       </div>
@@ -538,6 +566,15 @@ export default function AdminEvListingsPage() {
                       </button>
                       <button
                         className="text-xs px-2 py-1 border border-gray-200 rounded-md"
+                        onClick={() => {
+                          setEditing(l);
+                          setShowForm(true);
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="text-xs px-2 py-1 border border-gray-200 rounded-md"
                         onClick={() => onDelete(l.id)}
                       >
                         Delete
@@ -572,6 +609,37 @@ export default function AdminEvListingsPage() {
           </button>
         </div>
       </div>
+
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => {
+              setShowForm(false);
+              setEditing(null);
+              setEditingFull(null);
+            }}
+          />
+          {/* Modal content */}
+          <div className="relative z-10 w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-lg bg-white shadow-xl">
+            <VehicleManagementForm
+              vehicle={editingFull || editing || undefined}
+              onSuccess={() => {
+                setShowForm(false);
+                setEditing(null);
+                setEditingFull(null);
+                loadListings();
+              }}
+              onCancel={() => {
+                setShowForm(false);
+                setEditing(null);
+                setEditingFull(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

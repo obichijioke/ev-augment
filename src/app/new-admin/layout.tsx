@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   ListChecks,
   LayoutDashboard,
+  Car,
 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuthStore } from "@/store/authStore";
@@ -24,16 +25,11 @@ export default function NewAdminLayout({
 }) {
   const pathname = usePathname();
   const { role, isModeratorOrAdmin, isAdmin, isLoading } = useUserRole();
-  const { user, userProfile } = useAuthStore();
 
-  const fallbackRole = userProfile?.role || user?.role || null;
-  const hasAccess =
-    isModeratorOrAdmin ||
-    fallbackRole === "moderator" ||
-    fallbackRole === "admin";
+  const hasAccess = isModeratorOrAdmin;
 
-  // While determining role (either hook loading or no known role yet), show a spinner instead of denying
-  if (isLoading || (!hasAccess && role === null && !fallbackRole)) {
+  // While determining role, show a spinner
+  if (isLoading || role === null) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8">
         <div className="text-center max-w-md">
@@ -109,6 +105,7 @@ export default function NewAdminLayout({
           />
           <NavLink href="/new-admin/blog" label="Blog" icon={FileText} />
           <NavLink href="/new-admin/forum" label="Forum" icon={MessageSquare} />
+          <NavLink href="/new-admin/ev-listings" label="Vehicles" icon={Car} />
           <NavLink href="/new-admin/reports" label="Reports" icon={FileText} />
           <NavLink
             href="/new-admin/analytics"
