@@ -61,7 +61,7 @@ const ReplyList: React.FC<ReplyListProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             Replies ({replies.length})
           </h2>
           <MessageSquare className="h-5 w-5 text-gray-500" />
@@ -71,12 +71,14 @@ const ReplyList: React.FC<ReplyListProps> = ({
           {/* Sort Options */}
           {replies.length > 1 && (
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Sort:</span>
+              <span className="text-sm text-gray-600 dark:text-gray-300">
+                Sort:
+              </span>
               <button
                 onClick={() =>
                   setSortOrder(sortOrder === "oldest" ? "newest" : "oldest")
                 }
-                className="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 {sortOrder === "oldest" ? (
                   <>
@@ -120,12 +122,12 @@ const ReplyList: React.FC<ReplyListProps> = ({
 
       {/* Replies */}
       {replies.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-          <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <MessageSquare className="h-12 w-12 text-gray-400 dark:text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             No replies yet
           </h3>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 dark:text-gray-300 mb-4">
             {isLocked
               ? "This thread is locked and no new replies can be added."
               : "Be the first to reply to this thread!"}

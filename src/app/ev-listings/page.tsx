@@ -1,22 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Search,
-  Filter,
-  Grid,
-  List,
-  Heart,
-  Eye,
-  Zap,
-  Battery,
-  Clock,
-  DollarSign,
-  CheckSquare,
-  Square,
-  BarChart3,
-  Loader2,
-} from "lucide-react";
+import { Search, Grid, List, BarChart3, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { EV, VehicleListing, VehicleListingsQuery } from "@/types/vehicle";
 import { fetchVehicleListings, ApiError } from "@/services/vehicleApi";
@@ -26,7 +11,7 @@ const EVListingsPage = () => {
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVehicles, setSelectedVehicles] = useState<string[]>([]);
-  const [showComparison, setShowComparison] = useState(false);
+
   const [vehicles, setVehicles] = useState<(EV | VehicleListing)[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,13 +61,13 @@ const EVListingsPage = () => {
         setError("Failed to load vehicles. Please try again.");
       }
 
-      // Fallback to mock data for development
-      setVehicles(getMockVehicles());
+      // No fallback data - show empty state
+      setVehicles([]);
       setPagination({
         page: 1,
         limit: 20,
-        total: getMockVehicles().length,
-        totalPages: 1,
+        total: 0,
+        totalPages: 0,
         hasNext: false,
         hasPrev: false,
       });
@@ -94,7 +79,7 @@ const EVListingsPage = () => {
   // Load vehicles on component mount and when filters change
   useEffect(() => {
     loadVehicles();
-  }, [searchQuery, filters, pagination.page]);
+  }, [searchQuery, filters, pagination.page]); // loadVehicles is stable, doesn't need to be in deps
 
   // Helper function to extract filter data from either EV or VehicleListing
   const getVehicleFilterData = (vehicle: EV | VehicleListing) => {
@@ -118,124 +103,6 @@ const EVListingsPage = () => {
       };
     }
   };
-
-  // Mock data fallback for development
-  const getMockVehicles = (): EV[] => [
-    {
-      id: "1",
-      name: "Tesla Model 3",
-      brand: "Tesla",
-      year: 2024,
-      range: 358,
-      chargingSpeed: "250kW",
-      bodyType: "Sedan",
-      batteryCapacity: "75kWh",
-      motorPower: "283hp",
-      acceleration: "5.8s",
-      topSpeed: "140mph",
-      efficiency: "4.1 mi/kWh",
-      availability: "Available",
-      image:
-        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=Tesla%20Model%203%202024%20electric%20sedan%20side%20view%20modern%20design&image_size=landscape_16_9",
-      views: 3421,
-      likes: 156,
-    },
-    {
-      id: "2",
-      name: "BMW i4 M50",
-      brand: "BMW",
-      year: 2024,
-      range: 270,
-      chargingSpeed: "200kW",
-      bodyType: "Sedan",
-      batteryCapacity: "83.9kWh",
-      motorPower: "536hp",
-      acceleration: "3.7s",
-      topSpeed: "155mph",
-      efficiency: "3.2 mi/kWh",
-      availability: "Available",
-      image:
-        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=BMW%20i4%20M50%202024%20electric%20sedan%20sporty%20design%20side%20view&image_size=landscape_16_9",
-      views: 2156,
-      likes: 89,
-    },
-    {
-      id: "3",
-      name: "Audi e-tron GT",
-      brand: "Audi",
-      year: 2024,
-      range: 238,
-      chargingSpeed: "270kW",
-      bodyType: "Coupe",
-      batteryCapacity: "93.4kWh",
-      motorPower: "469hp",
-      acceleration: "3.9s",
-      topSpeed: "152mph",
-      efficiency: "2.5 mi/kWh",
-      availability: "Limited",
-      image:
-        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=Audi%20e-tron%20GT%202024%20electric%20coupe%20luxury%20design%20side%20view&image_size=landscape_16_9",
-      views: 1834,
-      likes: 124,
-    },
-    {
-      id: "4",
-      name: "Nissan Ariya",
-      brand: "Nissan",
-      year: 2024,
-      range: 304,
-      chargingSpeed: "130kW",
-      bodyType: "SUV",
-      batteryCapacity: "87kWh",
-      motorPower: "389hp",
-      acceleration: "5.1s",
-      topSpeed: "124mph",
-      efficiency: "3.5 mi/kWh",
-      availability: "Available",
-      image:
-        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=Nissan%20Ariya%202024%20electric%20SUV%20crossover%20modern%20design&image_size=landscape_16_9",
-      views: 1567,
-      likes: 67,
-    },
-    {
-      id: "5",
-      name: "Ford Mustang Mach-E",
-      brand: "Ford",
-      year: 2024,
-      range: 312,
-      chargingSpeed: "150kW",
-      bodyType: "SUV",
-      batteryCapacity: "88kWh",
-      motorPower: "346hp",
-      acceleration: "4.8s",
-      topSpeed: "124mph",
-      efficiency: "3.5 mi/kWh",
-      availability: "Available",
-      image:
-        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=Ford%20Mustang%20Mach-E%202024%20electric%20SUV%20sporty%20design&image_size=landscape_16_9",
-      views: 2234,
-      likes: 98,
-    },
-    {
-      id: "6",
-      name: "Lucid Air Dream",
-      brand: "Lucid",
-      year: 2024,
-      range: 516,
-      chargingSpeed: "300kW",
-      bodyType: "Sedan",
-      batteryCapacity: "118kWh",
-      motorPower: "1111hp",
-      acceleration: "2.5s",
-      topSpeed: "168mph",
-      efficiency: "4.4 mi/kWh",
-      availability: "Limited",
-      image:
-        "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=Lucid%20Air%20Dream%202024%20luxury%20electric%20sedan%20premium%20design&image_size=landscape_16_9",
-      views: 3456,
-      likes: 234,
-    },
-  ];
 
   const brands = ["all", "Tesla", "BMW", "Audi", "Nissan", "Ford", "Lucid"];
   const bodyTypes = ["all", "Sedan", "SUV", "Coupe", "Hatchback"];
@@ -298,14 +165,14 @@ const EVListingsPage = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
             Electric Vehicle Database
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             Explore and compare electric vehicles from all manufacturers. Browse
             specifications, features, and discover the perfect EV for your
             needs.
@@ -315,9 +182,11 @@ const EVListingsPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 sticky top-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Filters
+                </h2>
                 <button
                   onClick={() =>
                     setFilters({
@@ -328,7 +197,7 @@ const EVListingsPage = () => {
                       availability: "all",
                     })
                   }
-                  className="text-sm text-blue-600 hover:text-blue-700"
+                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                 >
                   Reset
                 </button>
@@ -337,7 +206,7 @@ const EVListingsPage = () => {
               <div className="space-y-6">
                 {/* Brand Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Brand
                   </label>
                   <select
@@ -345,7 +214,7 @@ const EVListingsPage = () => {
                     onChange={(e) =>
                       setFilters((prev) => ({ ...prev, brand: e.target.value }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     {brands.map((brand) => (
                       <option key={brand} value={brand}>
@@ -357,7 +226,7 @@ const EVListingsPage = () => {
 
                 {/* Range Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Range: {filters.range[0]} - {filters.range[1]} miles
                   </label>
                   <div className="space-y-2">
@@ -394,7 +263,7 @@ const EVListingsPage = () => {
 
                 {/* Body Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Body Type
                   </label>
                   <select
@@ -405,7 +274,7 @@ const EVListingsPage = () => {
                         bodyType: e.target.value,
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     {bodyTypes.map((type) => (
                       <option key={type} value={type}>
@@ -417,7 +286,7 @@ const EVListingsPage = () => {
 
                 {/* Year */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Year
                   </label>
                   <select
@@ -425,7 +294,7 @@ const EVListingsPage = () => {
                     onChange={(e) =>
                       setFilters((prev) => ({ ...prev, year: e.target.value }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     {years.map((year) => (
                       <option key={year} value={year}>
@@ -437,7 +306,7 @@ const EVListingsPage = () => {
 
                 {/* Availability */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Availability
                   </label>
                   <select
@@ -448,7 +317,7 @@ const EVListingsPage = () => {
                         availability: e.target.value,
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     {availabilityOptions.map((option) => (
                       <option key={option} value={option}>
@@ -464,7 +333,7 @@ const EVListingsPage = () => {
           {/* Main Content */}
           <div className="lg:col-span-3">
             {/* Search and View Controls */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
               <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -473,7 +342,7 @@ const EVListingsPage = () => {
                     placeholder="Search vehicles..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
                 </div>
                 <div className="flex items-center space-x-4">

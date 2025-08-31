@@ -79,27 +79,27 @@ const ForumsPage: React.FC = () => {
                 placeholder="Search categories..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
 
             {/* Forum Stats */}
             <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
                 <MessageSquare className="h-4 w-4" />
                 <span className="font-medium">
                   {totalThreads.toLocaleString()}
                 </span>
                 <span>threads</span>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
                 <Users className="h-4 w-4" />
                 <span className="font-medium">
                   {totalPosts.toLocaleString()}
                 </span>
                 <span>posts</span>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
                 <Activity className="h-4 w-4" />
                 <span className="font-medium">{categories.length}</span>
                 <span>categories</span>
@@ -126,10 +126,10 @@ const ForumsPage: React.FC = () => {
             {filteredCategories.length === 0 && searchQuery && (
               <div className="text-center py-12">
                 <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   No categories found
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-300">
                   Try adjusting your search terms or{" "}
                   <button
                     onClick={() => setSearchQuery("")}
@@ -142,18 +142,18 @@ const ForumsPage: React.FC = () => {
             )}
 
             {/* Quick Actions */}
-            <div className="mt-12 bg-blue-50 rounded-lg p-6">
+            <div className="mt-12 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                     New to the community?
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-gray-300">
                     Start by introducing yourself or asking your first question!
                   </p>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <button className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+                  <button className="px-4 py-2 text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                     Community Guidelines
                   </button>
                 </div>

@@ -398,10 +398,10 @@ const BlogEditPage = () => {
   // Loading state
   if (isLoadingPost) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading post...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading post...</p>
         </div>
       </div>
     );
@@ -410,12 +410,12 @@ const BlogEditPage = () => {
   // Error state
   if (postError || !post) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             Post Not Found
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             The blog post you're trying to edit doesn't exist.
           </p>
           <Link href="/blog" className="btn-primary">
@@ -432,7 +432,7 @@ const BlogEditPage = () => {
       requireBlogEdit={true}
       postAuthorId={post.authorId}
     >
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Draft Recovery */}
           {showDraftRecovery && (
@@ -458,7 +458,7 @@ const BlogEditPage = () => {
           <div className="mb-8">
             <Link
               href={`/blog/${post.slug}`}
-              className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4 transition-colors"
+              className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mb-4 transition-colors"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Post
@@ -466,10 +466,10 @@ const BlogEditPage = () => {
 
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                   Edit Blog Post
                 </h1>
-                <p className="text-gray-600 mt-2">
+                <p className="text-gray-600 dark:text-gray-300 mt-2">
                   Update your blog post content and settings
                 </p>
               </div>
@@ -499,9 +499,11 @@ const BlogEditPage = () => {
 
           {/* Error Display */}
           {updateError && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
-              <AlertCircle className="h-5 w-5 text-red-500 mr-3 flex-shrink-0" />
-              <p className="text-sm text-red-700">{updateError}</p>
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-500 dark:text-red-400 mr-3 flex-shrink-0" />
+              <p className="text-sm text-red-700 dark:text-red-300">
+                {updateError}
+              </p>
             </div>
           )}
 
@@ -509,10 +511,10 @@ const BlogEditPage = () => {
             {/* Edit Form */}
             <div className="xl:col-span-2 space-y-6">
               {/* Basic Information */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-center mb-6">
                   <FileText className="h-5 w-5 text-gray-400 mr-2" />
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     Basic Information
                   </h2>
                 </div>
@@ -522,7 +524,7 @@ const BlogEditPage = () => {
                   <div>
                     <label
                       htmlFor="title"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                     >
                       Title *
                     </label>
@@ -532,10 +534,10 @@ const BlogEditPage = () => {
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
                         validationErrors.title
-                          ? "border-red-300 bg-red-50"
-                          : "border-gray-300"
+                          ? "border-red-300 bg-red-50 dark:bg-red-900/20"
+                          : "border-gray-300 dark:border-gray-600"
                       }`}
                       placeholder="Enter blog post title"
                       required
@@ -546,7 +548,7 @@ const BlogEditPage = () => {
                         {validationErrors.title}
                       </p>
                     )}
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       {formData.title.length}/200 characters
                     </p>
                   </div>
@@ -555,7 +557,7 @@ const BlogEditPage = () => {
                   <div>
                     <label
                       htmlFor="excerpt"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                     >
                       Excerpt
                     </label>
@@ -565,10 +567,10 @@ const BlogEditPage = () => {
                       value={formData.excerpt}
                       onChange={handleInputChange}
                       rows={3}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
                         validationErrors.excerpt
-                          ? "border-red-300 bg-red-50"
-                          : "border-gray-300"
+                          ? "border-red-300 bg-red-50 dark:bg-red-900/20"
+                          : "border-gray-300 dark:border-gray-600"
                       }`}
                       placeholder="Brief description of your post (optional)"
                     />
@@ -578,7 +580,7 @@ const BlogEditPage = () => {
                         {validationErrors.excerpt}
                       </p>
                     )}
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       {formData.excerpt.length}/300 characters
                     </p>
                   </div>
@@ -586,21 +588,21 @@ const BlogEditPage = () => {
               </div>
 
               {/* Content Editor */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-center mb-4">
                   <Code className="h-5 w-5 text-gray-400 mr-2" />
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     Content
                   </h2>
                 </div>
 
                 {/* Markdown Toolbar */}
-                <div className="border border-gray-200 rounded-t-lg p-3 bg-gray-50">
+                <div className="border border-gray-200 dark:border-gray-700 rounded-t-lg p-3 bg-gray-50 dark:bg-gray-700/30">
                   <div className="flex items-center space-x-1 flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => insertMarkdown("bold")}
-                      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
                       title="Bold"
                     >
                       <Bold className="h-4 w-4" />
@@ -608,7 +610,7 @@ const BlogEditPage = () => {
                     <button
                       type="button"
                       onClick={() => insertMarkdown("italic")}
-                      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
                       title="Italic"
                     >
                       <Italic className="h-4 w-4" />
@@ -616,16 +618,16 @@ const BlogEditPage = () => {
                     <button
                       type="button"
                       onClick={() => insertMarkdown("code")}
-                      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
                       title="Code"
                     >
                       <Code className="h-4 w-4" />
                     </button>
-                    <div className="w-px h-6 bg-gray-300"></div>
+                    <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
                     <button
                       type="button"
                       onClick={() => insertMarkdown("heading")}
-                      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
                       title="Heading"
                     >
                       <span className="text-sm font-bold">H</span>
@@ -633,16 +635,16 @@ const BlogEditPage = () => {
                     <button
                       type="button"
                       onClick={() => insertMarkdown("quote")}
-                      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
                       title="Quote"
                     >
                       <Quote className="h-4 w-4" />
                     </button>
-                    <div className="w-px h-6 bg-gray-300"></div>
+                    <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
                     <button
                       type="button"
                       onClick={() => insertMarkdown("list")}
-                      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
                       title="Bullet List"
                     >
                       <List className="h-4 w-4" />
@@ -650,16 +652,16 @@ const BlogEditPage = () => {
                     <button
                       type="button"
                       onClick={() => insertMarkdown("orderedList")}
-                      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
                       title="Numbered List"
                     >
                       <ListOrdered className="h-4 w-4" />
                     </button>
-                    <div className="w-px h-6 bg-gray-300"></div>
+                    <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
                     <button
                       type="button"
                       onClick={() => insertMarkdown("link")}
-                      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
                       title="Link"
                     >
                       <Link2 className="h-4 w-4" />
@@ -667,7 +669,7 @@ const BlogEditPage = () => {
                     <button
                       type="button"
                       onClick={() => insertMarkdown("image")}
-                      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
                       title="Image"
                     >
                       <Image className="h-4 w-4" />
@@ -684,8 +686,10 @@ const BlogEditPage = () => {
                     value={formData.content}
                     onChange={handleInputChange}
                     rows={20}
-                    className={`w-full px-3 py-3 border-x border-b border-gray-200 rounded-b-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm resize-none ${
-                      validationErrors.content ? "border-red-300 bg-red-50" : ""
+                    className={`w-full px-3 py-3 border-x border-b border-gray-200 dark:border-gray-700 rounded-b-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm resize-none bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
+                      validationErrors.content
+                        ? "border-red-300 bg-red-50 dark:bg-red-900/20"
+                        : ""
                     }`}
                     placeholder="Write your blog post content here using Markdown..."
                     required
@@ -696,7 +700,7 @@ const BlogEditPage = () => {
                       {validationErrors.content}
                     </p>
                   )}
-                  <div className="mt-2 flex justify-between text-xs text-gray-500">
+                  <div className="mt-2 flex justify-between text-xs text-gray-500 dark:text-gray-400">
                     <span>
                       Supports Markdown: **bold**, *italic*, `code`, etc.
                     </span>
@@ -711,10 +715,10 @@ const BlogEditPage = () => {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Metadata */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-center mb-6">
                   <Tag className="h-5 w-5 text-gray-400 mr-2" />
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     Metadata
                   </h2>
                 </div>
@@ -724,7 +728,7 @@ const BlogEditPage = () => {
                   <div>
                     <label
                       htmlFor="category"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                     >
                       <Folder className="h-4 w-4 inline mr-1" />
                       Category *
@@ -734,7 +738,7 @@ const BlogEditPage = () => {
                       name="category"
                       value={formData.category}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                       required
                     >
                       <option value="">Select a category</option>
@@ -750,7 +754,7 @@ const BlogEditPage = () => {
                   <div>
                     <label
                       htmlFor="tags"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                     >
                       <Tag className="h-4 w-4 inline mr-1" />
                       Tags
@@ -761,10 +765,10 @@ const BlogEditPage = () => {
                       name="tags"
                       value={formData.tags}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                       placeholder="tag1, tag2, tag3"
                     />
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       Separate tags with commas
                     </p>
                   </div>
@@ -773,7 +777,7 @@ const BlogEditPage = () => {
                   <div>
                     <label
                       htmlFor="featured_image"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                     >
                       <Image className="h-4 w-4 inline mr-1" />
                       Featured Image URL
@@ -784,10 +788,10 @@ const BlogEditPage = () => {
                       name="featured_image"
                       value={formData.featured_image}
                       onChange={handleInputChange}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
                         validationErrors.featured_image
-                          ? "border-red-300 bg-red-50"
-                          : "border-gray-300"
+                          ? "border-red-300 bg-red-50 dark:bg-red-900/20"
+                          : "border-gray-300 dark:border-gray-600"
                       }`}
                       placeholder="https://example.com/image.jpg"
                     />
@@ -803,7 +807,7 @@ const BlogEditPage = () => {
                           <img
                             src={formData.featured_image}
                             alt="Featured image preview"
-                            className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                            className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
                             onError={(e) => {
                               e.currentTarget.style.display = "none";
                             }}
@@ -816,7 +820,7 @@ const BlogEditPage = () => {
                   <div>
                     <label
                       htmlFor="status"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                     >
                       <Calendar className="h-4 w-4 inline mr-1" />
                       Status
@@ -826,12 +830,12 @@ const BlogEditPage = () => {
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                     >
                       <option value="draft">Draft</option>
                       <option value="published">Published</option>
                     </select>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       {formData.status === "draft"
                         ? "Only you can see this post"
                         : "Visible to everyone"}
@@ -841,8 +845,8 @@ const BlogEditPage = () => {
               </div>
 
               {/* Actions */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   Actions
                 </h3>
 
@@ -851,7 +855,7 @@ const BlogEditPage = () => {
                   <button
                     type="button"
                     onClick={() => setIsPreview(!isPreview)}
-                    className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     {isPreview ? "Hide Preview" : "Show Preview"}
@@ -864,7 +868,7 @@ const BlogEditPage = () => {
                     disabled={
                       isUpdating || Object.keys(validationErrors).length > 0
                     }
-                    className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <Save className="h-4 w-4 mr-2" />
                     {isUpdating ? "Saving..." : "Save as Draft"}
@@ -885,8 +889,8 @@ const BlogEditPage = () => {
                 </div>
 
                 {Object.keys(validationErrors).length > 0 && (
-                  <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-sm text-amber-700 flex items-center">
+                  <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+                    <p className="text-sm text-amber-700 dark:text-amber-300 flex items-center">
                       <AlertCircle className="h-4 w-4 mr-2" />
                       Please fix validation errors before saving
                     </p>
@@ -898,25 +902,27 @@ const BlogEditPage = () => {
 
           {/* Preview Modal/Section */}
           {isPreview && (
-            <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Preview</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Preview
+                </h2>
                 <button
                   onClick={() => setIsPreview(false)}
-                  className="flex items-center space-x-2 px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center space-x-2 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
                 >
                   <X className="h-4 w-4" />
                   <span>Close Preview</span>
                 </button>
               </div>
 
-              <div className="prose max-w-none">
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              <div className="prose max-w-none dark:prose-invert">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
                   {formData.title || "Untitled Post"}
                 </h1>
 
                 {formData.excerpt && (
-                  <p className="text-lg text-gray-600 mb-6 italic">
+                  <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 italic">
                     {formData.excerpt}
                   </p>
                 )}

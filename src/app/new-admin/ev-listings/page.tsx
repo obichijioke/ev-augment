@@ -7,6 +7,7 @@ import { adminApi } from "@/services/adminApi";
 import { useUserRole } from "@/hooks/useUserRole";
 import VehicleManagementForm from "@/components/admin/VehicleManagementForm";
 import { fetchVehicleDetails } from "@/services/vehicleApi";
+import CSVUploadMapper from "./CSVUploadMapper";
 
 // helper fetchers for dropdowns
 async function fetchManufacturers() {
@@ -65,6 +66,9 @@ export default function AdminEvListingsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [editingFull, setEditingFull] = useState<any | null>(null);
+
+  // CSV Mapper modal state
+  const [showCsvMapper, setShowCsvMapper] = useState(false);
 
   // initialize from URL
   useEffect(() => {
@@ -330,33 +334,13 @@ export default function AdminEvListingsPage() {
         </select>
       </div>
 
-      {/* Bulk upload */}
+      {/* Bulk upload via CSV Mapper */}
       <div className="flex items-center gap-2">
-        <input
-          type="file"
-          accept=".csv"
-          onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
-          className="text-sm"
-        />
         <button
           className="px-3 py-2 border border-gray-200 rounded-md text-sm"
-          disabled={!bulkFile}
-          onClick={async () => {
-            if (!bulkFile) return;
-            try {
-              await (adminApi as any).bulkUploadEvListings(bulkFile);
-              setBulkFile(null);
-              (
-                document.querySelector('input[type="file"]') as HTMLInputElement
-              ).value = "";
-              toast.success("Bulk upload completed");
-              loadListings();
-            } catch (e: any) {
-              toast.error(e?.message || "Bulk upload failed");
-            }
-          }}
+          onClick={() => setShowCsvMapper(true)}
         >
-          Upload CSV
+          CSV Mapper
         </button>
       </div>
 
@@ -635,6 +619,22 @@ export default function AdminEvListingsPage() {
                 setShowForm(false);
                 setEditing(null);
                 setEditingFull(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
+      {showCsvMapper && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowCsvMapper(false)}
+          />
+          <div className="relative z-10 w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-lg bg-white shadow-xl p-2">
+            <CSVUploadMapper
+              onClose={() => {
+                setShowCsvMapper(false);
+                loadListings();
               }}
             />
           </div>

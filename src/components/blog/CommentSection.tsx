@@ -29,14 +29,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
   return (
     <div className="mt-12">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
         Comments ({comments.length})
       </h2>
 
       {/* Error Display */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 text-sm">{error}</p>
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+          <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
         </div>
       )}
 
@@ -52,8 +52,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                 className="h-10 w-10 rounded-full"
               />
             ) : (
-              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                <User className="h-5 w-5 text-gray-600" />
+              <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
+                <User className="h-5 w-5 text-gray-600 dark:text-gray-300" />
               </div>
             )}
             <div className="flex-1">
@@ -61,7 +61,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Add a comment..."
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 rows={3}
                 disabled={isLoading}
               ></textarea>
@@ -76,10 +76,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({
           </div>
         </form>
       ) : (
-        <div className="text-center p-4 border border-gray-200 rounded-lg bg-gray-50">
-          <p>
+        <div className="text-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+          <p className="text-gray-700 dark:text-gray-300">
             Please{" "}
-            <a href="/auth/login" className="text-blue-600 hover:underline">
+            <a
+              href="/auth/login"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
               log in
             </a>{" "}
             to post a comment.
@@ -99,34 +102,38 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                 className="h-10 w-10 rounded-full"
               />
             ) : (
-              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                <User className="h-5 w-5 text-gray-600" />
+              <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
+                <User className="h-5 w-5 text-gray-600 dark:text-gray-300" />
               </div>
             )}
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-gray-900">
+                  <p className="font-semibold text-gray-900 dark:text-white">
                     {comment.author.name}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     @{comment.author.username}
                   </p>
                 </div>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {new Date(comment.publishedAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                   })}
                 </p>
               </div>
-              <p className="mt-2 text-gray-700">{comment.content}</p>
-              <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
-                <button className="flex items-center space-x-1 hover:text-blue-500">
+              <p className="mt-2 text-gray-700 dark:text-gray-300">
+                {comment.content}
+              </p>
+              <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <button className="flex items-center space-x-1 hover:text-blue-500 dark:hover:text-blue-400">
                   <ThumbsUp className="h-4 w-4" />
                   <span>{comment.likes}</span>
                 </button>
-                <button className="hover:text-blue-500">Reply</button>
+                <button className="hover:text-blue-500 dark:hover:text-blue-400">
+                  Reply
+                </button>
               </div>
             </div>
           </div>

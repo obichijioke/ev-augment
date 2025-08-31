@@ -127,7 +127,7 @@ const BlogPage = () => {
   // Show loading state
   if (isLoading && posts.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
@@ -151,7 +151,7 @@ const BlogPage = () => {
   // Show error state
   if (error && posts.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
@@ -181,7 +181,7 @@ const BlogPage = () => {
   // Show empty state if no posts and not loading
   if (!isLoading && posts.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
@@ -208,7 +208,7 @@ const BlogPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -226,17 +226,17 @@ const BlogPage = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
                 placeholder="Search articles..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
 
@@ -246,7 +246,7 @@ const BlogPage = () => {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
               >
                 {allCategories.map((category) => (
                   <option key={category} value={category}>
@@ -259,7 +259,7 @@ const BlogPage = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
               >
                 <option value="latest">Latest</option>
                 <option value="popular">Most Popular</option>
@@ -267,13 +267,13 @@ const BlogPage = () => {
               </select>
 
               {/* View Mode */}
-              <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+              <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
                 <button
                   onClick={() => setViewMode("grid")}
                   className={`p-2 ${
                     viewMode === "grid"
                       ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-50"
+                      : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30"
                   }`}
                 >
                   <Grid className="h-4 w-4" />
@@ -283,7 +283,7 @@ const BlogPage = () => {
                   className={`p-2 ${
                     viewMode === "list"
                       ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-50"
+                      : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30"
                   }`}
                 >
                   <List className="h-4 w-4" />
@@ -294,14 +294,14 @@ const BlogPage = () => {
 
           {/* Tags */}
           {allTags.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setSelectedTag("")}
                   className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                     !selectedTag
                       ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                   }`}
                 >
                   All Tags
@@ -313,7 +313,7 @@ const BlogPage = () => {
                     className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                       selectedTag === tag
                         ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                     }`}
                   >
                     #{tag}
@@ -326,11 +326,11 @@ const BlogPage = () => {
 
         {/* Results Count */}
         <div className="mb-6 flex items-center justify-between">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             Showing {posts.length} of {pagination.total} articles
             {searchQuery && ` for "${searchQuery}"`}
             {(isLoading || isSearching) && (
-              <span className="ml-2 text-blue-600">
+              <span className="ml-2 text-blue-600 dark:text-blue-400">
                 {isSearching ? "Searching..." : "Loading..."}
               </span>
             )}
@@ -359,7 +359,7 @@ const BlogPage = () => {
           {posts.map((post) => (
             <article
               key={post.id}
-              className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 ${
+              className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow duration-200 ${
                 viewMode === "list" ? "flex" : ""
               }`}
             >
@@ -378,8 +378,8 @@ const BlogPage = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <div className="text-gray-400 text-center">
+                  <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                    <div className="text-gray-400 dark:text-gray-500 text-center">
                       <div className="text-4xl mb-2">📄</div>
                       <div className="text-sm">No Image</div>
                     </div>
@@ -394,7 +394,7 @@ const BlogPage = () => {
 
               {/* Content */}
               <div className={`p-6 ${viewMode === "list" ? "flex-1" : ""}`}>
-                <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
                   <div className="flex items-center gap-2">
                     <img
                       src={post.author.avatar}
@@ -413,16 +413,16 @@ const BlogPage = () => {
                   </div>
                 </div>
 
-                <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3 line-clamp-2">
                   <Link
                     href={`/blog/${post.slug}`}
-                    className="hover:text-blue-600 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   >
                     {post.title}
                   </Link>
                 </h2>
 
-                <p className="text-gray-600 mb-4 line-clamp-3">
+                <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
                   {post.excerpt}
                 </p>
 
@@ -431,13 +431,13 @@ const BlogPage = () => {
                     {post.tags.slice(0, 3).map((tag) => (
                       <span
                         key={tag}
-                        className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
+                        className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded text-xs"
                       >
                         #{tag}
                       </span>
                     ))}
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                     <span>{post.views} views</span>
                     <span>{post.likes} likes</span>
                   </div>
@@ -452,13 +452,13 @@ const BlogPage = () => {
           posts.length === 0 &&
           (searchQuery || selectedCategory !== "all" || selectedTag) && (
             <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
+              <div className="text-gray-400 dark:text-gray-500 mb-4">
                 <Search className="h-12 w-12 mx-auto" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 No articles found
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-300">
                 Try adjusting your search or filter criteria
               </p>
               <button
@@ -467,7 +467,7 @@ const BlogPage = () => {
                   setSelectedCategory("all");
                   setSelectedTag("");
                 }}
-                className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+                className="mt-4 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
               >
                 Clear all filters
               </button>

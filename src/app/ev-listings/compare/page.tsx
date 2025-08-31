@@ -249,8 +249,8 @@ const EVComparePage: React.FC = () => {
   // Show loading state while initial vehicles are loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white border-b border-gray-200">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <Link
@@ -260,7 +260,7 @@ const EVComparePage: React.FC = () => {
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Back to Listings
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Compare Electric Vehicles
               </h1>
               <div></div>
@@ -270,7 +270,9 @@ const EVComparePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-blue-600 mr-3" />
-            <span className="text-lg text-gray-600">Loading vehicles...</span>
+            <span className="text-lg text-gray-600 dark:text-gray-300">
+              Loading vehicles...
+            </span>
           </div>
         </div>
       </div>
@@ -278,9 +280,9 @@ const EVComparePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <Link
@@ -290,7 +292,7 @@ const EVComparePage: React.FC = () => {
               <ArrowLeft className="w-5 h-5 mr-2" />
               Back to Listings
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               Compare Electric Vehicles
             </h1>
             <div></div>
@@ -301,10 +303,10 @@ const EVComparePage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
             <div className="flex items-center">
               <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-              <span className="text-red-800">{error}</span>
+              <span className="text-red-800 dark:text-red-300">{error}</span>
             </div>
           </div>
         )}
@@ -325,7 +327,7 @@ const EVComparePage: React.FC = () => {
           </div>
 
           {selectedVehicles.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+            <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="text-gray-500 mb-4">
                 <Zap className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <p className="text-lg">No vehicles selected for comparison</p>
@@ -345,7 +347,7 @@ const EVComparePage: React.FC = () => {
               {selectedVehicles.map((vehicle) => (
                 <div
                   key={vehicle.id}
-                  className="bg-white rounded-lg border border-gray-200 overflow-hidden"
+                  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
                 >
                   <div className="relative">
                     <img
@@ -355,7 +357,7 @@ const EVComparePage: React.FC = () => {
                     />
                     <button
                       onClick={() => removeVehicle(vehicle.id)}
-                      className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-50"
+                      className="absolute top-2 right-2 p-1 bg-white dark:bg-gray-900 rounded-full shadow-md hover:bg-gray-50 dark:hover:bg-gray-700/30"
                     >
                       <X className="w-4 h-4 text-gray-600" />
                     </button>
@@ -364,7 +366,9 @@ const EVComparePage: React.FC = () => {
                     <h3 className="font-semibold text-lg">
                       {vehicle.year} {vehicle.make} {vehicle.model}
                     </h3>
-                    <p className="text-gray-600 text-sm">{vehicle.trim}</p>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">
+                      {vehicle.trim}
+                    </p>
                     <div className="flex items-center justify-between mt-2">
                       <div className="flex items-center">
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
@@ -383,29 +387,29 @@ const EVComparePage: React.FC = () => {
 
         {/* Comparison Table */}
         {selectedVehicles.length > 1 && (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Detailed Comparison
               </h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-gray-900/40">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">
                       Specification
                     </th>
                     {selectedVehicles.map((vehicle) => (
                       <th
                         key={vehicle.id}
-                        className="px-6 py-4 text-center text-sm font-medium text-gray-900 min-w-48"
+                        className="px-6 py-4 text-center text-sm font-medium text-gray-900 dark:text-white min-w-48"
                       >
                         <div>
                           <div className="font-semibold">
                             {vehicle.make} {vehicle.model}
                           </div>
-                          <div className="text-xs text-gray-600">
+                          <div className="text-xs text-gray-600 dark:text-gray-300">
                             {vehicle.year} {vehicle.trim}
                           </div>
                         </div>
@@ -413,17 +417,17 @@ const EVComparePage: React.FC = () => {
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {/* Price Row */}
                   <tr>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900 flex items-center">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white flex items-center">
                       <DollarSign className="w-4 h-4 mr-2 text-green-600" />
                       Starting Price
                     </td>
                     {selectedVehicles.map((vehicle) => (
                       <td
                         key={vehicle.id}
-                        className="px-6 py-4 text-center text-sm text-gray-900 font-semibold"
+                        className="px-6 py-4 text-center text-sm text-gray-900 dark:text-white font-semibold"
                       >
                         ${vehicle.price.toLocaleString()}
                       </td>
@@ -431,15 +435,15 @@ const EVComparePage: React.FC = () => {
                   </tr>
 
                   {/* Rating Row */}
-                  <tr className="bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900 flex items-center">
+                  <tr className="bg-gray-50 dark:bg-gray-900/40">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white flex items-center">
                       <Star className="w-4 h-4 mr-2 text-yellow-400" />
                       Rating
                     </td>
                     {selectedVehicles.map((vehicle) => (
                       <td
                         key={vehicle.id}
-                        className="px-6 py-4 text-center text-sm text-gray-900"
+                        className="px-6 py-4 text-center text-sm text-gray-900 dark:text-white"
                       >
                         <div className="flex items-center justify-center">
                           <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />

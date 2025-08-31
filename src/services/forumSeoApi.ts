@@ -9,19 +9,30 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002/api";
 
 // Server-side fetch function with error handling
-async function serverFetch(url: string, options?: RequestInit) {
+async function serverFetch(
+  url: string,
+  options?: RequestInit & { allow404?: boolean }
+) {
   try {
+    const { allow404, ...fetchOptions } = (options ?? {}) as RequestInit & {
+      allow404?: boolean;
+    };
+
     const response = await fetch(url, {
-      ...options,
+      ...fetchOptions,
       headers: {
         "Content-Type": "application/json",
-        ...options?.headers,
+        ...(fetchOptions as RequestInit).headers,
       },
       // Disable caching for development, enable for production
       cache: process.env.NODE_ENV === "production" ? "force-cache" : "no-store",
     });
 
     if (!response.ok) {
+      // Gracefully handle 404s when allowed
+      if (response.status === 404 && allow404) {
+        return null;
+      }
       const errorText = await response.text();
       console.error("Server fetch error response:", errorText);
       throw new Error(
@@ -31,6 +42,7 @@ async function serverFetch(url: string, options?: RequestInit) {
 
     return await response.json();
   } catch (error) {
+    // Only log unexpected errors; 404s handled above shouldn't reach here
     console.error("Server fetch error:", error);
     throw error;
   }
@@ -71,10 +83,11 @@ export async function getForumThread(
 
     // Get full thread details with replies
     const threadResponse = await serverFetch(
-      `${API_BASE_URL}/forum/threads/${thread.id}`
+      `${API_BASE_URL}/forum/threads/${thread.id}`,
+      { allow404: true }
     );
 
-    if (!threadResponse.success || !threadResponse.data) {
+    if (!threadResponse || !threadResponse.success || !threadResponse.data) {
       return null;
     }
 
@@ -181,9 +194,11 @@ export async function getForumThreadById(
   id: string
 ): Promise<ForumThread | null> {
   try {
-    const response = await serverFetch(`${API_BASE_URL}/forum/threads/${id}`);
+    const response = await serverFetch(`${API_BASE_URL}/forum/threads/${id}`, {
+      allow404: true,
+    });
 
-    if (!response.success || !response.data) {
+    if (!response || !response.success || !response.data) {
       return null;
     }
 

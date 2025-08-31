@@ -64,7 +64,7 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
 
   return (
     <div
-      className={`bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 p-6 ${className}`}
+      className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200 p-6 ${className}`}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
@@ -84,7 +84,7 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
                   thread.slug || thread.id
                 }`
               }
-              className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2"
+              className="text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors line-clamp-2"
             >
               {thread.title}
             </Link>
@@ -103,7 +103,7 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
           )}
 
           {/* Content Preview */}
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+          <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">
             {truncateContent(thread.content)}
           </p>
         </div>
@@ -122,12 +122,12 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
                   className="w-6 h-6 rounded-full"
                 />
               ) : (
-                <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
-                  <User className="h-3 w-3 text-gray-600" />
+                <div className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                  <User className="h-3 w-3 text-gray-600 dark:text-gray-300" />
                 </div>
               )}
               <div className="flex items-center space-x-1">
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {thread.author.displayName}
                 </span>
                 {thread.author.isVerified && (
@@ -137,7 +137,7 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
             </div>
           )}
 
-          <div className="flex items-center space-x-1 text-xs text-gray-500">
+          <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
             <Clock className="h-3 w-3" />
             <span>{formatDate(thread.created_at)}</span>
           </div>
@@ -146,20 +146,20 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
         {/* Thread Stats */}
         <div className="flex items-center space-x-4">
           {/* View Count */}
-          <div className="flex items-center space-x-1 text-sm text-gray-500">
+          <div className="flex items-center space-x-1 text-sm text-gray-500 dark:text-gray-400">
             <Eye className="h-4 w-4" />
             <span>{formatNumber(thread.view_count)}</span>
           </div>
 
           {/* Reply Count */}
-          <div className="flex items-center space-x-1 text-sm text-gray-500">
+          <div className="flex items-center space-x-1 text-sm text-gray-500 dark:text-gray-400">
             <MessageSquare className="h-4 w-4" />
             <span>{formatNumber(thread.reply_count)}</span>
           </div>
 
           {/* Last Reply */}
           {thread.last_reply_at && (
-            <div className="text-xs text-gray-500 text-right">
+            <div className="text-xs text-gray-500 dark:text-gray-400 text-right">
               <div>Last reply</div>
               <div>{formatDate(thread.last_reply_at)}</div>
             </div>

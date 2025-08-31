@@ -182,16 +182,18 @@ const NewThreadPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Error Display */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4">
                   <div className="flex items-center space-x-2">
                     <AlertCircle className="h-5 w-5 text-red-600" />
-                    <span className="text-red-800">{error.message}</span>
+                    <span className="text-red-800 dark:text-red-300">
+                      {error.message}
+                    </span>
                   </div>
                 </div>
               )}
 
               {/* Category Selection */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <label className="block text-sm font-medium text-gray-900 mb-3">
                   Category *
                 </label>
@@ -203,7 +205,7 @@ const NewThreadPage: React.FC = () => {
                       categoryId: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                   required
                 >
                   <option value="">Select a category</option>
@@ -216,7 +218,7 @@ const NewThreadPage: React.FC = () => {
               </div>
 
               {/* Thread Title */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <label className="block text-sm font-medium text-gray-900 mb-3">
                   Thread Title *
                 </label>
@@ -227,7 +229,7 @@ const NewThreadPage: React.FC = () => {
                     setFormData((prev) => ({ ...prev, title: e.target.value }))
                   }
                   placeholder="Enter a descriptive title for your thread"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                   maxLength={200}
                   required
                 />
@@ -237,7 +239,7 @@ const NewThreadPage: React.FC = () => {
               </div>
 
               {/* Thread Content */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <label className="block text-sm font-medium text-gray-900 mb-3">
                   Content *
                 </label>
@@ -251,7 +253,7 @@ const NewThreadPage: React.FC = () => {
                   }
                   placeholder="Write your thread content here..."
                   rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                   maxLength={10000}
                   required
                 />
@@ -261,14 +263,14 @@ const NewThreadPage: React.FC = () => {
               </div>
 
               {/* Image Upload */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="bg-white dark:bg_gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <label className="block text-sm font-medium text-gray-900 mb-3">
                   Images (Optional)
                 </label>
 
                 {/* Upload Button */}
                 <div className="mb-4">
-                  <label className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                  <label className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                     <Image className="h-4 w-4 mr-2" />
                     <span>Add Images</span>
                     <input
@@ -279,7 +281,7 @@ const NewThreadPage: React.FC = () => {
                       className="hidden"
                     />
                   </label>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-gray-500 dark:text-gray-300 mt-2">
                     Maximum 5 images, 5MB each. Supported formats: JPG, PNG,
                     GIF, WebP
                   </p>
@@ -293,7 +295,7 @@ const NewThreadPage: React.FC = () => {
                         <img
                           src={preview}
                           alt={`Preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                          className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
                         />
                         <button
                           type="button"
@@ -309,7 +311,7 @@ const NewThreadPage: React.FC = () => {
               </div>
 
               {/* Form Actions */}
-              <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <div className="text-sm text-gray-600">
                   <p>• Be respectful and follow community guidelines</p>
                   <p>• Use clear, descriptive titles</p>
@@ -321,7 +323,7 @@ const NewThreadPage: React.FC = () => {
                     type="button"
                     onClick={handleCancel}
                     disabled={isSubmitting}
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>

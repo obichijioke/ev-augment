@@ -68,7 +68,7 @@ export default function NewAdminLayout({
   }: {
     href: string;
     label: string;
-    icon: any;
+    icon: React.ElementType;
     adminOnly?: boolean;
   }) => {
     const active = pathname === href || pathname?.startsWith(href + "/");
@@ -90,7 +90,7 @@ export default function NewAdminLayout({
 
   return (
     <div className="min-h-screen flex">
-      <aside className="w-60 border-r border-gray-200 bg-white p-4 hidden md:block">
+      <aside className="w-60 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 hidden md:block">
         <div className="mb-6">
           <h2 className="text-lg font-semibold">New Admin</h2>
           <p className="text-xs text-gray-500">Advanced controls</p>
@@ -127,7 +127,7 @@ export default function NewAdminLayout({
           />
         </nav>
       </aside>
-      <main className="flex-1 p-4 md:p-8 bg-gray-50">
+      <main className="flex-1 p-4 md:p-8 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto">{children}</div>
       </main>
     </div>

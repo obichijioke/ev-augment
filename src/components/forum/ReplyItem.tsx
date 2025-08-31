@@ -96,9 +96,9 @@ const ReplyItem: React.FC<ReplyItemProps> = ({
       }`}
     >
       {/* Reply Content */}
-      <div className="bg-white rounded-lg border border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 rounded-t-lg">
           <div className="flex items-center space-x-3">
             {reply.author?.avatar ? (
               <img
@@ -107,14 +107,14 @@ const ReplyItem: React.FC<ReplyItemProps> = ({
                 className="w-8 h-8 rounded-full"
               />
             ) : (
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <User className="h-4 w-4 text-gray-600" />
+              <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
               </div>
             )}
 
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-semibold text-gray-900">
+                <span className="font-semibold text-gray-900 dark:text-white">
                   {reply.author?.displayName || "Anonymous User"}
                 </span>
                 {reply.author?.isVerified && (
@@ -126,12 +126,12 @@ const ReplyItem: React.FC<ReplyItemProps> = ({
                   </span>
                 )}
                 {isNested && (
-                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
+                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium rounded-full">
                     Reply
                   </span>
                 )}
               </div>
-              <div className="flex items-center space-x-1 text-xs text-gray-500">
+              <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
                 <Clock className="h-3 w-3" />
                 <span>{formatDate(reply.createdAt)}</span>
               </div>
@@ -140,7 +140,7 @@ const ReplyItem: React.FC<ReplyItemProps> = ({
 
           {/* Edit Indicator */}
           {reply.isEdited && (
-            <div className="flex items-center space-x-1 text-xs text-gray-500">
+            <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
               <Edit className="h-3 w-3" />
               <span>
                 Edited{" "}
@@ -154,13 +154,13 @@ const ReplyItem: React.FC<ReplyItemProps> = ({
 
         {/* Content */}
         <div className="p-4">
-          <div className="prose prose-gray max-w-none">
+          <div className="prose prose-gray dark:prose-invert max-w-none">
             {formatContent(reply.content)
               .split("\n\n")
               .map((paragraph, index) => (
                 <p
                   key={index}
-                  className="mb-3 last:mb-0 text-gray-800 leading-relaxed"
+                  className="mb-3 last:mb-0 text-gray-800 dark:text-gray-200 leading-relaxed"
                 >
                   {paragraph}
                 </p>
