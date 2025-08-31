@@ -16,7 +16,6 @@ import {
 import { authenticateToken, requireAdmin } from "../middleware/auth";
 import { toString, toNumber } from "../utils/typeUtils";
 import Joi from "joi";
-import multer from "multer";
 
 const router: Router = express.Router();
 
@@ -144,6 +143,176 @@ const vehicleListingSchemas = {
 // =============================================================================
 // ADMIN VEHICLE LISTING ENDPOINTS
 // =============================================================================
+
+// @route   POST /api/admin/vehicle-listings/bulk-insert
+// @desc    Bulk insert pre-validated listings (Admin only)
+// @access  Private (Admin only)
+router.post(
+  "/bulk-insert",
+  asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { listings } = (req.body || {}) as { listings?: any[] };
+    if (!Array.isArray(listings) || listings.length === 0) {
+      throw validationError("'listings' must be a non-empty array");
+    }
+    if (listings.length > 500) {
+      throw validationError("Too many listings. Maximum 500 per request");
+    }
+
+    const results: Array<{
+      index: number;
+      success: boolean;
+      id?: string;
+      errors?: string;
+    }> = [];
+
+    for (let i = 0; i < listings.length; i++) {
+      const raw = listings[i];
+      try {
+        // Validate with the same schema as create
+        const { error, value } = (Joi as any)
+          .object(vehicleListingSchemas.create.describe().keys)
+          .unknown(false)
+          .validate(raw, { abortEarly: false, stripUnknown: true });
+        if (error) {
+          results.push({ index: i, success: false, errors: error.message });
+          continue;
+        }
+
+        // Use the same mapping/coercion logic as the single create
+        const {
+          performanceSpecs,
+          batterySpecs,
+          dimensionSpecs,
+          safetySpecs,
+          environmentalSpecs,
+          features,
+          ...listingData
+        } = value as any;
+
+        const listingDataMapped: any = { ...listingData };
+        if (Array.isArray((raw as any).images)) {
+          const arr = ((raw as any).images as string[]).filter(
+            (u) => !!u && u.trim() !== ""
+          );
+          if (arr.length > 0) {
+            if (!listingDataMapped.primary_image_url)
+              listingDataMapped.primary_image_url = arr[0];
+            if (!listingDataMapped.image_urls)
+              listingDataMapped.image_urls = arr.slice(1);
+          }
+          delete listingDataMapped.images;
+        }
+
+        if (
+          listingDataMapped.msrp_base !== undefined &&
+          typeof listingDataMapped.msrp_base === "string"
+        ) {
+          const n = parseFloat(listingDataMapped.msrp_base);
+          if (!Number.isNaN(n)) listingDataMapped.msrp_base = n;
+        }
+        if (
+          listingDataMapped.msrp_max !== undefined &&
+          typeof listingDataMapped.msrp_max === "string"
+        ) {
+          const n = parseFloat(listingDataMapped.msrp_max);
+          if (!Number.isNaN(n)) listingDataMapped.msrp_max = n;
+        }
+
+        const { data: listing, error: listingError } = await supabaseAdmin
+          .from("vehicle_listings")
+          .insert({
+            ...listingDataMapped,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (listingError) {
+          results.push({
+            index: i,
+            success: false,
+            errors: listingError.message,
+          });
+          continue;
+        }
+
+        const id = listing.id as string;
+
+        // Insert related specs if provided
+        const nowIso = new Date().toISOString();
+        if (performanceSpecs) {
+          await supabaseAdmin.from("vehicle_performance_specs").insert({
+            listing_id: id,
+            ...performanceSpecs,
+            created_at: nowIso,
+            updated_at: nowIso,
+          });
+        }
+        if (batterySpecs) {
+          await supabaseAdmin.from("vehicle_battery_specs").insert({
+            listing_id: id,
+            ...batterySpecs,
+            created_at: nowIso,
+            updated_at: nowIso,
+          });
+        }
+        if (dimensionSpecs) {
+          await supabaseAdmin.from("vehicle_dimension_specs").insert({
+            listing_id: id,
+            ...dimensionSpecs,
+            created_at: nowIso,
+            updated_at: nowIso,
+          });
+        }
+        if (safetySpecs) {
+          await supabaseAdmin.from("vehicle_safety_specs").insert({
+            listing_id: id,
+            ...safetySpecs,
+            created_at: nowIso,
+            updated_at: nowIso,
+          });
+        }
+        if (environmentalSpecs) {
+          await supabaseAdmin.from("vehicle_environmental_specs").insert({
+            listing_id: id,
+            ...environmentalSpecs,
+            created_at: nowIso,
+            updated_at: nowIso,
+          });
+        }
+
+        if (Array.isArray(features)) {
+          if (features.length > 0) {
+            const inserts = features.map((featureId: string) => ({
+              listing_id: id,
+              feature_id: featureId,
+              is_standard: true,
+              created_at: nowIso,
+            }));
+            await supabaseAdmin.from("vehicle_features").insert(inserts);
+          }
+        }
+
+        results.push({ index: i, success: true, id });
+      } catch (e: any) {
+        results.push({
+          index: i,
+          success: false,
+          errors: e?.message || "Unknown error",
+        });
+      }
+    }
+
+    const successCount = results.filter((r) => r.success).length;
+    const failureCount = results.length - successCount;
+    res.json({
+      success: true,
+      summary: { successCount, failureCount },
+      results,
+    });
+  })
+);
 
 // @route   POST /api/admin/vehicle-listings
 // @desc    Create a new vehicle listing (Admin only)
@@ -708,113 +877,3 @@ router.post(
 );
 
 export default router;
-
-// =============================================================================
-// BULK UPLOAD (CSV)
-// =============================================================================
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
-
-/**
- * CSV format (header row required):
- * model_id,year,trim,msrp_base,msrp_max,availability_status,description,is_featured,is_active
- */
-router.post(
-  "/bulk-upload",
-  upload.single("file"),
-  asyncHandler(async (req: AuthenticatedRequest & Request, res: Response) => {
-    if (!req.file) {
-      throw validationError("CSV file is required");
-    }
-
-    const csvText = req.file.buffer.toString("utf-8");
-    const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
-    if (lines.length <= 1) {
-      throw validationError("CSV must contain a header and at least one row");
-    }
-
-    const header = lines[0].split(",").map((h) => h.trim());
-    const required = [
-      "model_id",
-      "year",
-      "trim",
-      "msrp_base",
-      "msrp_max",
-      "availability_status",
-      "description",
-      "is_featured",
-      "is_active",
-    ];
-    for (const col of required) {
-      if (!header.includes(col)) {
-        throw validationError(`Missing required column: ${col}`);
-      }
-    }
-
-    const idx = Object.fromEntries(header.map((h, i) => [h, i] as const));
-
-    const rows = lines.slice(1);
-    const inserts: any[] = [];
-    for (const line of rows) {
-      const cols = line.split(",");
-      if (cols.length !== header.length) continue;
-
-      const model_id = cols[idx.model_id]?.trim();
-      const yearStr = cols[idx.year]?.trim();
-      const trim = cols[idx.trim]?.trim();
-      const msrp_base = cols[idx.msrp_base]?.trim();
-      const msrp_max = cols[idx.msrp_max]?.trim();
-      const availability_status = cols[idx.availability_status]?.trim();
-      const description = cols[idx.description]?.trim();
-      const is_featured =
-        (cols[idx.is_featured]?.trim() || "false").toLowerCase() === "true";
-      const is_active =
-        (cols[idx.is_active]?.trim() || "true").toLowerCase() === "true";
-
-      if (!model_id || !isValidUUID(model_id)) continue;
-      const year = parseInt(yearStr, 10);
-      if (!year || Number.isNaN(year)) continue;
-
-      inserts.push({
-        model_id,
-        year,
-        trim: trim || null,
-        msrp_base: msrp_base ? parseFloat(msrp_base) : null,
-        msrp_max: msrp_max ? parseFloat(msrp_max) : null,
-        availability_status: availability_status || null,
-        description: description || null,
-        is_featured,
-        is_active,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-    }
-
-    if (inserts.length === 0) {
-      throw validationError("No valid rows found in CSV");
-    }
-
-    const { data, error } = await supabaseAdmin
-      .from("vehicle_listings")
-      .insert(inserts)
-      .select("id")
-      .range(0, inserts.length - 1);
-
-    if (error) {
-      throw createError(
-        `Failed to import CSV: ${error.message}`,
-        500,
-        "BULK_UPLOAD_FAILED"
-      );
-    }
-
-    res.json({
-      success: true,
-      message: "Bulk upload completed",
-      data: { inserted: data?.length || 0 },
-    });
-  })
-);

@@ -13,18 +13,13 @@ interface Props {
  * New: /forums/[category]/[slug]
  */
 export default async function ThreadRedirectPage({ params }: Props) {
-  try {
-    const thread = await getForumThreadById(params.id);
+  const thread = await getForumThreadById(params.id);
 
-    if (!thread || !thread.category || !thread.slug) {
-      // If thread not found or missing required data, redirect to forums home
-      redirect("/forums");
-    }
-
-    // Redirect to new SEO-friendly URL
-    redirect(`/forums/${thread.category.slug}/${thread.slug}`);
-  } catch (error) {
-    console.error("Error redirecting thread:", error);
+  if (!thread || !thread.category?.slug || !thread.slug) {
+    // If thread not found or missing required data, redirect to forums home
     redirect("/forums");
   }
+
+  // Redirect to new SEO-friendly URL
+  redirect(`/forums/${thread.category.slug}/${thread.slug}`);
 }

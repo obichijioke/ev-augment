@@ -184,30 +184,8 @@ export const adminApi = {
       return res.json();
     }),
   bulkEvListings: (body: any) => apiPost(`/admin/vehicle-listings/bulk`, body),
-  bulkUploadEvListings: async (file: File) => {
-    const token = getAccessToken();
-    const form = new FormData();
-    form.append("file", file);
-    const res = await fetch(
-      `${API_BASE_URL}/admin/vehicle-listings/bulk-upload`,
-      {
-        method: "POST",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: form,
-      }
-    );
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw {
-        success: false,
-        message: errorData.message || `HTTP error! status: ${res.status}`,
-        error: { status: res.status, code: errorData.code },
-      } as ApiError;
-    }
-    return res.json();
-  },
+  bulkInsertEvListings: (listings: any[]) =>
+    apiPost(`/admin/vehicle-listings/bulk-insert`, { listings }),
 
   // Moderation
   getPendingContent: (

@@ -164,6 +164,12 @@ export default function AdminBlogPage() {
             >
               Apply
             </button>
+            <Link
+              href="/new-admin/blog/new"
+              className="px-3 py-2 border border-gray-200 rounded-md text-sm bg-blue-600 text-white"
+            >
+              New Post
+            </Link>
           </div>
         )}
       </div>
@@ -306,6 +312,12 @@ export default function AdminBlogPage() {
                           <option value="published">Published</option>
                           <option value="archived">Archived</option>
                         </select>
+                        <Link
+                          href={`/new-admin/blog/${p.id}/edit`}
+                          className="text-xs px-2 py-1 border border-gray-200 rounded-md"
+                        >
+                          Edit
+                        </Link>
                         <button
                           className="text-xs px-2 py-1 border border-gray-200 rounded-md"
                           onClick={() =>

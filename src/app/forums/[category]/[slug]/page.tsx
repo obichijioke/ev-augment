@@ -12,10 +12,15 @@ interface Props {
 }
 
 // Generate metadata for SEO
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ category: string; slug: string }>;
+}): Promise<Metadata> {
   try {
-    const thread = await getForumThread(params.category, params.slug);
-    const category = await getForumCategory(params.category);
+    const { category: categorySlug, slug } = await params;
+    const thread = await getForumThread(categorySlug, slug);
+    const category = await getForumCategory(categorySlug);
 
     if (!thread || !category) {
       return {
@@ -42,7 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title,
         description,
         type: "article",
-        url: `/forums/${params.category}/${params.slug}`,
+        url: `/forums/${categorySlug}/${slug}`,
         siteName: "EV Community Platform",
         publishedTime: thread.created_at,
         modifiedTime: thread.updated_at,
@@ -57,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         creator: `@${thread.author?.username || "EVCommunity"}`,
       },
       alternates: {
-        canonical: `/forums/${params.category}/${params.slug}`,
+        canonical: `/forums/${categorySlug}/${slug}`,
       },
     };
   } catch (error) {

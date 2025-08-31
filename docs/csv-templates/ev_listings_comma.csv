@@ -1,0 +1,3 @@
+model_id,year,trim,msrp_base,msrp_max,availability_status,description,is_featured,is_active,primary_image_url,image_urls
+11374394-bb5b-40c7-925e-7e4e204bfa2b,2025,Long Range,48990,59990,available,"Base LR trim with updated range",true,true,https://example.com/img1.jpg,https://example.com/img2.jpg;https://example.com/img3.jpg
+11374394-bb5b-40c7-925e-7e4e204bfa2b,2025,Performance,55990,67990,coming_soon,"Performance pack",false,true,https://example.com/perf_main.jpg,https://example.com/p2.jpg;https://example.com/p3.jpg
