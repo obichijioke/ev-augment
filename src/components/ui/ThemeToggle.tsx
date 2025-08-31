@@ -68,11 +68,25 @@ export function ThemeToggle() {
 export function ThemeToggleDropdown() {
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, systemTheme, resolvedTheme } = useTheme();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: Event) => {
+      if (isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+    }
+  }, [isOpen]);
 
   if (!mounted) {
     return (
@@ -88,18 +102,40 @@ export function ThemeToggleDropdown() {
     { value: "system", label: "System", icon: Monitor },
   ];
 
-  const currentTheme = themes.find((t) => t.value === theme) || themes[2];
-  const IconComponent = currentTheme.icon;
+  // Determine which icon to show based on current theme
+  const getDisplayIcon = () => {
+    if (theme === "system") {
+      return systemTheme === "dark" ? Moon : Sun;
+    }
+    return theme === "dark" ? Moon : Sun;
+  };
+
+  const DisplayIcon = getDisplayIcon();
+  const currentThemeLabel =
+    theme === "system"
+      ? `System (${systemTheme})`
+      : theme === "dark"
+      ? "Dark"
+      : "Light";
+
+  const handleThemeSelect = (selectedTheme: string) => {
+    console.log("Setting theme to:", selectedTheme);
+    setTheme(selectedTheme);
+    setIsOpen(false);
+  };
 
   return (
     <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
         className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-600 dark:text-gray-300"
-        title={`${currentTheme.label} mode`}
+        title={`Current: ${currentThemeLabel}`}
         aria-label="Toggle theme menu"
       >
-        <IconComponent className="h-4 w-4" />
+        <DisplayIcon className="h-4 w-4" />
       </button>
 
       {isOpen && (
@@ -108,24 +144,35 @@ export function ThemeToggleDropdown() {
             className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute top-full right-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20">
-            {themes.map(({ value, label, icon: Icon }) => (
-              <button
-                key={value}
-                onClick={() => {
-                  setTheme(value);
-                  setIsOpen(false);
-                }}
-                className={`w-full flex items-center px-3 py-2 text-sm transition-colors ${
-                  theme === value
-                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                <Icon className="h-4 w-4 mr-2" />
-                {label}
-              </button>
-            ))}
+          <div className="absolute top-full right-0 mt-2 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20">
+            {themes.map(({ value, label, icon: Icon }) => {
+              const isActive = theme === value;
+              return (
+                <button
+                  key={value}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleThemeSelect(value);
+                  }}
+                  className={`w-full flex items-center px-3 py-2 text-sm transition-colors ${
+                    isActive
+                      ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 mr-2" />
+                  <span className="flex-1 text-left">{label}</span>
+                  {isActive && (
+                    <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full ml-2" />
+                  )}
+                </button>
+              );
+            })}
+            <div className="border-t border-gray-200 dark:border-gray-700 mt-1 pt-1">
+              <div className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400">
+                Current: {resolvedTheme}
+              </div>
+            </div>
           </div>
         </>
       )}

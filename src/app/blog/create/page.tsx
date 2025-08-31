@@ -250,10 +250,10 @@ const CreateBlogPage = () => {
   // Show loading during hydration
   if (!isHydrated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
         </div>
       </div>
     );
@@ -261,12 +261,12 @@ const CreateBlogPage = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             Authentication Required
           </h1>
-          <p className="text-gray-600 mb-8">
+          <p className="text-gray-600 dark:text-gray-300 mb-8">
             Please sign in to create a blog post.
           </p>
           <Link
@@ -282,27 +282,27 @@ const CreateBlogPage = () => {
 
   return (
     <AccessControl requireAuth={true} requireBlogCreate={true}>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <Link
                   href="/blog"
-                  className="inline-flex items-center text-blue-600 hover:text-blue-700"
+                  className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Blog
                 </Link>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                   Create New Article
                 </h1>
               </div>
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => setIsPreview(!isPreview)}
-                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
                 >
                   <Eye className="h-4 w-4" />
                   <span>{isPreview ? "Edit" : "Preview"}</span>
@@ -310,7 +310,7 @@ const CreateBlogPage = () => {
                 <button
                   onClick={() => handleSubmit(true)}
                   disabled={isCreating}
-                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors disabled:opacity-50"
                 >
                   <Save className="h-4 w-4" />
                   <span>{isCreating ? "Saving..." : "Save Draft"}</span>
@@ -335,14 +335,16 @@ const CreateBlogPage = () => {
         {/* Error Display */}
         {postError && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 mb-6">
               <div className="flex items-center">
-                <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mr-3" />
                 <div>
-                  <h3 className="text-sm font-medium text-red-800">
+                  <h3 className="text_sm font-medium text-red-800 dark:text-red-300">
                     Error Creating Post
                   </h3>
-                  <p className="text-sm text-red-700 mt-1">{postError}</p>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                    {postError}
+                  </p>
                 </div>
               </div>
             </div>
@@ -354,10 +356,10 @@ const CreateBlogPage = () => {
             {/* Main Content */}
             <div className="lg:col-span-3">
               {!isPreview ? (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                   {/* Title */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Title *
                     </label>
                     <input
@@ -367,13 +369,13 @@ const CreateBlogPage = () => {
                         handleInputChange("title", e.target.value)
                       }
                       placeholder="Enter your article title..."
-                      className="w-full text-2xl font-bold border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
+                      className="w-full text-2xl font-bold border-none outline-none focus:ring-0 p-0 placeholder-gray-400 dark:placeholder-gray-500 bg-transparent text-gray-900 dark:text-white"
                     />
                   </div>
 
                   {/* Excerpt */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Excerpt
                     </label>
                     <textarea
@@ -383,13 +385,13 @@ const CreateBlogPage = () => {
                       }
                       placeholder="Brief description of your article..."
                       rows={3}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     />
                   </div>
 
                   {/* Featured Image */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Featured Image
                     </label>
                     <div className="flex items-center space-x-4">
@@ -400,12 +402,12 @@ const CreateBlogPage = () => {
                           handleInputChange("featuredImage", e.target.value)
                         }
                         placeholder="Image URL or upload below..."
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                       />
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={imageUploading}
-                        className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors disabled:opacity-50"
                       >
                         <Upload className="h-4 w-4" />
                         <span>
@@ -423,7 +425,7 @@ const CreateBlogPage = () => {
 
                     {/* Upload Error */}
                     {uploadError && (
-                      <div className="mt-2 text-sm text-red-600">
+                      <div className="mt-2 text-sm text-red-600 dark:text-red-400">
                         Upload failed: {uploadError}
                       </div>
                     )}
@@ -450,21 +452,21 @@ const CreateBlogPage = () => {
                   {/* Content Editor */}
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Content *
                       </label>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
                         Markdown supported • Use Preview to see formatted
                         content
                       </span>
                     </div>
 
                     {/* Toolbar */}
-                    <div className="border border-gray-300 rounded-t-lg bg-gray-50 px-3 py-2 flex items-center space-x-2">
+                    <div className="border border-gray-300 dark:border-gray-600 rounded-t-lg bg-gray-50 dark:bg-gray-700/30 px-3 py-2 flex items-center space-x-2">
                       <button
                         type="button"
                         onClick={() => insertTextAtCursor("**Bold text**")}
-                        className="p-1 hover:bg-gray-200 rounded"
+                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                         title="Bold"
                       >
                         <Bold className="h-4 w-4" />
@@ -472,7 +474,7 @@ const CreateBlogPage = () => {
                       <button
                         type="button"
                         onClick={() => insertTextAtCursor("*Italic text*")}
-                        className="p-1 hover:bg-gray-200 rounded"
+                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                         title="Italic"
                       >
                         <Italic className="h-4 w-4" />
@@ -480,7 +482,7 @@ const CreateBlogPage = () => {
                       <button
                         type="button"
                         onClick={() => insertTextAtCursor("\n## Heading\n")}
-                        className="p-1 hover:bg-gray-200 rounded text-xs font-bold"
+                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-xs font-bold"
                         title="Heading"
                       >
                         H2
@@ -490,7 +492,7 @@ const CreateBlogPage = () => {
                         onClick={() =>
                           insertTextAtCursor("\n- List item\n- List item\n")
                         }
-                        className="p-1 hover:bg-gray-200 rounded"
+                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                         title="List"
                       >
                         <List className="h-4 w-4" />
@@ -498,7 +500,7 @@ const CreateBlogPage = () => {
                       <button
                         type="button"
                         onClick={() => insertTextAtCursor("[Link text](URL)")}
-                        className="p-1 hover:bg-gray-200 rounded"
+                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                         title="Link"
                       >
                         <LinkIcon className="h-4 w-4" />
@@ -506,7 +508,7 @@ const CreateBlogPage = () => {
                       <button
                         type="button"
                         onClick={() => insertTextAtCursor("\n> Quote text\n")}
-                        className="p-1 hover:bg-gray-200 rounded"
+                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                         title="Quote"
                       >
                         <Quote className="h-4 w-4" />
@@ -561,28 +563,11 @@ const CreateBlogPage = () => {
                       onChange={(e) =>
                         handleInputChange("content", e.target.value)
                       }
-                      placeholder="Write your article content here using Markdown...
-
-Examples:
-# Heading 1
-## Heading 2
-**Bold text** or *Italic text*
-[Link text](https://example.com)
-![Image alt text](image-url)
-> Quote text
-- List item
-- Another item
-
-```javascript
-// Code block
-console.log('Hello World');
-```
-
-`inline code` for small snippets"
+                      placeholder="Write your article content here using Markdown..."
                       rows={20}
-                      className="w-full border-l border-r border-b border-gray-300 rounded-b-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                      className="w-full border-l border-r border-b border-gray-300 dark:border-gray-600 rounded-b-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Supports Markdown formatting. Estimated read time:{" "}
                       {estimateReadTime(formData.content)} min
                     </p>
@@ -590,13 +575,13 @@ console.log('Hello World');
                 </div>
               ) : (
                 /* Preview Mode */
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                   {formData.featuredImage && (
                     <div className="aspect-video">
                       <img
                         src={formData.featuredImage}
                         alt={formData.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object_cover"
                       />
                     </div>
                   )}
@@ -606,15 +591,15 @@ console.log('Hello World');
                         {formData.category || "Uncategorized"}
                       </span>
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
                       {formData.title || "Article Title"}
                     </h1>
                     {formData.excerpt && (
-                      <p className="text-lg text-gray-600 mb-6">
+                      <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
                         {formData.excerpt}
                       </p>
                     )}
-                    <div className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-strong:text-gray-900 prose-code:text-pink-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100">
+                    <div className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-strong:text-gray-900 prose-code:text-pink-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         rehypePlugins={[rehypeHighlight, rehypeRaw]}
@@ -630,14 +615,14 @@ console.log('Hello World');
 
             {/* Sidebar */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 sticky top-8">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   Article Settings
                 </h3>
 
                 {/* Category */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Category
                   </label>
                   <select
@@ -645,7 +630,7 @@ console.log('Hello World');
                     onChange={(e) =>
                       handleInputChange("category", e.target.value)
                     }
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                   >
                     <option value="">Select category</option>
                     {availableCategories.map((category) => (
@@ -658,7 +643,7 @@ console.log('Hello World');
 
                 {/* Tags */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Tags
                   </label>
                   <input
@@ -667,19 +652,19 @@ console.log('Hello World');
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyDown={handleTagAdd}
                     placeholder="Add tags (press Enter or comma)"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
                   {formData.tags.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {formData.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm flex items-center space-x-1"
+                          className="bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400 px-2 py-1 rounded text-sm flex items-center space-x-1"
                         >
                           <span>#{tag}</span>
                           <button
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                             onClick={() => handleTagRemove(tag)}
-                            className="text-blue-600 hover:text-blue-800"
                           >
                             ×
                           </button>
@@ -690,11 +675,11 @@ console.log('Hello World');
                 </div>
 
                 {/* Stats */}
-                <div className="border-t border-gray-200 pt-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Article Stats
                   </h4>
-                  <div className="space-y-2 text-sm text-gray-600">
+                  <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex justify-between">
                       <span>Word count:</span>
                       <span>
@@ -706,7 +691,7 @@ console.log('Hello World');
                         }
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify_between">
                       <span>Character count:</span>
                       <span>{formData.content.length}</span>
                     </div>

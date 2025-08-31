@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { MessageSquare, Users, TrendingUp } from 'lucide-react';
-import ForumLayout from '@/components/forum/ForumLayout';
-import ThreadCard from '@/components/forum/ThreadCard';
-import ForumFilters from '@/components/forum/ForumFilters';
-import BreadcrumbNavigation from '@/components/forum/BreadcrumbNavigation';
-import StructuredData from '@/components/seo/StructuredData';
+import React, { useState, useEffect } from "react";
+import { MessageSquare, Users, TrendingUp } from "lucide-react";
+import ForumLayout from "@/components/forum/ForumLayout";
+import ThreadCard from "@/components/forum/ThreadCard";
+import ForumFilters from "@/components/forum/ForumFilters";
+import BreadcrumbNavigation from "@/components/forum/BreadcrumbNavigation";
+import StructuredData from "@/components/seo/StructuredData";
 import ErrorBoundary, {
   ForumLoading,
   ForumError,
   ForumEmpty,
-} from '@/components/forum/ErrorBoundary';
-import { ForumCategory, ForumThread, ThreadFilters } from '@/types/forum';
-import { useForumThreads } from '@/hooks/useForumApi';
+} from "@/components/forum/ErrorBoundary";
+import { ForumCategory, ForumThread, ThreadFilters } from "@/types/forum";
+import { useForumThreads } from "@/hooks/useForumApi";
 
 interface Props {
   category: ForumCategory;
@@ -23,9 +23,9 @@ interface Props {
 const ForumCategoryPage: React.FC<Props> = ({ category, categorySlug }) => {
   const [filteredThreads, setFilteredThreads] = useState<ForumThread[]>([]);
   const [filters, setFilters] = useState<ThreadFilters>({
-    sort: 'latest',
-    filter: 'all',
-    search: '',
+    sort: "latest",
+    filter: "all",
+    search: "",
   });
 
   // Get threads for this category
@@ -37,13 +37,13 @@ const ForumCategoryPage: React.FC<Props> = ({ category, categorySlug }) => {
   } = useForumThreads({
     category_id: category.id,
     sort:
-      filters.sort === 'latest'
-        ? 'newest'
-        : filters.sort === 'oldest'
-        ? 'oldest'
-        : filters.sort === 'popular'
-        ? 'most_views'
-        : 'newest',
+      filters.sort === "latest"
+        ? "newest"
+        : filters.sort === "oldest"
+        ? "oldest"
+        : filters.sort === "popular"
+        ? "most_views"
+        : "newest",
   });
 
   // Apply filters and sorting
@@ -62,47 +62,47 @@ const ForumCategoryPage: React.FC<Props> = ({ category, categorySlug }) => {
         (thread) =>
           thread.title.toLowerCase().includes(searchLower) ||
           thread.content.toLowerCase().includes(searchLower) ||
-          (thread.author?.displayName || '').toLowerCase().includes(searchLower)
+          (thread.author?.displayName || "").toLowerCase().includes(searchLower)
       );
     }
 
     // Apply status filter
     switch (filters.filter) {
-      case 'pinned':
+      case "pinned":
         filtered = filtered.filter((thread) => thread.is_pinned);
         break;
-      case 'locked':
+      case "locked":
         filtered = filtered.filter((thread) => thread.is_locked);
         break;
-      case 'unanswered':
+      case "unanswered":
         filtered = filtered.filter((thread) => thread.reply_count === 0);
         break;
     }
 
     // Apply sorting
     switch (filters.sort) {
-      case 'latest':
+      case "latest":
         filtered.sort(
           (a, b) =>
             new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
         );
         break;
-      case 'oldest':
+      case "oldest":
         filtered.sort(
           (a, b) =>
             new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
         break;
-      case 'popular':
+      case "popular":
         filtered.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
         break;
-      case 'replies':
+      case "replies":
         filtered.sort((a, b) => (b.reply_count || 0) - (a.reply_count || 0));
         break;
     }
 
     // Pinned threads always come first
-    if (filters.filter !== 'locked' && filters.filter !== 'unanswered') {
+    if (filters.filter !== "locked" && filters.filter !== "unanswered") {
       const pinned = filtered.filter((thread) => thread.is_pinned);
       const regular = filtered.filter((thread) => !thread.is_pinned);
       filtered = [...pinned, ...regular];
@@ -117,30 +117,30 @@ const ForumCategoryPage: React.FC<Props> = ({ category, categorySlug }) => {
 
   // Generate structured data for the category
   const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'DiscussionForum',
+    "@context": "https://schema.org",
+    "@type": "DiscussionForum",
     name: category.name,
     description: category.description,
     url: `/forums/${categorySlug}`,
     mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': `/forums/${categorySlug}`,
+      "@type": "WebPage",
+      "@id": `/forums/${categorySlug}`,
     },
     publisher: {
-      '@type': 'Organization',
-      name: 'EV Community Platform',
-      url: process.env.NEXT_PUBLIC_SITE_URL || 'https://evcommunity.com',
+      "@type": "Organization",
+      name: "EV Community Platform",
+      url: process.env.NEXT_PUBLIC_SITE_URL || "https://evcommunity.com",
     },
     discussionUrl: `/forums/${categorySlug}`,
     interactionStatistic: [
       {
-        '@type': 'InteractionCounter',
-        interactionType: 'https://schema.org/CreateAction',
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/CreateAction",
         userInteractionCount: category.thread_count || 0,
       },
       {
-        '@type': 'InteractionCounter',
-        interactionType: 'https://schema.org/ReplyAction',
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/ReplyAction",
         userInteractionCount: category.post_count || 0,
       },
     ],
@@ -157,10 +157,7 @@ const ForumCategoryPage: React.FC<Props> = ({ category, categorySlug }) => {
   if (threadsError) {
     return (
       <ForumLayout title="Error" showBackButton={true}>
-        <ForumError
-          message={threadsError}
-          onRetry={handleRetry}
-        />
+        <ForumError message={threadsError} onRetry={handleRetry} />
       </ForumLayout>
     );
   }
@@ -169,7 +166,7 @@ const ForumCategoryPage: React.FC<Props> = ({ category, categorySlug }) => {
     <>
       {/* Structured Data for SEO */}
       <StructuredData data={structuredData} />
-      
+
       <ErrorBoundary>
         <ForumLayout
           title={category.name}
@@ -182,14 +179,14 @@ const ForumCategoryPage: React.FC<Props> = ({ category, categorySlug }) => {
           {/* Breadcrumb Navigation */}
           <BreadcrumbNavigation
             items={[
-              { label: 'Forums', href: '/forums' },
+              { label: "Forums", href: "/forums" },
               { label: category.name, href: `/forums/${categorySlug}` },
             ]}
             className="mb-6"
           />
 
           {/* Category Stats */}
-          <div className="mb-6 bg-white rounded-lg border border-gray-200 p-6">
+          <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div
@@ -199,25 +196,32 @@ const ForumCategoryPage: React.FC<Props> = ({ category, categorySlug }) => {
                   {category.icon}
                 </div>
                 <div>
-                  <h1 className="text-xl font-semibold text-gray-900">
+                  <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
                     {category.name}
                   </h1>
-                  <p className="text-gray-600 mt-1">{category.description}</p>
+                  <p className="text-gray-600 dark:text-gray-300 mt-1">
+                    {category.description}
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
                     {category.thread_count || threads.length}
                   </div>
-                  <div className="text-sm text-gray-600">Threads</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">
+                    Threads
+                  </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {category.post_count || threads.reduce((sum, t) => sum + (t.reply_count || 0), 0)}
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {category.post_count ||
+                      threads.reduce((sum, t) => sum + (t.reply_count || 0), 0)}
                   </div>
-                  <div className="text-sm text-gray-600">Posts</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">
+                    Posts
+                  </div>
                 </div>
               </div>
             </div>
@@ -235,8 +239,8 @@ const ForumCategoryPage: React.FC<Props> = ({ category, categorySlug }) => {
             <ForumEmpty
               title="No threads found"
               message={
-                filters.search || filters.filter !== 'all'
-                  ? 'No threads match your current filters. Try adjusting your search or filter criteria.'
+                filters.search || filters.filter !== "all"
+                  ? "No threads match your current filters. Try adjusting your search or filter criteria."
                   : "This category doesn't have any threads yet. Be the first to start a discussion!"
               }
               actionLabel="Start New Thread"
@@ -245,8 +249,8 @@ const ForumCategoryPage: React.FC<Props> = ({ category, categorySlug }) => {
           ) : (
             <div className="space-y-4">
               {filteredThreads.map((thread) => (
-                <ThreadCard 
-                  key={thread.id} 
+                <ThreadCard
+                  key={thread.id}
                   thread={thread}
                   href={`/forums/${categorySlug}/${thread.slug}`}
                 />
@@ -256,7 +260,7 @@ const ForumCategoryPage: React.FC<Props> = ({ category, categorySlug }) => {
 
           {/* Results Summary */}
           {filteredThreads.length > 0 && (
-            <div className="mt-8 text-center text-sm text-gray-600">
+            <div className="mt-8 text-center text-sm text-gray-600 dark:text-gray-300">
               Showing {filteredThreads.length} of {threads.length} threads
             </div>
           )}

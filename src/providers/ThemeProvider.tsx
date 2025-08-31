@@ -9,7 +9,9 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
       attribute="class"
       defaultTheme="system"
       enableSystem
-      themes={["light", "dark", "system"]}
+      themes={["light", "dark"]}
+      storageKey="ev-theme"
+      disableTransitionOnChange={false}
       {...props}
     >
       {children}

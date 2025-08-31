@@ -64,9 +64,11 @@ const PostContent: React.FC<PostContentProps> = ({
   };
 
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 ${className}`}>
+    <div
+      className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 ${className}`}
+    >
       {/* Author Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 rounded-t-lg">
         <div className="flex items-center space-x-3">
           {author.avatar ? (
             <img
@@ -75,14 +77,14 @@ const PostContent: React.FC<PostContentProps> = ({
               className="w-8 h-8 rounded-full"
             />
           ) : (
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              <User className="h-4 w-4 text-gray-600" />
+            <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+              <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
             </div>
           )}
 
           <div>
             <div className="flex items-center space-x-2">
-              <span className="font-semibold text-gray-900">
+              <span className="font-semibold text-gray-900 dark:text-white">
                 {author.displayName}
               </span>
               {author.isVerified && (
@@ -94,7 +96,7 @@ const PostContent: React.FC<PostContentProps> = ({
                 </span>
               )}
             </div>
-            <div className="flex items-center space-x-1 text-xs text-gray-500">
+            <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
               <Clock className="h-3 w-3" />
               <span>{formatDate(createdAt)}</span>
             </div>
@@ -103,7 +105,7 @@ const PostContent: React.FC<PostContentProps> = ({
 
         {/* Edit Indicator */}
         {isEdited && (
-          <div className="flex items-center space-x-1 text-xs text-gray-500">
+          <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
             <Edit className="h-3 w-3" />
             <span>
               Edited{" "}
@@ -117,13 +119,13 @@ const PostContent: React.FC<PostContentProps> = ({
 
       {/* Post Content */}
       <div className="p-6">
-        <div className="prose prose-gray max-w-none">
+        <div className="prose prose-gray dark:prose-invert max-w-none">
           {formatContent(content)
             .split("\n\n")
             .map((paragraph, index) => (
               <p
                 key={index}
-                className="mb-4 last:mb-0 text-gray-800 leading-relaxed"
+                className="mb-4 last:mb-0 text-gray-800 dark:text-gray-200 leading-relaxed"
               >
                 {paragraph}
               </p>
@@ -143,14 +145,14 @@ const PostContent: React.FC<PostContentProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Placeholder for voting buttons */}
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               {/* Future: Vote buttons, report, etc. */}
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
             {/* Placeholder for action buttons */}
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               {/* Future: Reply, Quote, etc. */}
             </div>
           </div>

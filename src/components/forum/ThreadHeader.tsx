@@ -47,7 +47,7 @@ const ThreadHeader: React.FC<ThreadHeaderProps> = ({
 
   return (
     <div
-      className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}
+      className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 ${className}`}
     >
       {/* Category Badge */}
       {thread.category && (
@@ -83,7 +83,7 @@ const ThreadHeader: React.FC<ThreadHeaderProps> = ({
         </div>
 
         <div className="flex items-start justify-between mt-2">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight flex-1">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight flex-1">
             {thread.title}
           </h1>
 
@@ -91,7 +91,7 @@ const ThreadHeader: React.FC<ThreadHeaderProps> = ({
           {showEditButton && onEdit && (
             <button
               onClick={onEdit}
-              className="ml-4 inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="ml-4 inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <Edit className="h-4 w-4 mr-1" />
               Edit
@@ -112,21 +112,21 @@ const ThreadHeader: React.FC<ThreadHeaderProps> = ({
                 className="w-10 h-10 rounded-full"
               />
             ) : (
-              <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                <User className="h-5 w-5 text-gray-600" />
+              <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                <User className="h-5 w-5 text-gray-600 dark:text-gray-300" />
               </div>
             )}
 
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-semibold text-gray-900">
+                <span className="font-semibold text-gray-900 dark:text-white">
                   {thread.author.displayName}
                 </span>
                 {thread.author.isVerified && (
                   <CheckCircle className="h-4 w-4 text-blue-500" />
                 )}
               </div>
-              <div className="flex items-center space-x-1 text-sm text-gray-500">
+              <div className="flex items-center space-x-1 text-sm text-gray-500 dark:text-gray-400">
                 <Clock className="h-3 w-3" />
                 <span>Posted {formatDate(thread.created_at)}</span>
                 {thread.updated_at !== thread.created_at && (
@@ -142,7 +142,7 @@ const ThreadHeader: React.FC<ThreadHeaderProps> = ({
 
         {/* Thread Stats */}
         <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2 text-gray-600">
+          <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
             <Eye className="h-4 w-4" />
             <span className="text-sm font-medium">
               {formatNumber(thread.view_count)}
@@ -150,7 +150,7 @@ const ThreadHeader: React.FC<ThreadHeaderProps> = ({
             <span className="text-sm">views</span>
           </div>
 
-          <div className="flex items-center space-x-2 text-gray-600">
+          <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
             <MessageSquare className="h-4 w-4" />
             <span className="text-sm font-medium">
               {formatNumber(thread.reply_count)}
@@ -162,7 +162,7 @@ const ThreadHeader: React.FC<ThreadHeaderProps> = ({
 
       {/* Thread Status Indicators */}
       {(thread.is_pinned || thread.is_locked) && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-4 text-sm">
             {thread.is_pinned && (
               <div className="flex items-center space-x-1 text-blue-600">
@@ -171,7 +171,7 @@ const ThreadHeader: React.FC<ThreadHeaderProps> = ({
               </div>
             )}
             {thread.is_locked && (
-              <div className="flex items-center space-x-1 text-gray-500">
+              <div className="flex items-center space-x-1 text-gray-500 dark:text-gray-400">
                 <Lock className="h-3 w-3" />
                 <span>This thread is locked - no new replies can be added</span>
               </div>

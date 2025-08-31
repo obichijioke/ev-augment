@@ -22,7 +22,7 @@ import {
   useCanCreateBlog,
   useCanAccessDraftManagement,
 } from "@/hooks/useBlogPermissions";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggleDropdown } from "@/components/ui/ThemeToggle";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -124,7 +124,7 @@ const Navigation = () => {
               href="/whats-new"
               className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              What's New
+              What&apos;s New
             </Link>
 
             {/* More Dropdown */}
@@ -160,20 +160,8 @@ const Navigation = () => {
 
           {/* Search and User Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-              />
-            </div>
-
             {/* Theme Toggle */}
-            <ThemeToggle />
+            <ThemeToggleDropdown />
 
             {/* User Menu */}
             {isAuthenticated && user ? (
@@ -188,7 +176,7 @@ const Navigation = () => {
                       "https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20placeholder%2C%20clean%20simple%20design&image_size=square"
                     }
                     alt={user.firstName || user.username}
-                    className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
+                    className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
                   />
                   <span className="text-sm font-medium">
                     {user.firstName || user.username}
@@ -353,7 +341,7 @@ const Navigation = () => {
                   />
                 </div>
                 <div className="flex justify-end">
-                  <ThemeToggle />
+                  <ThemeToggleDropdown />
                 </div>
               </div>
 
@@ -387,7 +375,7 @@ const Navigation = () => {
                 href="/whats-new"
                 className="block px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
-                What's New
+                What&apos;s New
               </Link>
 
               {/* Mobile dropdown items */}
@@ -428,7 +416,7 @@ const Navigation = () => {
 
                   <Link
                     href="/dashboard"
-                    className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-md"
+                    className="flex items-center px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Activity className="h-5 w-5 mr-2" />
@@ -436,7 +424,7 @@ const Navigation = () => {
                   </Link>
                   <Link
                     href="/profile"
-                    className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-md"
+                    className="flex items-center px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <User className="h-5 w-5 mr-2" />
@@ -444,7 +432,7 @@ const Navigation = () => {
                   </Link>
                   <Link
                     href="/garage/my-garage"
-                    className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-md"
+                    className="flex items-center px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Car className="h-5 w-5 mr-2" />
@@ -455,7 +443,7 @@ const Navigation = () => {
                   {userProfile?.role === "admin" && (
                     <Link
                       href="/admin/vehicles"
-                      className="flex items-center px-3 py-2 text-base font-medium text-purple-600 hover:bg-purple-50 rounded-md"
+                      className="flex items-center px-3 py-2 text-base font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <Shield className="h-5 w-5 mr-2" />
@@ -466,7 +454,7 @@ const Navigation = () => {
                   {canCreateBlog && (
                     <Link
                       href="/blog/create"
-                      className="flex items-center px-3 py-2 text-base font-medium text-blue-600 hover:bg-blue-50 rounded-md"
+                      className="flex items-center px-3 py-2 text-base font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <PenTool className="h-5 w-5 mr-2" />
@@ -476,7 +464,7 @@ const Navigation = () => {
                   {canAccessDrafts && (
                     <Link
                       href="/blog/drafts"
-                      className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-md"
+                      className="flex items-center px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <FileText className="h-5 w-5 mr-2" />
@@ -485,7 +473,7 @@ const Navigation = () => {
                   )}
                   <Link
                     href="/profile?tab=settings"
-                    className="flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-md"
+                    className="flex items-center px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Settings className="h-5 w-5 mr-2" />
@@ -496,7 +484,7 @@ const Navigation = () => {
                       logout();
                       setIsMenuOpen(false);
                     }}
-                    className="flex items-center px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50 rounded-md w-full text-left"
+                    className="flex items-center px-3 py-2 text-base font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md w-full text-left"
                   >
                     <LogOut className="h-5 w-5 mr-2" />
                     Sign Out

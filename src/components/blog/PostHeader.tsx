@@ -11,15 +11,15 @@ const PostHeader: React.FC<PostHeaderProps> = ({ post }) => {
     <div className="mb-8">
       <Link
         href="/blog"
-        className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
+        className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mb-4"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Blog
       </Link>
-      <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+      <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
         {post.title}
       </h1>
-      <div className="flex items-center space-x-4 text-gray-600 mb-2">
+      <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-400 mb-2">
         <div className="flex items-center">
           <Calendar className="h-4 w-4 mr-2" />
           <span>
@@ -51,13 +51,17 @@ const PostHeader: React.FC<PostHeaderProps> = ({ post }) => {
               className="h-10 w-10 rounded-full"
             />
           ) : (
-            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-              <User className="h-5 w-5 text-gray-600" />
+            <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
+              <User className="h-5 w-5 text-gray-600 dark:text-gray-300" />
             </div>
           )}
           <div>
-            <p className="font-semibold text-gray-900">{post.author.name}</p>
-            <p className="text-sm text-gray-600">@{post.author.username}</p>
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {post.author.name}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              @{post.author.username}
+            </p>
           </div>
         </Link>
       </div>

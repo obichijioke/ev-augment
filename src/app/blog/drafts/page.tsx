@@ -219,13 +219,13 @@ const BlogDraftsPage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          <AlertCircle className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             Access Denied
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             You need to be logged in to view drafts.
           </p>
         </div>
@@ -235,16 +235,16 @@ const BlogDraftsPage: React.FC = () => {
 
   return (
     <AccessControl requireAuth={true} requireDraftAccess={true}>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                   Draft Management
                 </h1>
-                <p className="mt-2 text-gray-600">
+                <p className="mt-2 text-gray-600 dark:text-gray-300">
                   Manage your unpublished blog posts and drafts
                 </p>
               </div>
@@ -260,56 +260,56 @@ const BlogDraftsPage: React.FC = () => {
 
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center">
                 <FileText className="h-8 w-8 text-blue-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Total Drafts
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {draftStats.total}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center">
                 <Clock className="h-8 w-8 text-green-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Recently Modified
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {draftStats.recentlyModified}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center">
                 <AlertCircle className="h-8 w-8 text-amber-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Old Drafts
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {draftStats.oldDrafts}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center">
                 <Save className="h-8 w-8 text-purple-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Auto-saved
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {draftStats.autoSaved}
                   </p>
                 </div>
@@ -318,18 +318,18 @@ const BlogDraftsPage: React.FC = () => {
           </div>
 
           {/* Filters and Search */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
             <div className="flex flex-col sm:flex-row gap-4">
               {/* Search */}
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
                   <input
                     type="text"
                     placeholder="Search drafts..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
                 </div>
               </div>
@@ -339,7 +339,7 @@ const BlogDraftsPage: React.FC = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                 >
                   <option value="updated_at">Last Modified</option>
                   <option value="created_at">Date Created</option>
@@ -349,7 +349,7 @@ const BlogDraftsPage: React.FC = () => {
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as any)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                 >
                   <option value="desc">Newest First</option>
                   <option value="asc">Oldest First</option>
@@ -359,8 +359,8 @@ const BlogDraftsPage: React.FC = () => {
 
             {/* Bulk Actions */}
             {selectedDrafts.length > 0 && (
-              <div className="mt-4 flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <span className="text-sm text-blue-700">
+              <div className="mt-4 flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <span className="text-sm text-blue-700 dark:text-blue-400">
                   {selectedDrafts.length} draft
                   {selectedDrafts.length !== 1 ? "s" : ""} selected
                 </span>
@@ -386,16 +386,18 @@ const BlogDraftsPage: React.FC = () => {
           </div>
 
           {/* Drafts List */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             {isLoading ? (
               <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-600">Loading drafts...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto"></div>
+                <p className="mt-2 text-gray-600 dark:text-gray-300">
+                  Loading drafts...
+                </p>
               </div>
             ) : error ? (
               <div className="p-8 text-center">
                 <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-                <p className="text-red-600">{error}</p>
+                <p className="text-red-600 dark:text-red-400">{error}</p>
                 <button
                   onClick={() => loadPosts()}
                   className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -405,11 +407,11 @@ const BlogDraftsPage: React.FC = () => {
               </div>
             ) : filteredDrafts.length === 0 ? (
               <div className="p-8 text-center">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <FileText className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                   No drafts found
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
                   {searchQuery
                     ? "No drafts match your search criteria."
                     : "You haven't created any drafts yet."}
@@ -424,7 +426,7 @@ const BlogDraftsPage: React.FC = () => {
             ) : (
               <>
                 {/* Table Header */}
-                <div className="px-6 py-3 border-b border-gray-200 bg-gray-50">
+                <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -433,46 +435,49 @@ const BlogDraftsPage: React.FC = () => {
                         filteredDrafts.length > 0
                       }
                       onChange={selectAllDrafts}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
                     />
-                    <span className="ml-3 text-sm font-medium text-gray-700">
+                    <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                       Select All
                     </span>
                   </div>
                 </div>
 
                 {/* Drafts List */}
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredDrafts.map((draft) => (
-                    <div key={draft.id} className="px-6 py-4 hover:bg-gray-50">
+                    <div
+                      key={draft.id}
+                      className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                    >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4 flex-1">
                           <input
                             type="checkbox"
                             checked={selectedDrafts.includes(draft.id)}
                             onChange={() => toggleDraftSelection(draft.id)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
                           />
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-2 mb-1">
-                              <h3 className="text-lg font-medium text-gray-900 truncate">
+                              <h3 className="text-lg font-medium text-gray-900 dark:text-white truncate">
                                 {draft.title || "Untitled Draft"}
                               </h3>
                               {draft.updatedAt !== draft.publishedAt && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300">
                                   Auto-saved
                                 </span>
                               )}
                             </div>
 
                             {draft.excerpt && (
-                              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">
                                 {draft.excerpt}
                               </p>
                             )}
 
-                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                            <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                               <span className="flex items-center">
                                 <Calendar className="h-3 w-3 mr-1" />
                                 Created {formatDate(draft.publishedAt)}
@@ -486,7 +491,7 @@ const BlogDraftsPage: React.FC = () => {
                               </span>
                               <span>{getWordCount(draft.content)} words</span>
                               {draft.category && (
-                                <span className="px-2 py-0.5 bg-gray-100 rounded text-gray-700">
+                                <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">
                                   {draft.category}
                                 </span>
                               )}
@@ -498,7 +503,7 @@ const BlogDraftsPage: React.FC = () => {
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => handleEditDraft(draft.id)}
-                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                             title="Edit Draft"
                           >
                             <Edit3 className="h-4 w-4" />
@@ -506,7 +511,7 @@ const BlogDraftsPage: React.FC = () => {
 
                           <button
                             onClick={() => handlePreviewDraft(draft)}
-                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            className="p-2 text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
                             title="Preview Draft"
                           >
                             <Eye className="h-4 w-4" />
@@ -515,7 +520,7 @@ const BlogDraftsPage: React.FC = () => {
                           <button
                             onClick={() => handlePublishDraft(draft.id)}
                             disabled={isUpdating}
-                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
+                            className="p-2 text-gray-400 dark:text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors disabled:opacity-50"
                             title="Publish Draft"
                           >
                             <Send className="h-4 w-4" />
@@ -530,16 +535,16 @@ const BlogDraftsPage: React.FC = () => {
                                     : draft.id
                                 )
                               }
-                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                               title="More Actions"
                             >
                               <MoreVertical className="h-4 w-4" />
                             </button>
 
                             {showDeleteConfirm === draft.id && (
-                              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                              <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
                                 <div className="p-3">
-                                  <p className="text-sm text-gray-700 mb-3">
+                                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
                                     Delete this draft permanently?
                                   </p>
                                   <div className="flex space-x-2">
@@ -553,7 +558,7 @@ const BlogDraftsPage: React.FC = () => {
                                     </button>
                                     <button
                                       onClick={() => setShowDeleteConfirm(null)}
-                                      className="flex-1 px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
+                                      className="flex-1 px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
                                     >
                                       Cancel
                                     </button>
@@ -572,11 +577,11 @@ const BlogDraftsPage: React.FC = () => {
           </div>
 
           {/* Quick Tips */}
-          <div className="mt-8 bg-blue-50 rounded-lg p-6">
-            <h3 className="text-lg font-medium text-blue-900 mb-3">
+          <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+            <h3 className="text-lg font-medium text-blue-900 dark:text-blue-400 mb-3">
               💡 Draft Management Tips
             </h3>
-            <ul className="space-y-2 text-sm text-blue-800">
+            <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-300">
               <li>
                 • Drafts are automatically saved every 5 seconds while editing
               </li>

@@ -29,9 +29,9 @@ const ForumLayout: React.FC<ForumLayoutProps> = ({
 }) => {
   const { isAuthenticated } = useAuthStore();
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             {/* Navigation */}
@@ -40,7 +40,7 @@ const ForumLayout: React.FC<ForumLayoutProps> = ({
                 {showBackButton && (
                   <Link
                     href={backHref}
-                    className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+                    className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                   >
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back
@@ -48,17 +48,17 @@ const ForumLayout: React.FC<ForumLayoutProps> = ({
                 )}
 
                 {/* Breadcrumb */}
-                <nav className="flex items-center space-x-2 text-sm text-gray-500">
+                <nav className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                   <Link
                     href="/"
-                    className="hover:text-gray-700 transition-colors"
+                    className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                   >
                     <Home className="h-4 w-4" />
                   </Link>
                   <span>/</span>
                   <Link
                     href="/forums"
-                    className="hover:text-gray-700 transition-colors"
+                    className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                   >
                     Forums
                   </Link>
@@ -88,9 +88,13 @@ const ForumLayout: React.FC<ForumLayoutProps> = ({
             {/* Title Section */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {title}
+                </h1>
                 {subtitle && (
-                  <p className="mt-2 text-lg text-gray-600">{subtitle}</p>
+                  <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
+                    {subtitle}
+                  </p>
                 )}
               </div>
 
