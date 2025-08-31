@@ -1,140 +1,147 @@
-# API Documentation
+# EV Community Platform API Documentation
 
-This folder contains comprehensive documentation for all API routes in the EV Next.js application. The documentation is organized by feature and includes detailed information about endpoints, request/response formats, authentication requirements, and examples.
+Welcome to the EV Community Platform API documentation. This API powers a comprehensive electric vehicle community platform with features including user management, vehicle listings, forums, blog, marketplace, and more.
 
-## 📁 Folder Structure
-
+## Base URL
 ```
-api-docs/
-├── README.md                 # This file - overview and guidelines
-├── authentication/           # Auth-related endpoints
-├── forum/                   # Forum system endpoints
-├── users/                   # User management endpoints
-├── vehicles/                # Vehicle-related endpoints
-├── images/                  # Image upload/management endpoints
-└── schemas/                 # Shared data schemas and types
+http://localhost:3001/api
 ```
-
-## 📋 Documentation Standards
-
-Each API endpoint documentation should include:
-
-### Required Sections
-- **Endpoint URL** and HTTP method
-- **Description** of what the endpoint does
-- **Authentication** requirements
-- **Request Parameters** (path, query, body)
-- **Response Format** with status codes
-- **Example Request/Response**
-- **Error Handling** with error codes
-
-### Optional Sections
-- **Rate Limiting** information
-- **Permissions** required
-- **Related Endpoints**
-- **Notes** and special considerations
-
-## 🔧 Documentation Format
-
-Use Markdown format with the following structure:
-
-```markdown
-# Endpoint Name
-
-## Overview
-Brief description of what this endpoint does.
-
-## Endpoint
-`METHOD /api/path/to/endpoint`
 
 ## Authentication
-- Required: Yes/No
-- Type: Bearer Token / API Key / etc.
-
-## Parameters
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| id | string | Yes | Resource identifier |
-
-### Query Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| limit | number | No | Number of items to return |
-
-### Request Body
-```json
-{
-  "field": "value"
-}
+Most endpoints require authentication using JWT tokens. Include the token in the Authorization header:
+```
+Authorization: Bearer <your-jwt-token>
 ```
 
-## Response
+## Response Format
+All API responses follow a consistent format:
 
 ### Success Response
-**Status Code:** 200 OK
 ```json
 {
   "success": true,
-  "data": {},
-  "message": "Success message"
-}
-```
-
-### Error Response
-**Status Code:** 400 Bad Request
-```json
-{
-  "success": false,
-  "error": {
-    "message": "Error description",
-    "code": "ERROR_CODE"
+  "message": "Operation completed successfully",
+  "data": {
+    // Response data here
   }
 }
 ```
 
-## Examples
-
-### Request
-```bash
-curl -X GET "http://localhost:4001/api/endpoint" \
-  -H "Authorization: Bearer YOUR_TOKEN"
+### Error Response
+```json
+{
+  "success": false,
+  "error": "Error message",
+  "errors": {
+    "field": ["Validation error messages"]
+  }
+}
 ```
 
-### Response
+### Paginated Response
 ```json
 {
   "success": true,
-  "data": "response data"
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 100,
+    "totalPages": 5,
+    "hasNext": true,
+    "hasPrev": false
+  }
 }
 ```
+
+## Rate Limiting
+- General API endpoints: 100 requests per 15 minutes
+- Authentication endpoints: 5 requests per 15 minutes
+- Development mode: 1000 requests per 15 minutes
+
+## Available Endpoints
+
+### Core Features
+- [**Authentication**](./auth/README.md) - User registration, login, password management
+- [**Users**](./users/README.md) - User profiles, search, following system
+- [**Vehicles**](./vehicles/README.md) - Personal vehicle management
+- [**EV Listings**](./ev-listings/README.md) - Electric vehicle database and specifications
+
+### Content & Community
+- [**Forum**](./forum/README.md) - Discussion threads, categories, replies, moderation
+- [**Blog**](./blog/README.md) - Blog posts, comments, categories
+- [**Reviews**](./reviews/README.md) - User reviews and ratings system
+- [**Likes**](./likes/README.md) - Content likes and reactions
+
+### Marketplace & Services
+- [**Marketplace**](./marketplace/README.md) - Buy/sell listings *(currently disabled)*
+- [**Wanted Ads**](./wanted/README.md) - Wanted item advertisements *(currently disabled)*
+- [**Charging Stations**](./charging/README.md) - Charging station directory *(currently disabled)*
+- [**Directory**](./directory/README.md) - Business directory *(currently disabled)*
+
+### Utility Services
+- [**Upload**](./upload/README.md) - File upload management
+- [**Search**](./search/README.md) - Global search functionality *(currently disabled)*
+- [**Notifications**](./notifications/README.md) - User notifications *(currently disabled)*
+- [**Messages**](./messages/README.md) - Direct messaging system *(currently disabled)*
+
+### Administration
+- [**Admin**](./admin/README.md) - Administrative functions and dashboard
+
+### Data Models & Schemas
+- [**Data Models**](./schemas/data-models.md) - TypeScript interfaces for all data models
+- [**Validation Rules**](./schemas/validation-rules.md) - Comprehensive validation schemas
+- [**Response Formats**](./schemas/response-formats.md) - Standard response formats and status codes
+
+## Quick Start
+
+### 1. Health Check
+```bash
+curl http://localhost:3001/health
 ```
 
-## 🚀 Getting Started
+### 2. Register a User
+```bash
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "securepassword",
+    "username": "johndoe",
+    "full_name": "John Doe",
+    "terms_accepted": true
+  }'
+```
 
-1. **Create endpoint documentation** in the appropriate folder
-2. **Follow the standard format** outlined above
-3. **Include real examples** from the actual API
-4. **Keep documentation up-to-date** with code changes
+### 3. Login
+```bash
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "securepassword"
+  }'
+```
 
-## 📝 Contributing
+### 4. Get User Profile
+```bash
+curl -X GET http://localhost:3001/api/users/profile \
+  -H "Authorization: Bearer <your-jwt-token>"
+```
 
-When adding new API endpoints:
-1. Create documentation before or immediately after implementation
-2. Include comprehensive examples
-3. Test all examples to ensure accuracy
-4. Update related documentation if needed
+## Error Codes
 
-## 🔗 Related
+| Code | Description |
+|------|-------------|
+| 400 | Bad Request - Invalid input or validation error |
+| 401 | Unauthorized - Missing or invalid authentication |
+| 403 | Forbidden - Insufficient permissions |
+| 404 | Not Found - Resource does not exist |
+| 409 | Conflict - Resource already exists or conflict |
+| 422 | Unprocessable Entity - Validation failed |
+| 429 | Too Many Requests - Rate limit exceeded |
+| 500 | Internal Server Error - Server error |
 
-This documentation will be used to generate:
-- Interactive API documentation app
-- Postman collections
-- SDK generation
-- Developer guides
+## Support
 
----
-
-**Last Updated:** 2025-08-05
-**Version:** 1.0.0
+For questions or issues with the API, please refer to the specific endpoint documentation or contact the development team.
