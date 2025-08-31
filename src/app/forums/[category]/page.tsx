@@ -8,9 +8,9 @@ import {
 } from "@/services/forumSeoApi";
 
 interface Props {
-  params: {
+  params: Promise<{
     category: string;
-  };
+  }>;
 }
 
 // Generate static params for all categories (for static generation)
@@ -29,7 +29,8 @@ export async function generateStaticParams() {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
-    const category = await getForumCategory(params.category);
+    const { category: categorySlug } = await params;
+    const category = await getForumCategory(categorySlug);
 
     if (!category) {
       return {
@@ -51,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title,
         description,
         type: "website",
-        url: `/forums/${params.category}`,
+        url: `/forums/${categorySlug}`,
         siteName: "EV Community Platform",
         images: [
           {
@@ -69,7 +70,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         images: ["/images/forum-og-image.jpg"],
       },
       alternates: {
-        canonical: `/forums/${params.category}`,
+        canonical: `/forums/${categorySlug}`,
       },
     };
   } catch (error) {
@@ -84,14 +85,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // Server-side rendered forum category page
 export default async function ForumCategoryPageSSR({ params }: Props) {
   try {
-    const category = await getForumCategory(params.category);
+    const { category: categorySlug } = await params;
+    const category = await getForumCategory(categorySlug);
 
     if (!category) {
       notFound();
     }
 
     return (
-      <ForumCategoryPage category={category} categorySlug={params.category} />
+      <ForumCategoryPage category={category} categorySlug={categorySlug} />
     );
   } catch (error) {
     console.error("Error loading forum category:", error);

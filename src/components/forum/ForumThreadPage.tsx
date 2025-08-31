@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import ForumLayout from '@/components/forum/ForumLayout';
-import ThreadHeader from '@/components/forum/ThreadHeader';
-import PostContent from '@/components/forum/PostContent';
-import ReplyList from '@/components/forum/ReplyList';
-import BreadcrumbNavigation from '@/components/forum/BreadcrumbNavigation';
-import StructuredData from '@/components/seo/StructuredData';
-import { ForumThread, ForumCategory, CreateReplyForm } from '@/types/forum';
-import { useForumReplies, useForumImages } from '@/hooks/useForumApi';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import ForumLayout from "@/components/forum/ForumLayout";
+import ThreadHeader from "@/components/forum/ThreadHeader";
+import PostContent from "@/components/forum/PostContent";
+import ReplyList from "@/components/forum/ReplyList";
+import BreadcrumbNavigation from "@/components/forum/BreadcrumbNavigation";
+import StructuredData from "@/components/seo/StructuredData";
+import { ForumThread, ForumCategory, CreateReplyForm } from "@/types/forum";
+import { useForumReplies, useForumImages } from "@/hooks/useForumApi";
 
 interface Props {
   thread: ForumThread;
@@ -18,24 +18,24 @@ interface Props {
   threadSlug: string;
 }
 
-const ForumThreadPage: React.FC<Props> = ({ 
-  thread, 
-  category, 
-  categorySlug, 
-  threadSlug 
+const ForumThreadPage: React.FC<Props> = ({
+  thread,
+  category,
+  categorySlug,
+  threadSlug,
 }) => {
   const router = useRouter();
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
   // Reply API hook
   const { createReply } = useForumReplies();
-  
+
   // Image upload hook
   const { uploadImage } = useForumImages();
 
   // Handle edit button click
   const handleEdit = () => {
-    router.push(`/forums/${categorySlug}/${threadSlug}/edit`);
+    router.push(`/forums/thread/${thread.id}/edit`);
   };
 
   // Handle reply submission
@@ -46,11 +46,11 @@ const ForumThreadPage: React.FC<Props> = ({
         ...replyData,
         thread_id: thread.id,
       });
-      
+
       // Refresh the page to show new reply
       router.refresh();
     } catch (error) {
-      console.error('Error submitting reply:', error);
+      console.error("Error submitting reply:", error);
     } finally {
       setIsSubmittingReply(false);
     }
@@ -61,61 +61,64 @@ const ForumThreadPage: React.FC<Props> = ({
 
   // Generate structured data for SEO
   const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'DiscussionForumPosting',
+    "@context": "https://schema.org",
+    "@type": "DiscussionForumPosting",
     headline: thread.title,
     text: thread.content,
     datePublished: thread.created_at,
     dateModified: thread.updated_at,
     author: {
-      '@type': 'Person',
-      name: thread.author?.username || 'Anonymous',
-      url: thread.author?.username ? `/users/${thread.author.username}` : undefined,
+      "@type": "Person",
+      name: thread.author?.username || "Anonymous",
+      url: thread.author?.username
+        ? `/users/${thread.author.username}`
+        : undefined,
     },
     discussionUrl: `/forums/${categorySlug}/${threadSlug}`,
     mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': `/forums/${categorySlug}/${threadSlug}`,
+      "@type": "WebPage",
+      "@id": `/forums/${categorySlug}/${threadSlug}`,
     },
     publisher: {
-      '@type': 'Organization',
-      name: 'EV Community Platform',
-      url: process.env.NEXT_PUBLIC_SITE_URL || 'https://evcommunity.com',
+      "@type": "Organization",
+      name: "EV Community Platform",
+      url: process.env.NEXT_PUBLIC_SITE_URL || "https://evcommunity.com",
     },
     isPartOf: {
-      '@type': 'DiscussionForum',
+      "@type": "DiscussionForum",
       name: category.name,
       description: category.description,
       url: `/forums/${categorySlug}`,
     },
     interactionStatistic: [
       {
-        '@type': 'InteractionCounter',
-        interactionType: 'https://schema.org/ViewAction',
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/ViewAction",
         userInteractionCount: thread.view_count || 0,
       },
       {
-        '@type': 'InteractionCounter',
-        interactionType: 'https://schema.org/ReplyAction',
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/ReplyAction",
         userInteractionCount: thread.reply_count || 0,
       },
     ],
-    comment: thread.replies?.map(reply => ({
-      '@type': 'Comment',
-      text: reply.content,
-      datePublished: reply.created_at,
-      author: {
-        '@type': 'Person',
-        name: reply.author?.username || 'Anonymous',
-      },
-    })) || [],
+    comment:
+      thread.replies?.map((reply) => ({
+        "@type": "Comment",
+        text: reply.content,
+        datePublished: reply.created_at,
+        author: {
+          "@type": "Person",
+          name: reply.author?.username || "Anonymous",
+        },
+      })) || [],
   };
 
   return (
     <>
       {/* Structured Data for SEO */}
       <StructuredData data={structuredData} />
-      
+
       <ForumLayout
         title={thread.title}
         showBackButton={true}
@@ -124,9 +127,12 @@ const ForumThreadPage: React.FC<Props> = ({
         {/* Breadcrumb Navigation */}
         <BreadcrumbNavigation
           items={[
-            { label: 'Forums', href: '/forums' },
+            { label: "Forums", href: "/forums" },
             { label: category.name, href: `/forums/${categorySlug}` },
-            { label: thread.title, href: `/forums/${categorySlug}/${threadSlug}` },
+            {
+              label: thread.title,
+              href: `/forums/${categorySlug}/${threadSlug}`,
+            },
           ]}
           className="mb-6"
         />

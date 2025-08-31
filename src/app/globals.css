@@ -2,7 +2,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* Remove custom variant as we'll use Tailwind's built-in dark mode */
 
 :root {
   /* EV Platform Color Scheme */
@@ -56,12 +56,11 @@
 }
 
 body {
-  color: #1f2937;
-  background-color: #ffffff;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     sans-serif;
   font-size: 16px;
   line-height: 1.6;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .btn-primary {
@@ -108,6 +107,13 @@ body {
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   border: 1px solid #e5e7eb;
   padding: 1.5rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.dark .card {
+  background-color: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
 }
 
 .nav-link {
@@ -150,28 +156,28 @@ body {
 @layer components {
   /* Admin UI building blocks */
   .admin-card {
-    @apply bg-white border border-gray-200 rounded-lg;
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg;
   }
   .admin-panel {
-    @apply bg-white border border-gray-200 rounded-md;
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md;
   }
   .admin-input {
-    @apply border border-gray-200 rounded-md;
+    @apply border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
   }
   .admin-select {
-    @apply border border-gray-200 rounded-md;
+    @apply border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
   }
   .admin-btn {
-    @apply border border-gray-200 rounded-md;
+    @apply border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700;
   }
   .admin-btn-xs {
-    @apply text-xs px-2 py-1 border border-gray-200 rounded;
+    @apply text-xs px-2 py-1 border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
   }
   .admin-table {
-    @apply bg-white border border-gray-200 rounded-lg overflow-hidden;
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden;
   }
   .admin-row {
-    @apply border-t border-gray-200;
+    @apply border-t border-gray-200 dark:border-gray-700;
   }
 }
 
